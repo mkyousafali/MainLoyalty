@@ -1,0 +1,306 @@
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { getCardTypeGradient } from '$lib/stores/cardTypes';
+  import { supabase } from '$lib/supabase';
+  import { user } from '$lib/stores/auth';
+  import { goto } from '$app/navigation';
+  import { browser } from '$app/environment';
+  import { language, t } from '$lib/stores/language';
+
+  let selectedBranch = 'all';
+  let customerData: any = null;
+  let cardTypeData: any = null;
+  let branches: any[] = [];
+  let transactions: any[] = [];
+  let isLoading = true;
+  let error = '';
+
+  // Load customer data from database
+  async function loadCustomerData() {
+    try {
+      isLoading = true;
+      error = '';
+
+      // Only run in browser
+      if (!browser) {
+        isLoading = false;
+        return;
+      }
+
+      // Get current user mobile from auth store
+      const currentUser = JSON.parse(localStorage.getItem('loyaltyUser') || '{}');
+      console.log('🔍 Dashboard: Current user from localStorage:', currentUser);
+      
+      if (!currentUser.mobile) {
+        error = 'No user found. Please login again.';
+        console.log('❌ Dashboard: No mobile found in localStorage');
+        if (browser) {
+          goto('/login');
+        }
+        return;
+      }
+
+      console.log('🔍 Dashboard: Fetching customer data for mobile:', currentUser.mobile);
+
+      // Fetch customer data with card type - FIXED: use customer_code instead of mobile
+      const { data: customer, error: customerError } = await supabase
+        .from('customers')
+        .select(`
+          *,
+          card_types (
+            name,
+            name_ar,
+            color,
+            point_limit
+          )
+        `)
+        .eq('customer_code', currentUser.mobile)
+        .single();
+
+      if (customerError) {
+        console.error('❌ Dashboard: Error fetching customer:', customerError);
+        error = `Failed to load customer data: ${customerError.message}`;
+        return;
+      }
+
+      if (!customer) {
+        console.log('❌ Dashboard: No customer found for mobile:', currentUser.mobile);
+        error = 'Customer not found. Please contact support.';
+        return;
+      }
+
+      console.log('✅ Dashboard: Customer data loaded:', customer);
+      customerData = customer;
+      cardTypeData = customer.card_types;
+      console.log('✅ Dashboard: Card type data:', cardTypeData);
+
+      // Clear any previous errors since customer data loaded successfully
+      error = '';
+
+      // Load branches data
+      console.log('🔍 Dashboard: Fetching branches...');
+      const { data: branchesData, error: branchesError } = await supabase
+        .from('branches')
+        .select('*')
+        .order('name');
+
+      if (branchesError) {
+        console.warn('⚠️ Dashboard: Error fetching branches:', branchesError);
+        branches = []; // Set empty array if branches fail to load
+      } else {
+        branches = branchesData || [];
+        console.log('✅ Dashboard: Branches loaded:', branches.length);
+      }
+
+      // Load customer transactions (only latest 5 for dashboard, sorted by newest first)
+      console.log('🔍 Dashboard: Fetching transactions for customer_code:', customer.customer_code);
+      const { data: transactionsData, error: transactionsError } = await supabase
+        .from('customer_transactions')
+        .select(`
+          *,
+          branches (
+            name,
+            name_ar
+          )
+        `)
+        .eq('customer_code', customer.customer_code)
+        .order('bill_date', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (transactionsError) {
+        console.warn('⚠️ Dashboard: Error fetching transactions:', transactionsError);
+        transactions = []; // Set empty array if transactions fail to load
+      } else {
+        transactions = transactionsData || [];
+        console.log('✅ Dashboard: Transactions loaded:', transactions.length);
+      }
+
+    } catch (err) {
+      console.error('💥 Dashboard: Unexpected error:', err);
+      error = `Unexpected error: ${err}`;
+    } finally {
+      isLoading = false;
+      console.log('🏁 Dashboard: Loading completed. Error:', error);
+    }
+  }
+
+  onMount(() => {
+    loadCustomerData();
+  });
+
+  // Reactive branches based on language
+  $: branchOptions = $language === 'ar' 
+    ? [{ id: 'all', name: 'جميع الفروع' }, ...branches.map(b => ({ id: b.id, name: b.name_ar || b.name }))]
+    : [{ id: 'all', name: 'All Branches' }, ...branches.map(b => ({ id: b.id, name: b.name }))];
+
+  // Get dynamic card colors based on customer's card type - with fallback
+  $: cardGradient = (() => {
+    try {
+      return cardTypeData ? getCardTypeGradient(cardTypeData.name) : getCardTypeGradient('Gold');
+    } catch (err) {
+      console.warn('Failed to get card gradient, using default:', err);
+      return { from: '#FFD700', to: '#FFA500' }; // Gold gradient fallback
+    }
+  })();
+
+  // Format currency
+  function formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'SAR',
+      minimumFractionDigits: 2
+    }).format(amount);
+  }
+
+  // Format date
+  function formatDate(dateString: string): string {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString($language === 'ar' ? 'ar-SA' : 'en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch {
+      return 'N/A';
+    }
+  }
+</script>
+
+<svelte:head>
+  <title>{$t.dashboard || 'Dashboard'} - Urban Market Loyalty</title>
+</svelte:head>
+
+<!-- Top Navigation Bar -->
+<div class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40" class:rtl={$language === 'ar'}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
+      <!-- Logo and Title -->
+      <div class="flex items-center gap-4">
+        <img src="/logo.png" alt="Urban Market" class="h-10 w-auto" />
+        <h1 class="text-xl font-bold text-gray-900">{$t.dashboard || 'Dashboard'}</h1>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="flex items-center gap-3">
+        <!-- Customer Support Button -->
+        <a href="/customer-support" class="text-white py-3 px-4 rounded-lg text-center hover:shadow-md transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2 shadow-sm" style="background: #13A538;" class:flex-row-reverse={$language === 'ar'}>
+          <span class="text-xl">💬</span>
+          <span class="font-semibold">{$t.customerSupport}</span>
+        </a>
+
+        <!-- My Offers Button -->
+        <a href="/my-offers" class="text-white py-3 px-4 rounded-lg text-center hover:shadow-md transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2 shadow-sm" style="background: #f08300;" class:flex-row-reverse={$language === 'ar'}>
+          <span class="text-xl">🎁</span>
+          <span class="font-semibold">{$t.myOffers}</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard Widgets -->
+<main class="p-6 max-w-6xl mx-auto mt-8">
+  {#if isLoading}
+    <!-- Loading State -->
+    <div class="flex justify-center items-center h-64">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+    </div>
+  {:else if error}
+    <!-- Error State -->
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+      <p class="text-red-600">{error}</p>
+      <button 
+        on:click={loadCustomerData} 
+        class="mt-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+      >
+        Try Again
+      </button>
+    </div>
+  {:else if customerData}
+    <!-- Dashboard Content -->
+    <div class="space-y-8">
+      <!-- Welcome Message -->
+      <div class="text-center">
+        <h2 class="text-3xl font-bold text-gray-900 mb-2">
+          {$t.welcome || 'Welcome'}, {customerData.full_name}!
+        </h2>
+        <p class="text-gray-600">{$t.loyaltyDashboard || 'Your Loyalty Dashboard'}</p>
+      </div>
+
+      <!-- Points Card -->
+      <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+        <div class="text-center">
+          <h3 class="text-2xl font-bold mb-4" style="color: #13A538;">
+            {$t.yourPoints || 'Your Points'}
+          </h3>
+          <div class="text-6xl font-bold mb-4" style="color: #f08300;">
+            {customerData.total_points || 0}
+          </div>
+          <p class="text-gray-600">
+            {$t.availablePoints || 'Available Points'}
+          </p>
+        </div>
+      </div>
+
+      <!-- Recent Transactions -->
+      <section class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-2xl font-bold" style="color: #13A538;">
+            {$t.recentTransactions || 'Recent Transactions'}
+          </h3>
+          <a href="/transactions" class="text-blue-600 hover:text-blue-800 font-medium">
+            {$t.viewAll || 'View All'}
+          </a>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-gray-50 border-b border-gray-200">
+                <th class="p-4 font-medium" style="color: #C0A32A;">{$t.date}</th>
+                <th class="p-4 font-medium" style="color: #C0A32A;">{$t.branch}</th>
+                <th class="p-4 font-medium" style="color: #C0A32A;">{$t.amount}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#if transactions.length > 0}
+                {#each transactions as tx}
+                  <tr class="border-b border-gray-100 hover:bg-green-50 transition-colors duration-200">
+                    <td class="p-4 text-gray-700">{formatDate(tx.bill_date || tx.created_at)}</td>
+                    <td class="p-4 text-gray-700">
+                      {$language === 'ar' ? (tx.branches?.name_ar || tx.branches?.name || 'N/A') : (tx.branches?.name || 'N/A')}
+                    </td>
+                    <td class="p-4 font-semibold text-gray-900">
+                      {formatCurrency(tx.amount || 0)}
+                    </td>
+                  </tr>
+                {/each}
+              {:else}
+                <tr>
+                  <td colspan="3" class="p-12 text-center text-gray-500">
+                    <div class="flex flex-col items-center gap-3">
+                      <span class="text-4xl">📋</span>
+                      <p class="font-medium">{$t.noTransactions || 'No transactions found'}</p>
+                      <p class="text-xs text-gray-400">
+                        {$language === 'ar' ? 'ابدأ التسوق لرؤية تاريخ مشترياتك!' : 'Start shopping to see your purchase history!'}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              {/if}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  {/if}
+</main>
+
+<style>
+  .rtl {
+    direction: rtl;
+    font-family: 'Cairo', sans-serif;
+  }
+</style>

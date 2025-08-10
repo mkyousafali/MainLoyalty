@@ -1,0 +1,19 @@
+{
+  "name": "main-loyalty",
+  "version": "1.0.0",
+  "description": "Urban Market Loyalty System - Complete loyalty program with offers management",
+  "scripts": {
+    "dev": "cd frontend/svelte && npm run dev",
+    "build": "cd frontend/svelte && npm run build",
+    "preview": "cd frontend/svelte && npm run preview",
+    "setup": "cd frontend/svelte && npm install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mkyousafali/MainLoyalty.git"
+  },
+  "keywords": ["loyalty", "urban-market", "svelte", "supabase", "arabic", "bilingual"],
+  "author": "MK Yousaf Ali",
+  "license": "MIT",
+  "homepage": "https://github.com/mkyousafali/MainLoyalty#readme"
+}

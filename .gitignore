@@ -1,0 +1,67 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+.svelte-kit/
+build/
+dist/
+.vite/
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.*.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary folders
+tmp/
+temp/
+
+# Vercel
+.vercel
+
+# Go build files
+*.exe
+go.sum
+go.mod
+
+# Test and debug files
+*test*
+*debug*
+*diagnostic*
+*fix*
+*sample*
+
+# Development files
+*.html
+*.ps1
+emergency_*
+urgent_*
+critical_*
+manual_*
+detailed_*
+final_*
+minimal_*

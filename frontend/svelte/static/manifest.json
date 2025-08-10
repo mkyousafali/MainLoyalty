@@ -1,0 +1,29 @@
+{
+  "name": "Urban Market Loyalty",
+  "short_name": "Urban Market",
+  "description": "Urban Market Loyalty Program - Earn points, get rewards, and enjoy exclusive benefits",
+  "theme_color": "#f08300",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
+  "lang": "en",
+  "categories": ["business", "shopping", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-144x144.svg",
+      "sizes": "144x144",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [],
+  "features": [
+    "Cross-platform compatibility",
+    "Offline functionality", 
+    "Push notifications",
+    "Background sync"
+  ],
+  "shortcuts": []
+}

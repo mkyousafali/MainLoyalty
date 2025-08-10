@@ -1,0 +1,612 @@
+<script lang="ts">
+  import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
+  import { onMount, tick } from 'svelte';
+  import { language, toggleLanguage } from '$lib/stores/language';
+
+  const navCategories = [
+    {
+      title: 'Customer',
+      icon: '👥',
+      expanded: false,
+      items: [
+        { path: '/admin/upload-customers', label: 'Upload Customers', icon: '👥' },
+        { path: '/admin/upload-transactions', label: 'Upload Transactions', icon: '📊' },
+        { path: '/admin/customer-management', label: 'Customer Management', icon: '👤' }
+      ]
+    },
+    {
+      title: 'Virtual Card',
+      icon: '💳',
+      expanded: false,
+      items: [
+        { path: '/admin/assign-card-type', label: 'Assign Card Type', icon: '🏷️' },
+        { path: '/admin/extend-validity', label: 'Extend Validity', icon: '⏰' },
+        { path: '/admin/manage-card-types', label: 'Manage Card Types', icon: '💳' }
+      ]
+    },
+    {
+      title: 'Gift',
+      icon: '🎁',
+      expanded: false,
+      items: [
+        { path: '/admin/manage-coupons', label: 'Manage Coupons', icon: '🎟️' },
+        { path: '/admin/reward-categories', label: 'Reward Categories', icon: '🏆' }
+      ]
+    },
+    {
+      title: 'Support & Communication',
+      icon: '💬',
+      expanded: false,
+      items: [
+        { path: '/admin/support-settings', label: 'Support Settings', icon: '⚙️' },
+        { path: '/admin/notification-center', label: 'Notification Center', icon: '🔔' },
+        { path: '/admin/manage-branches', label: 'Manage Branches', icon: '🏢' }
+      ]
+    },
+    {
+      title: 'Reports & Data',
+      icon: '📈',
+      expanded: false,
+      items: [
+        { path: '/admin/analytics-reports', label: 'Analytics Reports', icon: '📊' },
+        { path: '/admin/export-data', label: 'Export Data', icon: '📤' }
+      ]
+    }
+  ];
+
+  // Add Dashboard as the first item
+  const dashboardItem = { path: '/admin', label: 'Dashboard', icon: '🏠' };
+
+  let focusedCategoryIndex = -1;
+  let focusedItemIndex = -1;
+  let sidebarEl: HTMLElement;
+  let isMobileOpen = false;
+
+  // Reactive: Expand category if current page is in it
+  $: {
+    const currentPath = $page.url.pathname;
+    navCategories.forEach((category, catIndex) => {
+      const hasActivePage = category.items.some(item => item.path === currentPath);
+      if (hasActivePage) {
+        category.expanded = true;
+        focusedCategoryIndex = catIndex;
+        focusedItemIndex = category.items.findIndex(item => item.path === currentPath);
+      }
+    });
+    
+    // Check if dashboard is active
+    if (currentPath === '/admin') {
+      focusedCategoryIndex = -1;
+      focusedItemIndex = -1;
+    }
+  }
+
+  function handleKeydown(event: KeyboardEvent) {
+    console.log('Key pressed:', event.key, 'catIndex:', focusedCategoryIndex, 'itemIndex:', focusedItemIndex);
+    
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape'].includes(event.key)) {
+      event.preventDefault();
+    }
+
+    if (event.key === 'ArrowDown') {
+      navigateDown();
+    } else if (event.key === 'ArrowUp') {
+      navigateUp();
+    } else if (event.key === 'ArrowRight' || event.key === 'Enter') {
+      if (focusedCategoryIndex >= 0 && focusedItemIndex === -1) {
+        // On category: expand and focus first item if available
+        if (!navCategories[focusedCategoryIndex].expanded) {
+          navCategories[focusedCategoryIndex].expanded = true;
+        }
+        if (navCategories[focusedCategoryIndex].items.length > 0) {
+          focusedItemIndex = 0;
+        }
+      } else if (focusedCategoryIndex >= 0 && focusedItemIndex >= 0) {
+        // Navigate to selected item
+        const category = navCategories[focusedCategoryIndex];
+        const item = category.items[focusedItemIndex];
+        goto(item.path);
+        // Keep focus state for easy navigation back
+        if (sidebarEl) sidebarEl.focus();
+      } else if (focusedCategoryIndex === -1 && focusedItemIndex === -1) {
+        // Navigate to dashboard
+        goto(dashboardItem.path);
+        if (sidebarEl) sidebarEl.focus();
+      }
+    } else if (event.key === 'ArrowLeft') {
+      if (focusedCategoryIndex >= 0 && focusedItemIndex >= 0) {
+        // Move focus back to category (master button)
+        focusedItemIndex = -1;
+      } else if (focusedCategoryIndex >= 0 && focusedItemIndex === -1) {
+        // Collapse category if expanded
+        if (navCategories[focusedCategoryIndex].expanded) {
+          navCategories[focusedCategoryIndex].expanded = false;
+        } else {
+          // If already collapsed, go back to dashboard
+          focusedCategoryIndex = -1;
+        }
+      }
+    } else if (event.key === 'Escape') {
+      // Reset to dashboard focus
+      focusedCategoryIndex = -1;
+      focusedItemIndex = -1;
+      // Close mobile menu if open
+      isMobileOpen = false;
+    }
+  }
+
+  function navigateDown() {
+    const totalCategories = navCategories.length;
+    
+    if (focusedCategoryIndex === -1) {
+      // From dashboard to first category
+      focusedCategoryIndex = 0;
+      focusedItemIndex = -1;
+    } else if (focusedItemIndex === -1) {
+      // On category: try to go to first item if expanded
+      if (navCategories[focusedCategoryIndex].expanded && navCategories[focusedCategoryIndex].items.length > 0) {
+        focusedItemIndex = 0;
+      } else {
+        // Move to next category
+        focusedCategoryIndex = (focusedCategoryIndex + 1) % totalCategories;
+      }
+    } else {
+      // On item: go to next item or next category
+      const currentCategory = navCategories[focusedCategoryIndex];
+      if (focusedItemIndex < currentCategory.items.length - 1) {
+        focusedItemIndex++;
+      } else {
+        // Go to next category
+        focusedCategoryIndex = (focusedCategoryIndex + 1) % totalCategories;
+        focusedItemIndex = -1;
+      }
+    }
+  }
+
+  function navigateUp() {
+    const totalCategories = navCategories.length;
+    
+    if (focusedCategoryIndex === -1) {
+      // From dashboard to last category
+      focusedCategoryIndex = totalCategories - 1;
+      focusedItemIndex = -1;
+    } else if (focusedItemIndex === -1) {
+      // On category: go to previous category or dashboard
+      if (focusedCategoryIndex > 0) {
+        focusedCategoryIndex = focusedCategoryIndex - 1;
+        // If previous category is expanded, go to its last item
+        const prevCategory = navCategories[focusedCategoryIndex];
+        if (prevCategory.expanded && prevCategory.items.length > 0) {
+          focusedItemIndex = prevCategory.items.length - 1;
+        }
+      } else {
+        // Go back to dashboard
+        focusedCategoryIndex = -1;
+        focusedItemIndex = -1;
+      }
+    } else {
+      // On item: go to previous item or category
+      if (focusedItemIndex > 0) {
+        focusedItemIndex--;
+      } else {
+        // Go back to category
+        focusedItemIndex = -1;
+      }
+    }
+  }
+
+  function toggleCategory(categoryIndex: number) {
+    navCategories[categoryIndex].expanded = !navCategories[categoryIndex].expanded;
+    // Focus on this category
+    focusedCategoryIndex = categoryIndex;
+    focusedItemIndex = -1;
+  }
+
+  function focusCategory(categoryIndex: number) {
+    focusedCategoryIndex = categoryIndex;
+    focusedItemIndex = -1;
+  }
+
+  function focusItem(categoryIndex: number, itemIndex: number) {
+    focusedCategoryIndex = categoryIndex;
+    focusedItemIndex = itemIndex;
+  }
+
+  function focusDashboard() {
+    focusedCategoryIndex = -1;
+    focusedItemIndex = -1;
+  }
+
+  function toggleMobileMenu() {
+    isMobileOpen = !isMobileOpen;
+  }
+
+  // Handle clicks outside sidebar on mobile
+  function handleClickOutside(event: MouseEvent) {
+    if (isMobileOpen && sidebarEl && !sidebarEl.contains(event.target as Node)) {
+      isMobileOpen = false;
+    }
+  }
+
+  onMount(() => {
+    // Add keyboard navigation
+    document.addEventListener('keydown', handleKeydown);
+    
+    // Add click outside handler for mobile
+    document.addEventListener('click', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeydown);
+      document.removeEventListener('click', handleClickOutside);
+    };
+  });
+</script>
+
+<div class="layout-container">
+  <!-- Sidebar -->
+  <aside 
+    bind:this={sidebarEl}
+    class="sidebar {isMobileOpen ? 'mobile-open' : ''}"
+    tabindex="-1"
+  >
+    <div class="sidebar-content">
+      <!-- Logo/Brand -->
+      <div class="brand">
+        <div class="brand-logo">
+          <img 
+            src="/logo.png" 
+            alt="Urban Market Logo" 
+            class="logo-image"
+          />
+        </div>
+        <div class="language-toggle">
+          <button 
+            on:click={toggleLanguage}
+            class="language-btn"
+            title="Toggle Language"
+          >
+            {$language === 'en' ? '🇸🇦' : '🇺🇸'} {$language.toUpperCase()}
+          </button>
+        </div>
+      </div>
+
+      <!-- Dashboard Link -->
+      <div class="nav-section">
+        <a 
+          href={dashboardItem.path}
+          class="nav-dashboard {$page.url.pathname === dashboardItem.path ? 'active' : ''} {focusedCategoryIndex === -1 && focusedItemIndex === -1 ? 'focused' : ''}"
+          on:click={focusDashboard}
+        >
+          <span class="nav-icon">{dashboardItem.icon}</span>
+          <span>{dashboardItem.label}</span>
+        </a>
+      </div>
+
+      <!-- Navigation Categories -->
+      {#each navCategories as category, categoryIndex}
+        <div class="nav-category">
+          <button
+            class="category-header {category.expanded ? 'expanded' : ''} {focusedCategoryIndex === categoryIndex && focusedItemIndex === -1 ? 'focused' : ''}"
+            on:click={() => toggleCategory(categoryIndex)}
+            on:focus={() => focusCategory(categoryIndex)}
+            aria-expanded={category.expanded}
+            aria-controls="category-{categoryIndex}-items"
+          >
+            <div class="category-main">
+              <span class="category-icon">{category.icon}</span>
+              <span class="category-title">{category.title}</span>
+            </div>
+            <span class="expand-icon {category.expanded ? 'rotated' : ''}">▼</span>
+          </button>
+          
+          <div 
+            id="category-{categoryIndex}-items"
+            class="category-items {category.expanded ? 'expanded' : ''}"
+          >
+            {#each category.items as item, itemIndex}
+              <a
+                href={item.path}
+                class="nav-item {$page.url.pathname === item.path ? 'active' : ''} {focusedCategoryIndex === categoryIndex && focusedItemIndex === itemIndex ? 'focused' : ''}"
+                on:focus={() => focusItem(categoryIndex, itemIndex)}
+              >
+                <span class="nav-icon">{item.icon}</span>
+                <span>{item.label}</span>
+              </a>
+            {/each}
+          </div>
+        </div>
+      {/each}
+    </div>
+  </aside>
+
+  <!-- Mobile Menu Toggle -->
+  <button 
+    class="mobile-menu-toggle md:hidden"
+    on:click={toggleMobileMenu}
+    aria-label="Open menu"
+  >
+    ☰
+  </button>
+
+  <!-- Page Content -->
+  <main class="main-content {isMobileOpen ? 'sidebar-open' : ''}">
+    <slot />
+  </main>
+</div>
+
+<style>
+  .layout-container {
+    display: flex;
+    min-height: 100vh;
+    background: #f8fafc;
+  }
+
+  .sidebar {
+    width: 280px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 40;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  @media (min-width: 768px) {
+    .sidebar {
+      position: relative;
+      transform: translateX(0);
+    }
+  }
+
+  .sidebar-content {
+    padding: 1.5rem;
+    height: 100%;
+  }
+
+  .brand {
+    margin-bottom: 2rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 1rem;
+  }
+
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+
+  .logo-image {
+    max-width: 180px;
+    max-height: 60px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    filter: brightness(1.1) contrast(1.1);
+    transition: all 0.3s ease;
+  }
+
+  .logo-image:hover {
+    transform: scale(1.05);
+    filter: brightness(1.2) contrast(1.2);
+  }
+
+  .language-toggle {
+    display: flex;
+    justify-content: center;
+  }
+
+  .language-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .language-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+  }
+
+  .nav-section {
+    margin-bottom: 1rem;
+  }
+
+  .nav-dashboard {
+    display: flex;
+    align-items: center;
+    padding: 0.875rem 1rem;
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    border-radius: 0.75rem;
+    transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.1);
+    margin-bottom: 1rem;
+  }
+
+  .nav-dashboard:hover,
+  .nav-dashboard.focused {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .nav-dashboard.active {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .nav-category {
+    margin-bottom: 0.5rem;
+  }
+
+  .category-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.875rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: rgba(255, 255, 255, 0.9);
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 0.25rem;
+  }
+
+  .category-header:hover,
+  .category-header.focused {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .category-header.expanded {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+  }
+
+  .category-main {
+    display: flex;
+    align-items: center;
+  }
+
+  .category-icon,
+  .nav-icon {
+    font-size: 1.25rem;
+    margin-right: 0.75rem;
+    min-width: 1.5rem;
+    text-align: center;
+  }
+
+  .category-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .expand-icon {
+    font-size: 0.75rem;
+    transition: transform 0.2s ease;
+    opacity: 0.7;
+  }
+
+  .expand-icon.rotated {
+    transform: rotate(180deg);
+  }
+
+  .category-items {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    margin-left: 0.5rem;
+  }
+
+  .category-items.expanded {
+    max-height: 500px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+  }
+
+  .nav-item:hover,
+  .nav-item.focused {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    transform: translateX(4px);
+    padding-left: 1.25rem;
+  }
+
+  .nav-item.active {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .mobile-menu-toggle {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 50;
+    background: white;
+    border: 1px solid #e2e8f0;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  .main-content {
+    flex: 1;
+    margin-left: 0;
+    transition: margin-left 0.3s ease;
+  }
+
+  @media (min-width: 768px) {
+    .main-content {
+      margin-left: 280px;
+    }
+    
+    .mobile-menu-toggle {
+      display: none;
+    }
+  }
+
+  .main-content.sidebar-open {
+    margin-left: 0;
+  }
+
+  @media (max-width: 767px) {
+    .main-content.sidebar-open {
+      margin-left: 0;
+    }
+  }
+
+  /* Scrollbar Styling */
+  .sidebar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+
+  .sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+</style>
