@@ -1,9 +1,11 @@
 {
+  "framework": "sveltekit",
+  "rootDirectory": "frontend/svelte",
   "github": {
     "silent": true
   },
   "functions": {
-    "frontend/svelte/.vercel/output/functions/*.func": {
+    ".vercel/output/functions/*.func": {
       "maxDuration": 30
     }
   }
