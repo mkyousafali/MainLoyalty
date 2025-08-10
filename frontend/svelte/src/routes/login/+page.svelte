@@ -6,7 +6,7 @@
   import { termsStore, formatTermsForLogin, type TermsData } from '$lib/stores/terms';
   import { getGlobalWhatsAppLink } from '$lib/stores/globalSettings';
 
-  let currentLang: 'en' | 'ar' = 'en';
+  let currentLang = 'en' as 'en' | 'ar';
   let mobile = '';
   let error = '';
   let isLoading = false;
@@ -573,77 +573,41 @@
   $: t = translations[currentLang];
 </script>
 
-<div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden" dir="{currentLang === 'ar' ? 'rtl' : 'ltr'}">
-  <!-- Animated Background -->
-  <div class="absolute inset-0">
-    <!-- Animated grid -->
-    <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-purple-600/20 to-orange-500/10"></div>
-    <div class="absolute inset-0" style="background-image: radial-gradient(circle at 2px 2px, rgba(14, 165, 233, 0.3) 1px, transparent 0); background-size: 40px 40px;"></div>
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4" dir="{currentLang === 'ar' ? 'rtl' : 'ltr'}">
+  <div class="w-full max-w-sm relative">
     
-    <!-- Floating particles -->
-    <div class="absolute top-1/4 left-1/4 w-2 h-2 bg-cyan-400 rounded-full animate-pulse opacity-70"></div>
-    <div class="absolute top-3/4 right-1/4 w-1 h-1 bg-orange-400 rounded-full animate-ping opacity-50"></div>
-    <div class="absolute top-1/2 left-3/4 w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce opacity-60"></div>
-    <div class="absolute top-1/3 right-1/3 w-1 h-1 bg-green-400 rounded-full animate-pulse opacity-40"></div>
-  </div>
-  
-  <div class="w-full max-w-md relative z-10">
+    <!-- Language Toggle -->
+    <div class="absolute top-0 right-0 z-10">
+      <button
+        type="button"
+        on:click={() => currentLang = currentLang === 'en' ? 'ar' : 'en'}
+        class="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg hover:shadow-xl rounded-full px-4 py-2 text-sm font-semibold border border-orange-400 hover:border-orange-500 transition-all duration-300 flex items-center transform hover:scale-105 active:scale-95"
+      >
+        <span class="tracking-wide">{currentLang === 'en' ? 'العربية' : 'English'}</span>
+      </button>
+    </div>
     
-    <!-- Main Card with Glassmorphism -->
-    <div class="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl shadow-2xl p-8 transform transition-all duration-700 delay-200 relative overflow-hidden" class:translate-y-0={pageLoaded} class:translate-y-4={!pageLoaded} class:opacity-100={pageLoaded} class:opacity-0={!pageLoaded}>
+    <!-- Main Card -->
+    <div class="bg-white rounded-3xl shadow-lg p-6 transform transition-all duration-500" class:translate-y-0={pageLoaded} class:translate-y-4={!pageLoaded} class:opacity-100={pageLoaded} class:opacity-0={!pageLoaded}>
       
-      <!-- Neon glow effect -->
-      <div class="absolute inset-0 bg-gradient-to-r from-cyan-400/20 via-transparent to-orange-400/20 rounded-3xl blur-xl opacity-50"></div>
-      <div class="absolute inset-0 bg-gradient-to-b from-purple-400/10 to-transparent rounded-3xl"></div>
-      
-      <!-- Language Toggle - Futuristic Design -->
-      <div class="flex justify-end mb-6 relative z-10">
-        <div class="flex bg-black/40 backdrop-blur-md border border-cyan-500/30 rounded-full p-1 shadow-xl">
-          <button
-            type="button"
-            on:click={() => currentLang = 'en'}
-            class="px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 relative {currentLang === 'en' ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-lg shadow-cyan-500/50' : 'text-cyan-300 hover:text-white hover:bg-white/10'}"
-          >
-            {#if currentLang === 'en'}
-              <div class="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 blur opacity-50"></div>
-            {/if}
-            <span class="relative">EN</span>
-          </button>
-          <button
-            type="button"
-            on:click={() => currentLang = 'ar'}
-            class="px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 relative {currentLang === 'ar' ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-lg shadow-cyan-500/50' : 'text-cyan-300 hover:text-white hover:bg-white/10'}"
-          >
-            {#if currentLang === 'ar'}
-              <div class="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 blur opacity-50"></div>
-            {/if}
-            <span class="relative">ع</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Logo and Header - Futuristic -->
-      <div class="text-center mb-10 relative z-10">
-        <!-- Logo with Neon Effect -->
-        <div class="mb-6 relative">
-          <div class="absolute inset-0 bg-gradient-to-r from-cyan-400/50 to-orange-400/50 rounded-full blur-lg opacity-60"></div>
-          <img src="/logo.png" alt="Urban Market Logo" class="mx-auto h-24 w-auto mb-6 relative z-10 drop-shadow-2xl" style="filter: drop-shadow(0 0 20px rgba(6, 182, 212, 0.5));" />
+      <!-- Logo and Header -->
+      <div class="text-center mb-6">
+        <div class="mb-4">
+          <img src="/logo.png" alt="Urban Market Logo" class="w-32 h-24 mx-auto object-contain" />
         </div>
         
-        <h1 class="text-3xl font-bold bg-gradient-to-r from-cyan-300 via-white to-orange-300 bg-clip-text text-transparent mb-3 tracking-tight relative">
-          <div class="absolute inset-0 blur-sm bg-gradient-to-r from-cyan-300 via-white to-orange-300 bg-clip-text text-transparent opacity-50">{t.title}</div>
-          <span class="relative">{t.title}</span>
-        </h1>
+        <h1 class="text-xl font-semibold text-gray-800 mb-1">{t.title}</h1>
+        <p class="text-gray-500 text-sm">{currentLang === 'en' ? 'Check your eligibility and register' : 'تحقق من أهليتك وسجل'}</p>
       </div>
 
-      <!-- Step 1: Check Eligibility - Futuristic -->
+      <!-- Step 1: Check Eligibility -->
       {#if currentStep === 'check'}
-        <form on:submit|preventDefault={checkEligibility} class="space-y-8 relative z-10">
+        <form on:submit|preventDefault={checkEligibility} class="space-y-4">
           <div>
-            <label for="mobile-input" class="block text-sm font-semibold text-cyan-300 mb-4 tracking-wide">{t.mobileNumber}</label>
+            <label for="mobile-input" class="block text-sm font-medium text-gray-700 mb-2 text-left">{t.mobileNumber}</label>
             <div class="relative">
-              <div class="absolute inset-y-0 left-0 flex items-center pl-4">
-                <span class="text-cyan-400 text-sm bg-black/40 backdrop-blur-sm border border-cyan-500/30 px-3 py-1.5 rounded-full font-mono">SA +966</span>
+              <div class="absolute inset-y-0 left-0 flex items-center pl-3">
+                <span class="text-gray-500 text-sm bg-gray-100 px-2 py-1 rounded text-xs font-medium">SA +966</span>
               </div>
               <input
                 id="mobile-input"
@@ -652,150 +616,119 @@
                 placeholder={t.mobilePlaceholder}
                 bind:value={mobile}
                 on:input={handleMobileInput}
-                class="w-full pl-28 pr-4 py-5 bg-black/20 backdrop-blur-sm border-2 border-cyan-500/30 rounded-2xl focus:border-cyan-400 focus:shadow-lg focus:shadow-cyan-500/25 focus:outline-none transition-all duration-300 text-lg text-white placeholder-gray-400 font-mono"
-                style="box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);"
+                class="w-full pl-24 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900 font-mono"
                 maxlength="10"
               />
-              <!-- Input glow effect -->
-              <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-400/10 to-orange-400/10 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
             </div>
           </div>
 
           <button
             type="submit"
             disabled={!isValidMobile || isLoading}
-            class="w-full bg-gradient-to-r from-cyan-500 via-purple-500 to-orange-500 hover:from-cyan-400 hover:via-purple-400 hover:to-orange-400 text-white py-5 px-6 rounded-2xl font-semibold focus:outline-none focus:ring-4 focus:ring-cyan-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-xl relative overflow-hidden"
+            class="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm tracking-wide"
           >
-            <!-- Button glow effect -->
-            <div class="absolute inset-0 bg-gradient-to-r from-cyan-400/50 via-purple-400/50 to-orange-400/50 blur-lg opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
-            <span class="relative z-10">
-              {#if isLoading}
-                <span class="flex items-center justify-center">
-                  <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  {processStatus || t.loading}
-                </span>
-              {:else}
-                <span class="flex items-center justify-center gap-2">
-                  <span>{t.checkEligibility}</span>
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                  </svg>
-                </span>
-              {/if}
-            </span>
+            {#if isLoading}
+              <span class="flex items-center justify-center">
+                <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {processStatus || t.loading}
+              </span>
+            {:else}
+              {t.checkEligibility}
+            {/if}
           </button>
         </form>
         
-        <!-- Support Section - Futuristic -->
-        <div class="mt-10 p-6 bg-black/30 backdrop-blur-md border border-green-500/30 rounded-3xl transform transition-all duration-500 delay-700 relative overflow-hidden" class:opacity-100={pageLoaded} class:opacity-0={!pageLoaded} class:translate-y-2={!pageLoaded}>
-          <!-- Animated background -->
-          <div class="absolute inset-0 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-3xl"></div>
-          
-          <div class="flex items-center gap-3 text-green-300 mb-4 relative z-10">
-            <div class="relative">
-              <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-              <div class="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-30"></div>
-            </div>
-            <span class="font-semibold text-base tracking-wide">{t.needHelpLogin}</span>
+        <!-- Support Section -->
+        <div class="mt-6 p-4 bg-green-50 rounded-2xl border border-green-200">
+          <div class="flex items-center gap-2 text-green-700 mb-3">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span class="font-medium text-xs">{t.needHelpLogin}</span>
           </div>
           
-          <a href={whatsappSupportLink} target="_blank" class="block w-full bg-gradient-to-r from-green-600 via-emerald-600 to-green-500 hover:from-green-500 hover:via-emerald-500 hover:to-green-400 text-white py-4 px-5 rounded-2xl font-semibold text-center mb-3 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-xl relative overflow-hidden">
-            <!-- Button glow -->
-            <div class="absolute inset-0 bg-gradient-to-r from-green-400/50 via-emerald-400/50 to-green-400/50 blur-lg opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
-            <div class="flex items-center justify-center gap-3 relative z-10">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+          <div class="flex justify-center mb-2">
+            <a href={whatsappSupportLink} target="_blank" class="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-xs font-medium transition-colors">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
               </svg>
-              <span>{t.chatWhatsApp}</span>
-            </div>
-          </a>
+              {t.chatWhatsApp}
+            </a>
+          </div>
           
-          <button
-            type="button"
-            on:click={() => showTerms = !showTerms}
-            class="w-full bg-gradient-to-r from-green-600 via-emerald-600 to-green-500 hover:from-green-500 hover:via-emerald-500 hover:to-green-400 text-white py-4 px-5 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-xl relative overflow-hidden"
-          >
-            <!-- Button glow -->
-            <div class="absolute inset-0 bg-gradient-to-r from-green-400/50 via-emerald-400/50 to-green-400/50 blur-lg opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
-            <div class="flex items-center justify-center gap-3 relative z-10">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-              </svg>
-              <span>{t.readTerms}</span>
-            </div>
-          </button>
+          <div class="flex justify-center">
+            <button
+              type="button"
+              on:click={() => showTerms = !showTerms}
+              class="text-green-600 hover:text-green-700 text-xs underline font-medium transition-colors"
+            >
+              {t.readTerms}
+            </button>
+          </div>
           
-          <!-- Terms Accordion - Futuristic -->
+          <!-- Terms Accordion -->
           {#if showTerms}
-            <div class="mt-5 p-5 bg-black/40 backdrop-blur-md border-2 border-green-500/30 rounded-3xl text-sm text-green-100 max-h-64 overflow-y-auto shadow-2xl relative">
-              <div class="absolute inset-0 bg-gradient-to-b from-green-500/5 to-transparent rounded-3xl"></div>
-              <div class="relative z-10">
-                {#if currentTermsContent}
-                  <h4 class="font-bold text-green-300 mb-4 text-center text-base tracking-wide">{currentTermsContent[currentLang]?.title || t.termsAndConditionsTitle}</h4>
-                  <div class="space-y-3">
-                    {#each formattedTerms as term}
-                      <p class="leading-relaxed"><strong class="text-green-400">{term.title}:</strong> <span class="text-gray-300">{term.content}</span></p>
-                    {/each}
-                  </div>
-                {:else}
-                  <h4 class="font-bold text-green-300 mb-4 text-center text-base tracking-wide">{t.termsAndConditionsTitle}</h4>
-                  <p class="text-center text-gray-400">{t.loadingTerms}</p>
-                {/if}
-              </div>
+            <div class="mt-3 p-3 bg-white border border-green-200 rounded-lg text-xs text-gray-700 max-h-32 overflow-y-auto">
+              {#if currentTermsContent}
+                <h4 class="font-semibold text-green-700 mb-2 text-xs">{currentTermsContent[currentLang]?.title || t.termsAndConditionsTitle}</h4>
+                <div class="space-y-1">
+                  {#each formattedTerms.slice(0, 5) as term}
+                    <p class="leading-relaxed text-xs"><strong class="text-green-600">{term.title}:</strong> <span class="text-gray-600">{term.content}</span></p>
+                  {/each}
+                </div>
+              {:else}
+                <h4 class="font-semibold text-green-700 mb-2 text-xs">{t.termsAndConditionsTitle}</h4>
+                <p class="text-center text-gray-500 text-xs">{t.loadingTerms}</p>
+              {/if}
             </div>
           {/if}
         </div>
       {/if}
 
-      <!-- Step 2: Registration Form - Futuristic -->
+      <!-- Step 2: Registration Form -->
       {#if currentStep === 'register'}
-        <div class="relative z-10">
-          <h2 class="text-3xl font-bold text-center bg-gradient-to-r from-cyan-300 via-white to-purple-300 bg-clip-text text-transparent mb-8 tracking-wide">{t.registrationForm}</h2>
+        <div>
+          <h2 class="text-xl font-semibold text-center text-gray-800 mb-6">{t.registrationForm}</h2>
           
-          <form on:submit|preventDefault={completeRegistration} class="space-y-6">
+          <form on:submit|preventDefault={completeRegistration} class="space-y-4">
             <div>
-              <label for="fullname-input" class="block text-sm font-semibold text-cyan-300 mb-3 tracking-wide">{t.fullName}</label>
+              <label for="fullname-input" class="block text-sm font-medium text-gray-700 mb-1">{t.fullName}</label>
               <input
                 id="fullname-input"
                 bind:value={fullName}
                 type="text"
                 placeholder={t.fullNamePlaceholder}
-                class="w-full px-5 py-4 bg-black/20 backdrop-blur-sm border-2 border-cyan-500/30 rounded-2xl focus:border-cyan-400 focus:shadow-lg focus:shadow-cyan-500/25 focus:outline-none transition-all duration-300 text-white placeholder-gray-400"
-                style="box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
                 required
               />
             </div>
 
             <div>
-              <label for="place-input" class="block text-sm font-semibold text-cyan-300 mb-3 tracking-wide">{t.place}</label>
+              <label for="place-input" class="block text-sm font-medium text-gray-700 mb-1">{t.place}</label>
               <input
                 id="place-input"
                 bind:value={place}
                 type="text"
                 placeholder={t.placePlaceholder}
-                class="w-full px-5 py-4 bg-black/20 backdrop-blur-sm border-2 border-cyan-500/30 rounded-2xl focus:border-cyan-400 focus:shadow-lg focus:shadow-cyan-500/25 focus:outline-none transition-all duration-300 text-white placeholder-gray-400"
-                style="box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
                 required
               />
             </div>
 
             <div>
-              <label for="branch-select" class="block text-sm font-semibold text-cyan-300 mb-3 tracking-wide">{t.nearestBranch}</label>
+              <label for="branch-select" class="block text-sm font-medium text-gray-700 mb-1">{t.nearestBranch}</label>
               <select
                 id="branch-select"
                 bind:value={selectedBranch}
-                class="w-full px-5 py-4 bg-black/20 backdrop-blur-sm border-2 border-cyan-500/30 rounded-2xl focus:border-cyan-400 focus:shadow-lg focus:shadow-cyan-500/25 focus:outline-none transition-all duration-300 text-white"
-                style="box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
                 required
               >
-                <option value="" class="bg-gray-800 text-gray-300">{t.selectBranch}</option>
+                <option value="" class="text-gray-500">{t.selectBranch}</option>
                 {#each branches as branch}
-                  <option value={branch.id} class="bg-gray-800 text-white">
+                  <option value={branch.id}>
                     {currentLang === 'ar' ? branch.nameAr : branch.name}
                   </option>
                 {/each}
@@ -803,161 +736,136 @@
             </div>
 
             <div>
-              <label for="password-input" class="block text-sm font-semibold text-cyan-300 mb-3 tracking-wide">{t.enterPassword}</label>
+              <label for="password-input" class="block text-sm font-medium text-gray-700 mb-1">{t.enterPassword}</label>
               <input
                 id="password-input"
                 bind:value={password}
                 type="password"
                 placeholder={t.passwordPlaceholder}
-                class="w-full px-5 py-4 bg-black/20 backdrop-blur-sm border-2 border-cyan-500/30 rounded-2xl focus:border-cyan-400 focus:shadow-lg focus:shadow-cyan-500/25 focus:outline-none transition-all duration-300 text-white placeholder-gray-400"
-                style="box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
                 minlength="6"
                 required
               />
             </div>
 
             <div>
-              <label for="confirm-password-input" class="block text-sm font-semibold text-cyan-300 mb-3 tracking-wide">{t.confirmPassword}</label>
+              <label for="confirm-password-input" class="block text-sm font-medium text-gray-700 mb-1">{t.confirmPassword}</label>
               <input
                 id="confirm-password-input"
                 bind:value={confirmPassword}
                 type="password"
                 placeholder={t.confirmPasswordPlaceholder}
-                class="w-full px-5 py-4 bg-black/20 backdrop-blur-sm border-2 border-cyan-500/30 rounded-2xl focus:border-cyan-400 focus:shadow-lg focus:shadow-cyan-500/25 focus:outline-none transition-all duration-300 text-white placeholder-gray-400"
-                style="box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
                 required
               />
             </div>
 
-            <!-- Captcha - Futuristic -->
-            <div class="p-6 rounded-2xl bg-black/30 backdrop-blur-md border border-cyan-500/30 relative overflow-hidden">
-              <div class="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-purple-500/5"></div>
-              <label for="captcha-input" class="block text-sm font-medium text-cyan-300 mb-4 flex items-center gap-2 relative z-10">
-                <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-                <span class="tracking-wide">{t.securityVerification}</span>
-              </label>
-              <div class="flex items-center gap-4 relative z-10">
-                <div class="bg-gradient-to-r from-cyan-500 to-purple-600 text-white px-6 py-3 rounded-xl font-mono text-lg font-bold shadow-xl relative overflow-hidden">
-                  <div class="absolute inset-0 bg-gradient-to-r from-cyan-400/30 to-purple-400/30 blur-lg"></div>
-                  <span class="relative">{captchaQuestion}</span>
+            <!-- Captcha -->
+            <div class="p-3 rounded-lg bg-gray-50 border border-gray-200">
+              <label for="captcha-input" class="block text-sm font-medium text-gray-700 mb-2">{t.securityVerification}</label>
+              <div class="flex items-center gap-3">
+                <div class="bg-orange-500 text-white px-3 py-2 rounded font-mono text-sm">
+                  {captchaQuestion}
                 </div>
-                <span class="text-cyan-300 text-xl font-light">=</span>
+                <span class="text-gray-500">=</span>
                 <input
                   id="captcha-input"
                   bind:value={userCaptchaAnswer}
                   type="number"
                   placeholder="?"
-                  class="w-20 h-12 text-center bg-black/30 border-0 border-b-2 border-cyan-500/30 focus:border-cyan-400 focus:outline-none transition-all duration-300 text-lg font-mono text-white"
+                  class="w-16 h-8 text-center border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
                   required
                 />
                 <button
                   type="button"
                   on:click={generateCaptcha}
-                  class="ml-auto w-8 h-8 flex items-center justify-center rounded-full bg-black/40 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 transition-all duration-300 group backdrop-blur-sm border border-cyan-500/20"
-                  aria-label="Generate new captcha question"
+                  class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 text-xs"
                   title="Generate new question"
                 >
-                  <svg class="w-4 h-4 transform group-hover:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                  </svg>
+                  ↻
                 </button>
               </div>
             </div>
 
-            <!-- Terms and Conditions - Futuristic -->
-            <div class="space-y-4">
-              <div class="flex items-start space-x-4">
-                <input
-                  bind:checked={termsAccepted}
-                  type="checkbox"
-                  class="mt-1 h-5 w-5 text-cyan-400 bg-black/20 border-2 border-cyan-500/30 rounded focus:ring-cyan-500/50 focus:ring-2 transition-all duration-200"
-                  required
-                />
-                <label class="text-sm text-cyan-200 leading-relaxed">
-                  {t.termsCheckbox} 
-                  <button
-                    type="button"
-                    on:click={() => showTerms = !showTerms}
-                    class="text-orange-400 font-semibold underline ml-1 hover:text-orange-300 transition-colors duration-200"
-                  >
-                    {t.termsAndConditions}
-                  </button>
-                </label>
-              </div>
-
-              <!-- Terms Accordion - Futuristic -->
-              {#if showTerms}
-                <div class="mt-4 p-5 bg-black/40 backdrop-blur-md border-2 border-cyan-500/30 rounded-3xl text-sm text-cyan-100 max-h-48 overflow-y-auto shadow-2xl relative">
-                  <div class="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent rounded-3xl"></div>
-                  <div class="relative z-10">
-                    {#if currentTermsContent}
-                      <h4 class="font-bold text-cyan-300 mb-4 text-base tracking-wide">{currentTermsContent[currentLang]?.title || t.termsAndConditionsTitle}</h4>
-                      <div class="space-y-3">
-                        {#each formattedTerms.slice(0, 8) as term}
-                          <p class="leading-relaxed"><strong class="text-cyan-400">{term.title}:</strong> <span class="text-gray-300">{term.content}</span></p>
-                        {/each}
-                      </div>
-                    {:else}
-                      <h4 class="font-bold text-cyan-300 mb-4 text-base tracking-wide">{t.termsAndConditionsTitle}</h4>
-                      <p class="text-center text-gray-400">{t.loadingTerms}</p>
-                    {/if}
-                  </div>
-                </div>
-              {/if}
+            <!-- Terms and Conditions -->
+            <div class="flex items-start space-x-2">
+              <input
+                bind:checked={termsAccepted}
+                type="checkbox"
+                class="mt-1 h-4 w-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                required
+              />
+              <label class="text-xs text-gray-600">
+                {t.termsCheckbox} 
+                <button
+                  type="button"
+                  on:click={() => showTerms = !showTerms}
+                  class="text-orange-500 font-medium underline ml-1 hover:text-orange-600"
+                >
+                  {t.termsAndConditions}
+                </button>
+              </label>
             </div>
+
+            <!-- Terms Accordion -->
+            {#if showTerms}
+              <div class="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700 max-h-32 overflow-y-auto">
+                {#if currentTermsContent}
+                  <h4 class="font-semibold text-gray-800 mb-2">{currentTermsContent[currentLang]?.title || t.termsAndConditionsTitle}</h4>
+                  <div class="space-y-1">
+                    {#each formattedTerms.slice(0, 5) as term}
+                      <p class="leading-relaxed"><strong>{term.title}:</strong> {term.content}</p>
+                    {/each}
+                  </div>
+                {:else}
+                  <h4 class="font-semibold text-gray-800 mb-2">{t.termsAndConditionsTitle}</h4>
+                  <p class="text-center text-gray-500">{t.loadingTerms}</p>
+                {/if}
+              </div>
+            {/if}
 
             <button
               type="submit"
               disabled={!termsAccepted || isLoading || !isValidCaptcha}
-              class="w-full bg-gradient-to-r from-green-600 via-emerald-600 to-teal-500 hover:from-green-500 hover:via-emerald-500 hover:to-teal-400 text-white py-5 px-6 rounded-2xl font-semibold focus:outline-none focus:ring-4 focus:ring-green-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-xl mt-8 relative overflow-hidden"
+              class="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <!-- Button glow -->
-              <div class="absolute inset-0 bg-gradient-to-r from-green-400/50 via-emerald-400/50 to-teal-400/50 blur-lg opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
-              <span class="relative z-10">
-                {#if isLoading}
-                  <span class="flex items-center justify-center">
-                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    {processStatus}
-                  </span>
-                {:else}
-                  {t.createCard}
-                {/if}
-              </span>
+              {#if isLoading}
+                <span class="flex items-center justify-center">
+                  <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {processStatus}
+                </span>
+              {:else}
+                {t.createCard}
+              {/if}
             </button>
 
             <button
               type="button"
               on:click={() => currentStep = 'check'}
-              class="w-full mt-4 text-cyan-300 hover:text-white font-semibold py-3 transition-all duration-300 hover:bg-white/10 rounded-2xl backdrop-blur-sm border border-cyan-500/20 hover:border-cyan-400/40"
+              class="w-full text-gray-600 hover:text-gray-800 font-medium py-2 transition-colors text-sm"
             >
-              <span class="flex items-center justify-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                <span>{t.backToCheck}</span>
-              </span>
+              ← {t.backToCheck}
             </button>
           </form>
         </div>
       {/if}
 
-      <!-- Step 3: Login for Existing Customers - Futuristic -->
+      <!-- Step 3: Login for Existing Customers -->
       {#if currentStep === 'login'}
-        <div class="relative z-10">
-          <h2 class="text-3xl font-bold text-center bg-gradient-to-r from-cyan-300 via-white to-orange-300 bg-clip-text text-transparent mb-6 tracking-wide">{t.welcomeBack}</h2>
-          <p class="text-center text-cyan-200 mb-8 font-light tracking-wide">{t.enterYourPassword}</p>
+        <div>
+          <h2 class="text-xl font-semibold text-center text-gray-800 mb-4">{t.welcomeBack}</h2>
+          <p class="text-center text-gray-600 mb-6 text-sm">{t.enterYourPassword}</p>
           
-          <form on:submit|preventDefault={loginExistingCustomer} class="space-y-8">
+          <form on:submit|preventDefault={loginExistingCustomer} class="space-y-4">
             <div>
               <input
                 bind:value={loginPassword}
                 type="password"
                 placeholder={t.enterPasswordPlaceholder}
-                class="w-full px-5 py-5 bg-black/20 backdrop-blur-sm border-2 border-orange-500/30 rounded-2xl focus:border-orange-400 focus:shadow-lg focus:shadow-orange-500/25 focus:outline-none transition-all duration-300 text-lg text-white placeholder-gray-400"
-                style="box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);"
+                class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
                 required
               />
             </div>
@@ -965,78 +873,62 @@
             <button
               type="submit"
               disabled={isLoading}
-              class="w-full bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 hover:from-orange-400 hover:via-red-400 hover:to-pink-400 text-white py-5 px-6 rounded-2xl font-semibold focus:outline-none focus:ring-4 focus:ring-orange-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-xl relative overflow-hidden"
+              class="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <!-- Button glow -->
-              <div class="absolute inset-0 bg-gradient-to-r from-orange-400/50 via-red-400/50 to-pink-400/50 blur-lg opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
-              <span class="relative z-10">{t.loginButton}</span>
+              {t.loginButton}
             </button>
 
             <button
               type="button"
               on:click={() => currentStep = 'check'}
-              class="w-full text-cyan-300 hover:text-white font-semibold py-3 transition-all duration-300 hover:bg-white/10 rounded-2xl backdrop-blur-sm border border-cyan-500/20 hover:border-cyan-400/40"
+              class="w-full text-gray-600 hover:text-gray-800 font-medium py-2 transition-colors text-sm"
             >
-              <span class="flex items-center justify-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                <span>{t.backToCheck}</span>
-              </span>
+              ← {t.backToCheck}
             </button>
           </form>
         </div>
       {/if}
 
-      <!-- Step 4: Success - Futuristic -->
+      <!-- Step 4: Success -->
       {#if currentStep === 'success'}
-        <div class="text-center relative z-10">
-          <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-md border border-green-400/30 mb-6 relative">
-            <!-- Success glow -->
-            <div class="absolute inset-0 bg-gradient-to-r from-green-400/50 to-emerald-400/50 rounded-full blur-lg animate-pulse"></div>
-            <svg class="h-8 w-8 text-green-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="text-center">
+          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+            <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
             </svg>
           </div>
-          <h2 class="text-3xl font-bold bg-gradient-to-r from-green-300 via-white to-emerald-300 bg-clip-text text-transparent mb-4 tracking-wide">{t.success}</h2>
-          <p class="text-cyan-200 mb-8 font-light leading-relaxed tracking-wide">{t.successMessage}</p>
+          <h2 class="text-xl font-semibold text-gray-800 mb-2">{t.success}</h2>
+          <p class="text-gray-600 mb-6 text-sm">{t.successMessage}</p>
           <button
             on:click={() => goto('/dashboard')}
-            class="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-500 hover:from-green-500 hover:via-emerald-500 hover:to-teal-400 text-white py-5 px-8 rounded-2xl font-semibold focus:outline-none focus:ring-4 focus:ring-green-500/50 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-xl relative overflow-hidden"
+            class="bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
           >
-            <!-- Button glow -->
-            <div class="absolute inset-0 bg-gradient-to-r from-green-400/50 via-emerald-400/50 to-teal-400/50 blur-lg opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
-            <span class="relative z-10">{t.goToDashboard}</span>
+            {t.goToDashboard}
           </button>
         </div>
       {/if}
 
-      <!-- Error Display - Futuristic -->
+      <!-- Error Display -->
       {#if error}
-        <div class="mt-6 p-5 bg-red-900/30 backdrop-blur-md border border-red-500/30 rounded-2xl shadow-xl relative overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-r from-red-500/10 to-pink-500/10"></div>
-          <div class="flex items-center relative z-10">
-            <div class="relative mr-3">
-              <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-              </svg>
-              <div class="absolute inset-0 bg-red-400 rounded-full animate-ping opacity-30"></div>
-            </div>
-            <p class="text-red-200 text-sm font-medium tracking-wide">{error}</p>
+        <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div class="flex items-center">
+            <svg class="w-4 h-4 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+            </svg>
+            <p class="text-red-700 text-sm">{error}</p>
           </div>
         </div>
       {/if}
 
-      <!-- Progress Status - Futuristic -->
+      <!-- Progress Status -->
       {#if showProcessStatus && processStatus}
-        <div class="mt-6 p-4 bg-orange-900/30 backdrop-blur-md border border-orange-500/30 rounded-2xl shadow-xl relative overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-amber-500/10"></div>
-          <div class="flex items-center justify-center relative z-10">
-            <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-orange-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <div class="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+          <div class="flex items-center justify-center">
+            <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <p class="text-orange-200 text-sm font-semibold text-center tracking-wide">{processStatus}</p>
+            <p class="text-orange-700 text-sm font-medium">{processStatus}</p>
           </div>
         </div>
       {/if}
@@ -1044,25 +936,16 @@
     </div>
 
     <!-- Footer -->
-    <div class="text-center mt-8 transform transition-all duration-500 delay-300" class:translate-y-0={pageLoaded} class:translate-y-4={!pageLoaded} class:opacity-100={pageLoaded} class:opacity-0={!pageLoaded}>
-      <div class="flex justify-center items-center gap-1">
+    <div class="text-center mt-6 transform transition-all duration-500" class:translate-y-0={pageLoaded} class:translate-y-4={!pageLoaded} class:opacity-100={pageLoaded} class:opacity-0={!pageLoaded}>
+      <div class="flex justify-center items-center">
         <span 
-          class="text-2xl cursor-pointer hover:scale-125 transition-transform duration-300 select-none {smileyClickCount >= 5 ? 'animate-pulse' : ''} {smileyClickCount >= 8 ? 'text-orange-500' : ''}"
+          class="text-xl cursor-pointer hover:scale-110 transition-transform duration-300 select-none"
           on:click={handleSmileyClick}
           role="button"
           tabindex="0"
           on:keydown={(e) => e.key === 'Enter' && handleSmileyClick()}
-          title={smileyClickCount > 0 ? `${smileyClickCount}/10 clicks` : 'Click me'}
         >
-          {#if smileyClickCount >= 9}
-            :D
-          {:else if smileyClickCount >= 7}
-            ;)
-          {:else if smileyClickCount >= 5}
-            :?
-          {:else}
-            :)
-          {/if}
+          😊
         </span>
       </div>
     </div>

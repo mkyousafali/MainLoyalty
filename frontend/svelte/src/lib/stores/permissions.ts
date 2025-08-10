@@ -385,18 +385,20 @@ export function setCurrentUserRole(role: UserRole) {
 // Check if user has specific permission
 export function hasPermission(permissionId: string): boolean {
   let result = false;
-  userPermissions.subscribe(permissions => {
+  const unsubscribe = userPermissions.subscribe(permissions => {
     result = permissions.some(p => p.id === permissionId);
-  })();
+  });
+  unsubscribe();
   return result;
 }
 
 // Check if user can access admin function
 export function canAccessFunction(functionId: string): boolean {
   let result = false;
-  allowedAdminFunctions.subscribe(functions => {
+  const unsubscribe = allowedAdminFunctions.subscribe(functions => {
     result = functions.some(f => f.id === functionId);
-  })();
+  });
+  unsubscribe();
   return result;
 }
 
