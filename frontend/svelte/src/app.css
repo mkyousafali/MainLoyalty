@@ -1,24 +1,150 @@
-@import 'tailwindcss';
 
-/* Custom Currency Symbol Styling */
-.currency-symbol {
-    height: 1em;
-    width: auto;
-    vertical-align: middle;
-    margin-right: 4px;
-    display: inline-block;
-    filter: drop-shadow(0 0 2px rgba(240, 131, 0, 0.3));
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+* {
+  box-sizing: border-box;
 }
 
-/* RTL Support for Arabic */
-[dir="rtl"] .currency-symbol {
-    margin-right: 0;
-    margin-left: 4px;
+html {
+  font-family: 'Montserrat', 'Cairo', system-ui, -apple-system, sans-serif;
+  scroll-behavior: smooth;
 }
 
-/* Currency display container for better alignment */
-.currency-display {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #fafafa;
+  color: #333;
+}
+
+/* RTL Support */
+[dir="rtl"] {
+  font-family: 'Cairo', sans-serif;
+}
+
+[dir="ltr"] {
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Global utility classes */
+.btn-primary {
+  @apply bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200;
+}
+
+.btn-secondary {
+  @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-all duration-200;
+}
+
+.btn-success {
+  @apply bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200;
+}
+
+.btn-danger {
+  @apply bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200;
+}
+
+.card {
+  @apply bg-white rounded-xl shadow-lg border border-gray-100 p-6;
+}
+
+.stat-card {
+  @apply bg-white rounded-2xl shadow-lg border border-gray-100 p-6 transition-all duration-200 hover:shadow-xl;
+}
+
+.data-table {
+  @apply w-full bg-white rounded-lg shadow-sm overflow-hidden;
+}
+
+.data-table th {
+  @apply bg-gray-50 px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
+
+.data-table td {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-t border-gray-200;
+}
+
+.virtual-card {
+  @apply rounded-2xl shadow-2xl p-8 text-white relative overflow-hidden;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.form-input {
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200;
+}
+
+.form-select {
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 bg-white;
+}
+
+/* Animation utilities */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes bounce-in {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+  70% { transform: scale(0.9); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-fade-in { animation: fade-in 0.5s ease-out; }
+.animate-slide-in { animation: slide-in 0.3s ease-out; }
+.animate-bounce-in { animation: bounce-in 0.6s ease-out; }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .modal-content {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+  
+  .stat-card {
+    padding: 1rem;
+  }
+  
+  .data-table {
+    font-size: 0.875rem;
+  }
+  
+  .data-table th,
+  .data-table td {
+    padding: 0.5rem;
+  }
+  
+  .virtual-card {
+    padding: 1.5rem;
+  }
+  
+  .btn-primary,
+  .btn-secondary,
+  .btn-success,
+  .btn-danger {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .virtual-card {
+    background: #f3f4f6 !important;
+    color: #000 !important;
+    box-shadow: none !important;
+  }
 }

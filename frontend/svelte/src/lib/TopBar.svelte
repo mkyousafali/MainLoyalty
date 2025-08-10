@@ -100,6 +100,18 @@
       <!-- Right Section -->
       <div class="flex items-center space-x-2 min-w-0 flex-1 justify-end" class:space-x-reverse={$language === 'ar'}>
         
+        <!-- PWA Install Button -->
+        <button 
+          id="pwa-install-button"
+          class="hidden group relative bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 text-gray-700 hover:text-gray-900 px-3 py-2 rounded-xl font-semibold transition-all duration-200 text-sm border border-green-200/50 hover:border-green-300/70 shadow-sm hover:shadow-md transform hover:scale-105"
+          title="Install App"
+        >
+          <span class="text-xs">📱</span>
+          <span class="hidden sm:inline ml-1 font-medium">Install</span>
+          <!-- Subtle glow effect -->
+          <div class="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-400/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 -z-10"></div>
+        </button>
+        
         <!-- Language Toggle -->
         {#if showLanguageToggle}
           <button 
