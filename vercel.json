@@ -1,7 +1,5 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
-  ]
+  "buildCommand": "cd frontend/svelte && npm run build",
+  "outputDirectory": "frontend/svelte/build",
+  "installCommand": "cd frontend/svelte && npm install"
 }
