@@ -1,0 +1,10 @@
+{
+  "github": {
+    "silent": true
+  },
+  "functions": {
+    "frontend/svelte/.vercel/output/functions/*.func": {
+      "maxDuration": 30
+    }
+  }
+}
