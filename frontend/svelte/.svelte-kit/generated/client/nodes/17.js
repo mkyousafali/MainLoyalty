@@ -1,1 +1,0 @@
-export { default as component } from "../../../../src/routes/admin/manage-card-types/+page.svelte";

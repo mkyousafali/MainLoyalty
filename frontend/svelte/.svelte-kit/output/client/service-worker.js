@@ -1,1 +1,0 @@
-console.log("Service Worker: Disabled for troubleshooting");const e=self;e.addEventListener("install",i=>{console.log("Service Worker: Install Event - Skipping"),e.skipWaiting()});e.addEventListener("activate",i=>{console.log("Service Worker: Activate Event - Skipping"),i.waitUntil(e.clients.claim())});
