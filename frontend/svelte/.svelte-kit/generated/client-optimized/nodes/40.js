@@ -1,0 +1,1 @@
+export { default as component } from "../../../../src/routes/pay-later/+page.svelte";

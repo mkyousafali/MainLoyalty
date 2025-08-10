@@ -1,0 +1,1 @@
+export { default as component } from "../../../../src/routes/admin/assign-coupons/+page.svelte";

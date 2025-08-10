@@ -1,0 +1,6 @@
+code,title,title_en,title_ar,description,description_en,description_ar,discount_type,discount_value,minimum_purchase,maximum_discount,usage_limit,usage_limit_per_customer,valid_from,valid_until,expires_at,redemption_window_seconds,status
+WELCOME20,Welcome Discount,Welcome Discount,خصم الترحيب,20% off on first purchase,20% off on first purchase,خصم 20% على الشراء الأول,percentage,20,100,50,1000,1,2024-01-01,2024-12-31,2024-12-31 23:59:59,300,active
+SAVE50,Fixed Amount Discount,Fixed Amount Discount,خصم مبلغ ثابت,50 SAR off,50 SAR off,خصم 50 ريال,fixed,50,200,,500,2,2024-01-01,2024-06-30,2024-06-30 23:59:59,600,active
+POINTS100,Bonus Points,Bonus Points,نقاط إضافية,Get 100 bonus points,Get 100 bonus points,احصل على 100 نقطة إضافية,points,100,0,,,1,,,,,300,active
+SUMMER25,Summer Sale,Summer Sale,تخفيضات الصيف,25% off summer collection,25% off summer collection,خصم 25% على مجموعة الصيف,percentage,25,150,100,200,1,2024-06-01,2024-08-31,2024-08-31 23:59:59,450,active
+VIP30,VIP Customer Discount,VIP Customer Discount,خصم العضوية المميزة,30 SAR off for VIP customers,30 SAR off for VIP customers,خصم 30 ريال للعملاء المميزين,fixed,30,100,,50,3,2024-01-01,2024-12-31,2024-12-31 23:59:59,600,active

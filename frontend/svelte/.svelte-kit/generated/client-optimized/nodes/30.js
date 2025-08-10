@@ -1,0 +1,1 @@
+export { default as component } from "../../../../src/routes/admin/user-roles/+page.svelte";

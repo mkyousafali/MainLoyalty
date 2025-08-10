@@ -1,0 +1,60 @@
+{
+	"/": [],
+	"/admin-login": [],
+	"/admin": [],
+	"/admin/analytics-reports": [],
+	"/admin/analytics": [],
+	"/admin/assign-card-type": [],
+	"/admin/assign-coupons": [],
+	"/admin/clear-transactions": [],
+	"/admin/create-offer": [],
+	"/admin/customer-management": [],
+	"/admin/database-test": [],
+	"/admin/edit-offer/[id]": [],
+	"/admin/export-data": [],
+	"/admin/extend-validity": [],
+	"/admin/manage-branches": [],
+	"/admin/manage-card-types": [],
+	"/admin/manage-coupons": [],
+	"/admin/notification-center": [],
+	"/admin/offers-management": [],
+	"/admin/password-reset": [],
+	"/admin/set-master-admin": [],
+	"/admin/support-settings": [],
+	"/admin/terms-management": [],
+	"/admin/upload-customers": [],
+	"/admin/upload-status": [],
+	"/admin/upload-transactions": [],
+	"/admin/user-management": [],
+	"/admin/user-reports": [],
+	"/admin/user-roles": [],
+	"/api/upload-queue": [
+		"src/routes/api/upload-queue/+server.ts"
+	],
+	"/api/upload-queue/recent": [
+		"src/routes/api/upload-queue/recent/+server.ts"
+	],
+	"/api/upload-queue/status": [
+		"src/routes/api/upload-queue/status/+server.ts"
+	],
+	"/api/upload-queue/status/[jobId]": [
+		"src/routes/api/upload-queue/status/[jobId]/+server.ts"
+	],
+	"/auto-login": [],
+	"/customer-support": [],
+	"/dashboard": [],
+	"/gift-points": [],
+	"/home-delivery": [],
+	"/login": [],
+	"/my-gift": [],
+	"/my-offers": [],
+	"/pay-later": [],
+	"/pickup-store": [],
+	"/register": [],
+	"/register/test": [],
+	"/register/[mobile]": [],
+	"/simple-dashboard": [],
+	"/terms-conditions": [],
+	"/transactions": [],
+	"/virtual-card": []
+}

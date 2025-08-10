@@ -1,0 +1,1 @@
+@keyframes svelte-onejoj-spin{to{transform:rotate(360deg)}}.animate-spin.svelte-onejoj{animation:svelte-onejoj-spin 1s linear infinite}
