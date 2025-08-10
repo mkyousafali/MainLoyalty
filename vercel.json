@@ -2,6 +2,5 @@
   "framework": "sveltekit",
   "buildCommand": "npm run build",
   "outputDirectory": "build",
-  "installCommand": "npm install",
-  "rootDirectory": "frontend/svelte"
+  "installCommand": "npm install"
 }
