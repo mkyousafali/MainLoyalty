@@ -67,30 +67,23 @@
       
       const ndef = new (window as any).NDEFReader();
       
-      // Prepare customer data for NFC
-      const customerInfo = {
-        id: customerData.customer_code || customerData.mobile,
-        name: customerData.full_name,
-        cardType: cardTypeData?.name || 'bronze',
-        cardNumber: customerData.customer_cards?.[0]?.card_number || customerData.customer_code
-      };
+      // Get customer number/code only
+      const customerNumber = customerData.customer_code || customerData.mobile || '';
       
-      // Write to NFC card
+      console.log('📝 Writing customer number to NFC:', customerNumber);
+      
+      // Write only customer number to NFC card
       await ndef.write({
         records: [
           {
             recordType: "text",
-            data: JSON.stringify(customerInfo)
-          },
-          {
-            recordType: "url", 
-            data: `${window.location.origin}/loyalty/${customerData.customer_code}`
+            data: customerNumber
           }
         ]
       });
       
       nfcStatus = $language === 'ar' ? 'تم الكتابة بنجاح!' : 'Successfully Written!';
-      nfcMessage = $language === 'ar' ? 'تم حفظ بيانات العضوية على بطاقة NFC' : 'Membership data saved to NFC card';
+      nfcMessage = $language === 'ar' ? `تم حفظ رقم العضو: ${customerNumber}` : `Customer number saved: ${customerNumber}`;
       
       setTimeout(() => {
         nfcStatus = $language === 'ar' ? 'NFC جاهز للكتابة' : 'NFC Ready to Write';
@@ -549,8 +542,8 @@
         <div class="flex items-center gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8 p-3 sm:p-4 md:p-5 lg:p-6 xl:p-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100" class:flex-row-reverse={$language === 'ar'}>
           <div class="w-8 sm:w-12 md:w-14 lg:w-16 xl:w-20 h-8 sm:h-12 md:h-14 lg:h-16 xl:h-20 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center font-bold shadow-lg text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl">1</div>
           <div class="flex-1">
-            <p class="font-semibold text-gray-800 text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl">{$language === 'ar' ? 'اقترب من قارئ NFC' : 'Tap card on NFC reader'}</p>
-            <p class="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-gray-600 mt-1 md:mt-2">{$language === 'ar' ? 'ضع البطاقة على قارئ NFC عند الدفع' : 'Hold your NFC card near the reader at checkout'}</p>
+            <p class="font-semibold text-gray-800 text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl">{$language === 'ar' ? 'اقترب من قارئ NFC' : 'Tap phone on NFC reader'}</p>
+            <p class="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-gray-600 mt-1 md:mt-2">{$language === 'ar' ? 'ضع الهاتف على قارئ NFC لإرسال رقم العضو' : 'Hold phone near NFC reader to transmit customer number'}</p>
           </div>
         </div>
         
@@ -580,11 +573,35 @@
                 <path d="M20,2H4A2,2 0 0,0 2,4V20A2,2 0 0,0 4,22H20A2,2 0 0,0 22,20V4A2,2 0 0,0 20,2M20,20H4V4H20V20M18,6H16.5V7.5H15V9H16.5V10.5H18V9H19.5V7.5H18V6M12.5,6H11V7.5H9.5V9H11V10.5H12.5V9H14V7.5H12.5V6M7,6H5.5V7.5H4V9H5.5V10.5H7V9H8.5V7.5H7V6M18,12H16.5V13.5H15V15H16.5V16.5H18V15H19.5V13.5H18V12M12.5,12H11V13.5H9.5V15H11V16.5H12.5V15H14V13.5H12.5V12M7,12H5.5V13.5H4V15H5.5V16.5H7V15H8.5V13.5H7V12Z"/>
               </svg>
             </div>
-            <h4 class="font-bold text-gray-800 text-lg">{$language === 'ar' ? 'إعداد بطاقة NFC' : 'NFC Card Setup'}</h4>
+            <h4 class="font-bold text-gray-800 text-lg">{$language === 'ar' ? 'إعداد NFC للهاتف' : 'Phone NFC Setup'}</h4>
           </div>
           
           <div class="space-y-4">
             <div class="text-sm text-gray-600">
+              <p class="font-semibold mb-2">{$language === 'ar' ? 'الحالة:' : 'Status:'} <span class="text-indigo-600">{nfcStatus}</span></p>
+              {#if nfcMessage}
+                <p class="text-gray-500 italic">{nfcMessage}</p>
+              {/if}
+            </div>
+            
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+              <div class="flex items-start gap-2">
+                <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
+                <div>
+                  <p class="font-medium text-blue-800 mb-1">{$language === 'ar' ? 'معلومات مهمة:' : 'Important:'}</p>
+                  <p class="text-blue-700">
+                    {$language === 'ar' 
+                      ? `سيتم كتابة رقم العضو فقط: ${customerData?.customer_code || customerData?.mobile || 'غير متوفر'}`
+                      : `Only customer number will be written: ${customerData?.customer_code || customerData?.mobile || 'N/A'}`
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-3">
               <p class="font-semibold mb-2">{$language === 'ar' ? 'الحالة:' : 'Status:'} <span class="text-indigo-600">{nfcStatus}</span></p>
               {#if nfcMessage}
                 <p class="text-gray-500 italic">{nfcMessage}</p>
@@ -617,7 +634,7 @@
                       {$language === 'ar' ? 'جاري الكتابة...' : 'Writing...'}
                     </span>
                   {:else}
-                    {$language === 'ar' ? 'كتابة بيانات العضوية' : 'Write Membership Data'}
+                    {$language === 'ar' ? 'كتابة رقم العضو' : 'Write Customer Number'}
                   {/if}
                 </button>
               {/if}
