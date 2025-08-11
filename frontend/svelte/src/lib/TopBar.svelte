@@ -75,13 +75,13 @@
           </button>
         {/if}
 
-        <!-- User Info (for non-login pages) -->
+        <!-- User Info (for desktop) -->
         {#if !isLoginPage && $user}
-          <div class="flex items-center space-x-3" class:space-x-reverse={$language === 'ar'}>
+          <div class="hidden sm:flex items-center space-x-3" class:space-x-reverse={$language === 'ar'}>
             <div class="w-8 h-8 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
               {$user.name.charAt(0)}
             </div>
-            <div class="hidden sm:block">
+            <div class="hidden md:block">
               <p class="text-xs text-gray-500">{$t.welcome || 'Welcome'}</p>
               <p class="font-medium text-gray-900 text-sm">{$user.name}</p>
             </div>
@@ -154,40 +154,22 @@
       </div>
     </div>
 
-    <!-- Mobile User Info (visible on small screens) -->
+    <!-- Mobile User Info - Now integrated into main header instead of separate section -->
     {#if !isLoginPage && $user}
-      <div class="sm:hidden pb-3 pt-1 border-t border-gray-100">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3" class:space-x-reverse={$language === 'ar'}>
-            <div class="w-6 h-6 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full flex items-center justify-center font-bold text-xs">
-              {$user.name.charAt(0)}
-            </div>
-            <div>
-              <p class="text-xs text-gray-500">{$t.welcome || 'Welcome'} {$user.name}</p>
-            </div>
+      <div class="sm:hidden pb-2 pt-1 px-2 border-t border-gray-100/50 bg-gray-50/50">
+        <div class="flex items-center justify-between text-xs">
+          <div class="flex items-center space-x-2" class:space-x-reverse={$language === 'ar'}>
+            <span class="text-gray-500">{$t.welcome || 'Welcome'} <span class="font-medium text-gray-700">{$user.name}</span></span>
           </div>
           
-          <div class="flex items-center space-x-2" class:space-x-reverse={$language === 'ar'}>
-            {#if showLanguageToggle}
-              <button 
-                on:click={handleLanguageToggle} 
-                class="group bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-gray-700 hover:text-gray-900 px-3 py-1 rounded-lg font-semibold transition-all duration-200 text-xs border border-blue-200/50 hover:border-blue-300/70 shadow-sm hover:shadow-md transform hover:scale-105"
-                title="Toggle Language"
-              >
-                <span class="font-bold tracking-wide">
-                  {$language === 'ar' ? 'EN' : 'AR'}
-                </span>
-              </button>
-            {/if}
-            {#if showLogout && $user}
-              <button 
-                on:click={logout} 
-                class="text-red-600 text-xs px-2 py-1 bg-red-50 rounded hover:bg-red-100 transition-colors"
-              >
-                🔓 Logout
-              </button>
-            {/if}
-          </div>
+          {#if showLogout}
+            <button 
+              on:click={logout} 
+              class="text-red-600 text-xs px-2 py-1 bg-red-50 rounded hover:bg-red-100 transition-colors font-medium"
+            >
+              🔓 {$t.logout || 'Logout'}
+            </button>
+          {/if}
         </div>
       </div>
     {/if}
