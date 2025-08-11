@@ -203,19 +203,6 @@
       || customerData?.customer_code
       || 'N/A';
   }
-  let copyMsg = '';
-  async function copyMemberId() {
-    const id = memberId();
-    if (!id || id === 'N/A') return;
-    try {
-      await navigator.clipboard.writeText(id);
-      copyMsg = $language === 'ar' ? 'تم النسخ' : 'Copied';
-      setTimeout(() => (copyMsg = ''), 1500);
-    } catch {
-      copyMsg = $language === 'ar' ? 'تعذر النسخ' : 'Copy failed';
-      setTimeout(() => (copyMsg = ''), 1500);
-    }
-  }
 
   // Generate content on mount
   onMount(() => {
@@ -312,44 +299,28 @@
 
             <!-- Member Number (Responsive, no logic/color changes) -->
             <div class="mb-6">
-              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <!-- Left: icon + number -->
-                <div class="flex items-center gap-2 justify-center sm:justify-start">
-                  <div class="w-8 sm:w-10 md:w-12 lg:w-14 h-6 sm:h-7 md:h-8 lg:h-10 rounded-md flex items-center justify-center" 
-                       class:bg-white={textTheme === 'light'} 
-                       class:opacity-20={textTheme === 'light'}
-                       class:bg-gray-800={textTheme === 'dark'}
-                       style={textTheme === 'gold' ? 'background: rgba(26,26,26,0.15);' : (textTheme === 'dark' ? 'background: rgba(31, 41, 55, 0.2);' : '')}>
-                    <svg class="w-4 sm:w-5 md:w-6 lg:w-7 h-4 sm:h-5 md:h-6 lg:h-7" 
-                         class:text-white={textTheme === 'light'} 
-                         class:text-gray-800={textTheme === 'dark'}
-                         style={textTheme === 'gold' ? 'color: #1A0F08;' : ''} 
-                         fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/>
-                      <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/>
-                    </svg>
-                  </div>
-                  <span class="text-sm sm:text-lg md:text-xl lg:text-2xl font-mono tracking-wider font-semibold break-all sm:break-normal" 
-                        class:text-gray-100={textTheme === 'light'} 
-                        class:text-gray-800={textTheme === 'dark'}
-                        style={textTheme === 'gold' ? 'color: #1A0F08; text-shadow: 1px 1px 2px rgba(255,255,255,0.3);' : ''}>
-                    {customerData?.customer_cards?.[0]?.card_number || customerData?.customer_code || 'N/A'}
-                  </span>
+              <div class="flex items-center gap-2 justify-center sm:justify-start">
+                <div class="w-8 sm:w-10 md:w-12 lg:w-14 h-6 sm:h-7 md:h-8 lg:h-10 rounded-md flex items-center justify-center" 
+                     class:bg-white={textTheme === 'light'} 
+                     class:opacity-20={textTheme === 'light'}
+                     class:bg-gray-800={textTheme === 'dark'}
+                     style={textTheme === 'gold' ? 'background: rgba(26,26,26,0.15);' : (textTheme === 'dark' ? 'background: rgba(31, 41, 55, 0.2);' : '')}>
+                  <svg class="w-4 sm:w-5 md:w-6 lg:w-7 h-4 sm:h-5 md:h-6 lg:h-7" 
+                       class:text-white={textTheme === 'light'} 
+                       class:text-gray-800={textTheme === 'dark'}
+                       style={textTheme === 'gold' ? 'color: #1A0F08;' : ''} 
+                       fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/>
+                    <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/>
+                  </svg>
                 </div>
-
-                <!-- Right: Copy -->
-                <div class="flex justify-center sm:justify-end gap-2">
-                  <button
-                    on:click={copyMemberId}
-                    class="px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white shadow text-xs sm:text-sm font-medium"
-                  >
-                    {$language === 'ar' ? 'نسخ' : 'Copy'}
-                  </button>
-                </div>
+                <span class="text-sm sm:text-lg md:text-xl lg:text-2xl font-mono tracking-wider font-semibold break-all sm:break-normal" 
+                      class:text-gray-100={textTheme === 'light'} 
+                      class:text-gray-800={textTheme === 'dark'}
+                      style={textTheme === 'gold' ? 'color: #1A0F08; text-shadow: 1px 1px 2px rgba(255,255,255,0.3);' : ''}>
+                  {customerData?.customer_cards?.[0]?.card_number || customerData?.customer_code || 'N/A'}
+                </span>
               </div>
-              {#if copyMsg}
-                <div class="mt-1 text-center sm:text-right text-xs opacity-80">{copyMsg}</div>
-              {/if}
 
               <!-- Cardholder Info -->
               <div class="mt-3 sm:mt-4 md:mt-6 space-y-1 md:space-y-2">
