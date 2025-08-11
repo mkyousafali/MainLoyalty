@@ -40,7 +40,7 @@
       '/admin': $t.adminPanel || 'Admin Panel',
       '/admin-login': 'Admin Login',
       '/login': 'Login',
-      '/register': 'Register'
+      '/register': 'Register' // Separate registration page
     };
     return titles[pathname] || 'MainLoyalty';
   }

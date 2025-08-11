@@ -7,6 +7,8 @@
   import { browser } from '$app/environment';
   import { language, t } from '$lib/stores/language';
   import { formatCurrency, formatCurrencyText } from '$lib/formatCurrency';
+  import QRCode from 'qrcode';
+  import JsBarcode from 'jsbarcode';
 
   let selectedBranch = 'all';
   let customerData: any = null;
@@ -16,6 +18,11 @@
   let allTransactions: any[] = []; // Store all transactions for filtering
   let isLoading = true;
   let error = '';
+
+  // QR/Barcode Toggle Variables
+  let showQRCode = true; // true for QR, false for barcode
+  let qrCanvas: HTMLCanvasElement;
+  let barcodeCanvas: HTMLCanvasElement;
 
   // Branch filtering reactive variables
   $: filteredTransactions = selectedBranch === 'all' 
@@ -184,7 +191,7 @@
         query = query.eq('branch_id', branchIdValue);
       }
 
-      const { data: transactionsData, error: transactionsError } = await query.limit(5);
+      const { data: transactionsData, error: transactionsError } = await query.limit(3);
 
       if (transactionsError) {
         console.warn('⚠️ Dashboard: Error fetching filtered transactions:', transactionsError);
@@ -279,7 +286,7 @@
         console.log('✅ Dashboard: Branches loaded:', branches.length);
       }
 
-      // Load customer transactions (only latest 5 for dashboard, sorted by newest first)
+      // Load customer transactions (only latest 3 for dashboard, sorted by newest first)
       console.log('🔍 Dashboard: Fetching transactions for customer_code:', customer.customer_code);
       const { data: transactionsData, error: transactionsError } = await supabase
         .from('customer_transactions')
@@ -293,7 +300,7 @@
         .or(`customer_code.eq.${customer.customer_code},customer_mobile.eq.${customer.customer_code}`)
         .order('bill_date', { ascending: false })
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(3);
 
       if (transactionsError) {
         console.warn('⚠️ Dashboard: Error fetching transactions:', transactionsError);
@@ -386,6 +393,56 @@
     loadCustomerData();
   });
 
+  // Generate QR Code
+  async function generateQRCode() {
+    if (!qrCanvas || !customerData) return;
+    
+    try {
+      const qrData = customerData.customer_code || customerData.mobile;
+      console.log('🔍 Generating QR code for:', qrData);
+      
+      await QRCode.toCanvas(qrCanvas, qrData, {
+        width: 180,
+        height: 180,
+        margin: 2,
+        errorCorrectionLevel: 'H'
+      });
+    } catch (err) {
+      console.error('Error generating QR code:', err);
+    }
+  }
+
+  // Generate Barcode
+  function generateBarcode() {
+    if (!barcodeCanvas || !customerData) return;
+    
+    try {
+      const barcodeData = customerData.customer_code || customerData.mobile;
+      console.log('🔍 Generating barcode for:', barcodeData);
+      
+      JsBarcode(barcodeCanvas, barcodeData, {
+        format: "CODE128",
+        width: 3,
+        height: 80,
+        fontSize: 16,
+        textMargin: 12,
+        background: "#FFFFFF",
+        margin: 15
+      });
+    } catch (err) {
+      console.error('Error generating barcode:', err);
+    }
+  }
+
+  // Generate codes when customer data is loaded
+  $: if (customerData && qrCanvas && showQRCode) {
+    generateQRCode();
+  }
+
+  $: if (customerData && barcodeCanvas && !showQRCode) {
+    generateBarcode();
+  }
+
   // Reactive branches based on language
   $: branchOptions = [
     { id: 'all', name: $language === 'ar' ? 'جميع الفروع' : 'All Branches' },
@@ -467,6 +524,95 @@
       </button>
     </div>
   {:else if customerData}
+    <!-- QR/Barcode Toggle Card - New Feature -->
+    <div class="mb-6 sm:mb-8">
+      <div class="relative group">
+        <!-- Animated background glow -->
+        <div class="absolute -inset-1 bg-gradient-to-r from-blue-400 via-purple-500 to-blue-600 rounded-2xl blur opacity-25 group-hover:opacity-40 animate-pulse"></div>
+        
+        <!-- Main card -->
+        <div class="relative bg-white p-4 sm:p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
+            
+            <!-- Left Section: Title and Toggle -->
+            <div class="flex-1 text-center sm:text-left">
+              <div class="flex items-center justify-center sm:justify-start gap-2 mb-3">
+                <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse" style="box-shadow: 0 0 10px #3b82f6;"></div>
+                <h3 class="text-lg sm:text-xl font-bold" style="color: #13A538;">
+                  {$language === 'ar' ? 'رمز العضوية' : 'MEMBERSHIP CODE'}
+                </h3>
+              </div>
+              
+              <!-- Toggle Button -->
+              <div class="flex items-center justify-center sm:justify-start gap-3">
+                <span class="text-sm font-medium text-gray-600" class:opacity-50={!showQRCode}>
+                  {$language === 'ar' ? 'كيو آر' : 'QR'}
+                </span>
+                
+                <button
+                  on:click={() => showQRCode = !showQRCode}
+                  class="relative w-12 h-6 bg-gray-300 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  class:bg-blue-500={showQRCode}
+                  class:bg-orange-500={!showQRCode}
+                >
+                  <div
+                    class="absolute w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 top-0.5"
+                    class:translate-x-0.5={!showQRCode}
+                    class:translate-x-6={showQRCode}
+                  ></div>
+                </button>
+                
+                <span class="text-sm font-medium text-gray-600" class:opacity-50={showQRCode}>
+                  {$language === 'ar' ? 'باركود' : 'BARCODE'}
+                </span>
+              </div>
+              
+              <p class="text-xs text-gray-500 mt-2">
+                {$language === 'ar' ? 
+                  'اعرض هذا الرمز عند الدفع لكسب النقاط' : 
+                  'Show this code at checkout to earn points'}
+              </p>
+            </div>
+            
+            <!-- Right Section: QR/Barcode Display -->
+            <div class="relative">
+              <!-- Code display container -->
+              <div class="relative p-3 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-dashed border-gray-300">
+                <!-- QR Code -->
+                {#if showQRCode}
+                  <div class="flex flex-col items-center">
+                    <canvas 
+                      bind:this={qrCanvas}
+                      class="bg-white rounded-lg shadow-sm"
+                      width="180" 
+                      height="180"
+                    ></canvas>
+                    <div class="mt-3 text-sm font-mono text-gray-600 text-center font-bold">
+                      {customerData?.customer_code || customerData?.mobile}
+                    </div>
+                  </div>
+                {:else}
+                  <!-- Barcode -->
+                  <div class="flex flex-col items-center">
+                    <canvas 
+                      bind:this={barcodeCanvas}
+                      class="bg-white rounded-lg shadow-sm max-w-full"
+                    ></canvas>
+                  </div>
+                {/if}
+                
+                <!-- Scanning line animation -->
+                <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-transparent animate-pulse" class:via-orange-400={!showQRCode}></div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Bottom accent line -->
+          <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent" class:via-orange-400={!showQRCode}></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Main Widgets - Mobile-First Responsive Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
       <!-- Points Widget with Premium Brand Design -->

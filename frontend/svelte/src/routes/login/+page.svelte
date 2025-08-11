@@ -10,31 +10,32 @@
   let mobile = '';
   let error = '';
   let isLoading = false;
-  let currentStep: 'check' | 'register' | 'login' | 'success' = 'check';
+  let currentStep: 'mobile' | 'password' | 'register' | 'success' = 'mobile';
   let processStatus = '';
   let showProcessStatus = false;
   let pageLoaded = false;
   let mobileInput: HTMLInputElement;
+  let showGreenTick = false;
   
-  // Registration form fields
-  let fullName = '';
-  let place = '';
-  let selectedBranch = '';
-  let password = '';
-  let confirmPassword = '';
-  let customerData: any = null;
-  let termsAccepted = false;
-
-  // Login form fields
+  // Login fields
   let loginPassword = '';
+  let customerData: any = null;
 
-  // Captcha variables
+  // Registration fields (for unregistered customers)
+  let regFullName = '';
+  let regEmail = '';
+  let regArea = '';
+  let regBranchId = '';
+  let regPassword = '';
+  let regConfirmPassword = '';
+  let termsAccepted = false;
+  let branches: any[] = [];
+
+  // Captcha for registration
   let captchaQuestion = '';
   let captchaAnswer = '';
   let userCaptchaAnswer = '';
   let captchaNumbers = { num1: 0, num2: 0 };
-
-  let branches: Array<{id: number, name: string, nameAr: string}> = [];
 
   // PWA Installation
   let showPWAInstall = false;
@@ -44,11 +45,11 @@
   onMount(() => {
     setTimeout(() => { pageLoaded = true; }, 100);
     setTimeout(() => { if (mobileInput) mobileInput.focus(); }, 600);
-    loadBranches();
-    generateCaptcha();
     loadTermsContent();
     loadWhatsAppLink();
     checkPWAInstallability();
+    loadBranches();
+    generateCaptcha();
   });
 
   async function loadTermsContent() {
@@ -69,6 +70,28 @@
     } catch (error) {
       console.warn('⚠️ Failed to load WhatsApp link, using fallback:', error);
       // Keep the fallback value already set
+    }
+  }
+
+  function generateCaptcha() {
+    captchaNumbers.num1 = Math.floor(Math.random() * 10) + 1;
+    captchaNumbers.num2 = Math.floor(Math.random() * 10) + 1;
+    captchaAnswer = (captchaNumbers.num1 + captchaNumbers.num2).toString();
+    captchaQuestion = `${captchaNumbers.num1} + ${captchaNumbers.num2} = ?`;
+    userCaptchaAnswer = '';
+  }
+
+  async function loadBranches() {
+    try {
+      const { data, error } = await supabase
+        .from('branches')
+        .select('id, name_en, name_ar')
+        .order('name_en');
+
+      if (error) throw error;
+      branches = data || [];
+    } catch (err) {
+      console.error('Failed to load branches:', err);
     }
   }
 
@@ -97,14 +120,6 @@
         smileyClickCount = Math.max(0, smileyClickCount - 1);
       }
     }, 5000);
-  }
-
-  function generateCaptcha() {
-    captchaNumbers.num1 = Math.floor(Math.random() * 10) + 1;
-    captchaNumbers.num2 = Math.floor(Math.random() * 10) + 1;
-    captchaAnswer = (captchaNumbers.num1 + captchaNumbers.num2).toString();
-    captchaQuestion = `${captchaNumbers.num1} + ${captchaNumbers.num2} = ?`;
-    userCaptchaAnswer = '';
   }
 
   // PWA Installation Functions
@@ -172,7 +187,7 @@
         const delay = isFirstTimeUser ? 3000 : 6000;
         
         setTimeout(() => {
-          if (!deferredPrompt && currentStep === 'check') {
+          if (!deferredPrompt && currentStep === 'mobile') {
             console.log('� Showing PWA install button for development testing');
             showPWAInstall = true;
             // Create a mock deferred prompt for testing
@@ -254,25 +269,6 @@
     }
   }
 
-  async function loadBranches() {
-    try {
-      const { data, error } = await supabase
-        .from('branches')
-        .select('id, name_en, name_ar')
-        .order('id', { ascending: true });
-
-      if (error) throw error;
-
-      branches = data.map(branch => ({
-        id: branch.id,
-        name: branch.name_en,
-        nameAr: branch.name_ar
-      }));
-    } catch (err) {
-      console.error('❌ Failed to load branches:', err);
-    }
-  }
-
   function formatMobileInput(value: string) {
     const digits = value.replace(/\D/g, '');
     return digits.slice(0, 10);
@@ -283,9 +279,11 @@
     const formatted = formatMobileInput(target.value);
     mobile = formatted;
     target.value = formatted;
+    showGreenTick = false; // Reset tick when typing
   }
 
   $: isValidMobile = mobile.length === 10 && mobile.startsWith('05');
+  $: isValidCaptcha = String(userCaptchaAnswer || '').trim() === captchaAnswer;
 
   // Update formatted terms when language changes
   $: if (currentTermsContent) {
@@ -293,24 +291,18 @@
     formattedTerms = formatTermsForLogin(termsForLang, 10);
   }
 
-  // Validate captcha
-  $: isValidCaptcha = userCaptchaAnswer === captchaAnswer;
-
-  async function checkEligibility() {
-    error = '';
-    isLoading = true;
-    processStatus = 'Validating mobile number...';
-
+  async function handleLogin() {
     if (!isValidMobile) {
-      error = 'Please enter a valid 10-digit Saudi mobile number';
-      isLoading = false;
+      error = 'Please enter a valid 10-digit Saudi mobile number starting with 05';
       return;
     }
 
+    error = '';
+    isLoading = true;
+    processStatus = 'Checking mobile number...';
+
     try {
-      // Step 1: Check eligibility in customer_numbers
-      processStatus = 'Searching customer database...';
-      
+      // Step 1: Check if mobile exists in customer_numbers table
       const { data: eligibilityData, error: eligibilityError } = await supabase
         .from('customer_numbers')
         .select('*')
@@ -318,15 +310,16 @@
         .single();
       
       if (eligibilityError || !eligibilityData) {
-        currentStep = 'check';
-        error = 'Not found. Please contact support or visit a branch.';
+        error = 'Mobile number not found in our system. Please contact support or visit a branch.';
         isLoading = false;
         return;
       }
-      
-      // Step 2: Check if already registered
-      processStatus = 'Verifying account status...';
-      
+
+      // Show green tick - mobile found in customer_numbers
+      showGreenTick = true;
+      processStatus = 'Mobile number verified! Checking account status...';
+
+      // Step 2: Check if customer exists in customers table
       const { data: existingCustomer, error: customerError } = await supabase
         .from('customers')
         .select('*')
@@ -334,31 +327,39 @@
         .single();
       
       if (!customerError && existingCustomer) {
-        if (existingCustomer.card_status === 'registered' && existingCustomer.full_name) {
-          // Already fully registered
-          currentStep = 'login';
-          customerData = existingCustomer;
-          processStatus = 'Welcome back! Redirecting to dashboard...';
+        // Customer exists
+        customerData = existingCustomer;
+        
+        if (existingCustomer.card_status === 'registered') {
+          // Fully registered - show password field
+          currentStep = 'password';
+          processStatus = 'Please enter your password';
         } else {
-          // Unregistered customer from upload, allow registration
+          // Unregistered - show registration form to complete details
+          // Pre-fill existing data if available
+          regFullName = existingCustomer.full_name || existingCustomer.name || '';
+          regEmail = existingCustomer.email || '';
+          regArea = existingCustomer.area || '';
+          regBranchId = existingCustomer.branch_id || '';
+          
           currentStep = 'register';
-          customerData = existingCustomer;
+          processStatus = 'Please complete your registration';
         }
       } else {
-        // New customer, proceed to registration
+        // Customer doesn't exist - show registration form to create account
         currentStep = 'register';
-        customerData = null;
+        processStatus = 'Please create your account';
       }
       
     } catch (err) {
-      console.error('Eligibility check error:', err);
-      error = 'An error occurred while checking eligibility. Please try again.';
+      console.error('Login check error:', err);
+      error = 'An error occurred while checking your account. Please try again.';
     } finally {
       isLoading = false;
     }
   }
 
-  async function loginExistingCustomer() {
+  async function handlePasswordLogin() {
     if (!loginPassword) {
       error = 'Please enter your password';
       return;
@@ -368,7 +369,12 @@
     error = '';
 
     try {
-      if (customerData && customerData.password === loginPassword) {
+      // Check both plain text and base64 encoded passwords
+      const isCorrectPassword = 
+        customerData.password === loginPassword ||  // Plain text comparison
+        customerData.password === btoa(loginPassword);  // Base64 encoded comparison
+        
+      if (customerData && isCorrectPassword) {
         // Login successful
         const userData = {
           mobile: mobile,
@@ -378,7 +384,12 @@
         };
 
         loginCustomer(userData);
-        goto('/dashboard');
+        currentStep = 'success';
+        
+        // Redirect to dashboard
+        setTimeout(() => {
+          goto('/dashboard');
+        }, 1500);
       } else {
         error = 'Incorrect password. Please try again.';
       }
@@ -389,51 +400,35 @@
     }
   }
 
-  async function completeRegistration() {
-    error = '';
-    isLoading = true;
-    showProcessStatus = true;
+  async function submitRegistration() {
+    // Validation
+    if (!regFullName.trim()) {
+      error = 'Please enter your full name';
+      return;
+    }
 
-    // Validations
+    if (!regArea.trim()) {
+      error = 'Please enter your area/place';
+      return;
+    }
+
+    if (!regBranchId) {
+      error = 'Please select your nearest branch';
+      return;
+    }
+
+    if (regPassword.length < 6) {
+      error = 'Password must be at least 6 characters long';
+      return;
+    }
+
+    if (regPassword !== regConfirmPassword) {
+      error = 'Passwords do not match';
+      return;
+    }
+
     if (!termsAccepted) {
       error = 'You must accept the Terms & Conditions to proceed';
-      isLoading = false;
-      showProcessStatus = false;
-      return;
-    }
-
-    if (!fullName || !String(fullName).trim()) {
-      error = 'Please enter your full name';
-      isLoading = false;
-      showProcessStatus = false;
-      return;
-    }
-
-    if (!place || !String(place).trim()) {
-      error = 'Please enter your place/area';
-      isLoading = false;
-      showProcessStatus = false;
-      return;
-    }
-
-    if (!selectedBranch) {
-      error = 'Please select your nearest branch';
-      isLoading = false;
-      showProcessStatus = false;
-      return;
-    }
-
-    if (!password || password.length < 6) {
-      error = 'Password must be at least 6 characters';
-      isLoading = false;
-      showProcessStatus = false;
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      error = 'Passwords do not match';
-      isLoading = false;
-      showProcessStatus = false;
       return;
     }
 
@@ -441,180 +436,121 @@
     if (userAnswer !== captchaAnswer) {
       error = 'Incorrect captcha answer. Please try again.';
       generateCaptcha();
-      isLoading = false;
-      showProcessStatus = false;
       return;
     }
 
+    isLoading = true;
+    error = '';
+
     try {
-      const registrationTimeout = setTimeout(() => {
-        throw new Error('Registration timeout - operation took too long');
-      }, 15000);
-      
-      processStatus = 'Creating your account...';
-      
-      const currentYear = new Date().getFullYear();
-      const expiryDate = new Date(currentYear, 11, 31, 23, 59, 59);
+      // Get default card type (Bronze)
+      const { data: cardTypes, error: cardError } = await supabase
+        .from('card_types')
+        .select('id')
+        .eq('name_en', 'Bronze')
+        .maybeSingle();
 
-      processStatus = 'Saving your details...';
-
-      const customerRecord = {
-        customer_code: mobile,
-        mobile: mobile,
-        phone: mobile,
-        card_number: mobile,
-        name: String(fullName || '').trim(),
-        full_name: String(fullName || '').trim(),
-        email: String(place || '').trim(),
-        password: password,
-        branch_id: parseInt(selectedBranch),
-        card_type: 'bronze',
-        card_status: 'registered',
-        status: 'active',
-        points: 0,
-        total_points: 0,
-        valid_until: expiryDate.toISOString().split('T')[0],
-        joined_at: new Date().toISOString(),
-        registration_date: new Date().toISOString()
-      };
-
-      console.log('📝 Preparing customer record:', customerRecord);
-
-      // BULLETPROOF REGISTRATION LOGIC
-      console.log('🎯 BULLETPROOF REGISTRATION: Always check for existing customer first');
-      
-      // Always check if customer already exists (from transaction uploads)
-      const { data: existingCustomers, error: checkError } = await supabase
-        .from('customers')
-        .select('*')
-        .eq('customer_code', mobile);
-      
-      console.log('🔍 Pre-registration check:', { 
-        existingCustomers, 
-        checkError, 
-        count: existingCustomers?.length || 0 
-      });
-      
-      let shouldUpdate = false;
-      let existingCustomer = null;
-      let data, insertError;
-      
-      if (existingCustomers && existingCustomers.length > 0) {
-        existingCustomer = existingCustomers[0];
-        console.log('📋 Found existing customer:', {
-          id: existingCustomer.id,
-          card_status: existingCustomer.card_status,
-          full_name: existingCustomer.full_name
-        });
-        
-        // Check if we should UPDATE instead of INSERT
-        if (existingCustomer.card_status === 'unregistered' || 
-            !existingCustomer.full_name || 
-            String(existingCustomer.full_name || '').trim() === '') {
-          shouldUpdate = true;
-          console.log('✅ Will UPDATE existing unregistered customer');
-        } else {
-          console.log('⚠️ Customer already registered, this should not happen');
-        }
-      } else {
-        console.log('✅ No existing customer found, will INSERT new customer');
+      if (cardError) {
+        console.error('Card type error:', cardError);
       }
-      
-      // Execute UPDATE or INSERT based on findings
-      if (shouldUpdate && existingCustomer) {
-        console.log('🔄 UPDATING existing customer:', existingCustomer.id);
-        
-        const updateResult = await supabase
+
+      const defaultCardType = cardTypes?.id || null;
+
+      // Check if we're updating an existing unregistered customer or creating a new one
+      if (customerData && customerData.card_status === 'unregistered') {
+        // Update existing unregistered customer
+        const { data: updatedCustomer, error: updateError } = await supabase
           .from('customers')
           .update({
-            full_name: String(fullName || '').trim(),
-            name: String(fullName || '').trim(),
-            email: String(place || '').trim(),
-            password: password,
-            branch_id: parseInt(selectedBranch),
+            name: regFullName.trim(),
+            full_name: regFullName.trim(),
+            email: regEmail.trim() || null,
+            area: regArea.trim(),
+            branch_id: regBranchId,
+            card_type_id: defaultCardType,
             card_status: 'registered',
-            status: 'active',
+            password: regPassword,
             registration_date: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            valid_until: expiryDate.toISOString().split('T')[0]
+            valid_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
           })
-          .eq('id', existingCustomer.id)
+          .eq('customer_code', mobile)
           .select()
           .single();
-          
-        data = updateResult.data;
-        insertError = updateResult.error;
-        
-        console.log('📊 UPDATE result:', { data, insertError });
-        
+
+        if (updateError) {
+          console.error('Customer update error:', updateError);
+          error = `Registration failed: ${updateError.message || 'Unknown error'}`;
+          return;
+        }
       } else {
-        console.log('🚀 INSERTING new customer');
-        
-        const insertResult = await supabase
+        // Insert new customer record
+        const { data: newCustomer, error: insertError } = await supabase
           .from('customers')
-          .insert(customerRecord)
+          .insert({
+            customer_code: mobile,
+            mobile: mobile,
+            phone: mobile,
+            name: regFullName.trim(),
+            full_name: regFullName.trim(),
+            email: regEmail.trim() || null,
+            area: regArea.trim(),
+            branch_id: regBranchId,
+            card_type_id: defaultCardType,
+            points: 0,
+            total_spent: 0,
+            status: 'active',
+            card_status: 'registered',
+            valid_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+            registration_date: new Date().toISOString(),
+            password: regPassword  // Store as plain text to match existing database format
+          })
           .select()
           .single();
 
-        data = insertResult.data;
-        insertError = insertResult.error;
-        
-        console.log('📊 INSERT result:', { data, insertError });
+        if (insertError) {
+          console.error('Customer insert error:', insertError);
+          
+          if (insertError.code === '23505') {
+            error = 'This mobile number is already registered. Please use login instead.';
+          } else if (insertError.code === 'PGRST116') {
+            error = 'Invalid data provided. Please check your information and try again.';
+          } else {
+            error = `Registration failed: ${insertError.message || 'Unknown error'}`;
+          }
+          return;
+        }
       }
 
-      clearTimeout(registrationTimeout);
-
-      if (insertError) {
-        console.error('❌ Database operation failed:', insertError);
-        throw new Error(`Registration failed: ${insertError.message}`);
-      }
-
-      console.log('✅ Customer record created successfully:', data);
-
-      // Update customer_numbers table status to 'registered'
-      processStatus = 'Activating your loyalty card...';
-      const { error: updateError } = await supabase
+      // Update customer_numbers status
+      await supabase
         .from('customer_numbers')
-        .update({
-          status: 'registered',
-          uploaded_at: new Date().toISOString()
-        })
+        .update({ status: 'registered' })
         .eq('customer', mobile);
 
-      if (updateError) {
-        console.warn('Failed to update customer_numbers status:', updateError);
-      }
-      
-      processStatus = 'Finalizing registration...';
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      // Registration success
+      // Auto-login the user
       const userData = {
         mobile: mobile,
-        name: String(fullName || '').trim(),
-        email: String(place || '').trim(),
+        name: regFullName.trim(),
+        email: regEmail.trim(),
         loginTime: new Date().toISOString()
       };
 
       loginCustomer(userData);
       
       currentStep = 'success';
-      showProcessStatus = false;
       
+      // Redirect to dashboard after success
       setTimeout(() => {
         goto('/dashboard');
-      }, 1500);
+      }, 2000);
       
     } catch (err: any) {
-      console.error('❌ Registration error:', err);
-      
+      console.error('Registration error:', err);
       if (err.message?.includes('duplicate key')) {
         error = 'This mobile number is already registered. Please try logging in instead.';
       } else {
         error = `Registration failed: ${err.message || 'Unknown error. Please try again.'}`;
       }
-      
-      showProcessStatus = false;
     } finally {
       isLoading = false;
     }
@@ -639,33 +575,15 @@
       title: 'Urban Market Loyalty',
       mobileNumber: 'Mobile Number',
       mobilePlaceholder: '05XXXXXXXX',
-      checkEligibility: 'Check Eligibility',
+      loginButton: 'Login',
       loading: 'Checking...',
-      registrationForm: 'Complete Your Registration',
-      fullName: 'Full Name',
-      fullNamePlaceholder: 'Enter your full name',
-      place: 'Place / Area',
-      placePlaceholder: 'Enter your area or city',
-      nearestBranch: 'Select Nearest Branch',
-      selectBranch: 'Choose your preferred branch',
-      createCard: 'Create My Card',
       enterPassword: 'Enter Password',
-      confirmPassword: 'Confirm Password',
-      passwordPlaceholder: 'Enter a secure password (min 6 characters)',
-      confirmPasswordPlaceholder: 'Re-enter your password',
-      securityVerification: 'Security Verification',
-      solveMath: 'Solve this math problem:',
-      captchaPlaceholder: 'Enter your answer',
-      refreshCaptcha: '↻ New Question',
-      termsCheckbox: 'I have read and agree to the',
-      termsAndConditions: 'Terms & Conditions',
-      welcomeBack: 'Welcome Back!',
-      enterYourPassword: 'Enter your password to continue',
-      loginButton: 'Login to Dashboard',
-      success: 'Registration Successful!',
-      successMessage: 'Your loyalty card has been created successfully.',
+      enterPasswordPlaceholder: 'Enter your password',
+      passwordLogin: 'Login to Dashboard',
+      success: 'Success!',
+      successMessage: 'Welcome to your loyalty account.',
       goToDashboard: 'Go to Dashboard',
-      backToCheck: 'Back to Check',
+      backToMobile: 'Back to Mobile',
       contactUs: 'Contact Us',
       needHelp: 'Need help? Contact our support team',
       phone: 'Phone',
@@ -676,39 +594,39 @@
       needHelpLogin: 'Need help with login?',
       termsAndConditionsTitle: 'Terms and Conditions',
       loadingTerms: 'Loading terms...',
-      enterPasswordPlaceholder: 'Enter your password'
+      // Registration fields for unregistered users
+      completeRegistration: 'Complete Your Registration',
+      fullName: 'Full Name',
+      fullNamePlaceholder: 'Enter your full name',
+      emailOptional: 'Email (Optional)',
+      emailPlaceholder: 'Enter your email address',
+      place: 'Place / Area',
+      placePlaceholder: 'Enter your area or city',
+      nearestBranch: 'Select Nearest Branch',
+      selectBranch: 'Choose a branch...',
+      password: 'Create Password',
+      passwordPlaceholder: 'Enter your password (min 6 characters)',
+      confirmPassword: 'Confirm Password',
+      confirmPasswordPlaceholder: 'Re-enter your password',
+      captchaLabel: 'Security Check',
+      captchaPlaceholder: 'Enter the answer',
+      acceptTerms: 'I accept the Terms & Conditions',
+      registerButton: 'Complete Registration',
+      registering: 'Creating Account...'
     },
     ar: {
       title: 'برنامج ولاء ايربن ماركت',
       mobileNumber: 'رقم الجوال',
       mobilePlaceholder: '05XXXXXXXX',
-      checkEligibility: 'تحقق من الأهلية',
+      loginButton: 'تسجيل الدخول',
       loading: 'جاري التحقق...',
-      registrationForm: 'أكمل تسجيلك',
-      fullName: 'الاسم الكامل',
-      fullNamePlaceholder: 'أدخل اسمك الكامل',
-      place: 'المكان / المنطقة',
-      placePlaceholder: 'أدخل منطقتك أو مدينتك',
-      nearestBranch: 'اختر أقرب فرع',
-      selectBranch: 'اختر الفرع المفضل لديك',
-      createCard: 'إنشاء بطاقتي',
       enterPassword: 'أدخل كلمة المرور',
-      confirmPassword: 'تأكيد كلمة المرور',
-      passwordPlaceholder: 'أدخل كلمة مرور آمنة (6 أحرف على الأقل)',
-      confirmPasswordPlaceholder: 'أعد إدخال كلمة المرور',
-      securityVerification: 'التحقق الأمني',
-      solveMath: 'حل هذه المسألة الرياضية:',
-      captchaPlaceholder: 'أدخل إجابتك',
-      refreshCaptcha: '↻ سؤال جديد',
-      termsCheckbox: 'لقد قرأت ووافقت على',
-      termsAndConditions: 'الشروط والأحكام',
-      welcomeBack: 'مرحباً بعودتك!',
-      enterYourPassword: 'أدخل كلمة المرور للمتابعة',
-      loginButton: 'تسجيل الدخول للوحة التحكم',
-      success: 'تم التسجيل بنجاح!',
-      successMessage: 'تم إنشاء بطاقة الولاء الخاصة بك بنجاح.',
+      enterPasswordPlaceholder: 'أدخل كلمة المرور',
+      passwordLogin: 'تسجيل الدخول للوحة التحكم',
+      success: 'نجح العملية!',
+      successMessage: 'مرحباً بك في حساب الولاء الخاص بك.',
       goToDashboard: 'اذهب إلى لوحة التحكم',
-      backToCheck: 'العودة للتحقق',
+      backToMobile: 'العودة للجوال',
       contactUs: 'اتصل بنا',
       needHelp: 'تحتاج مساعدة؟ اتصل بفريق الدعم',
       phone: 'الهاتف',
@@ -719,7 +637,25 @@
       needHelpLogin: 'تحتاج مساعدة في تسجيل الدخول؟',
       termsAndConditionsTitle: 'الشروط والأحكام',
       loadingTerms: 'جارٍ تحميل الشروط...',
-      enterPasswordPlaceholder: 'أدخل كلمة المرور'
+      // Registration fields in Arabic for unregistered users
+      completeRegistration: 'اكمل تسجيلك',
+      fullName: 'الاسم الكامل',
+      fullNamePlaceholder: 'أدخل اسمك الكامل',
+      emailOptional: 'البريد الإلكتروني (اختياري)',
+      emailPlaceholder: 'أدخل عنوان بريدك الإلكتروني',
+      place: 'المكان / المنطقة',
+      placePlaceholder: 'أدخل منطقتك أو مدينتك',
+      nearestBranch: 'اختر أقرب فرع',
+      selectBranch: 'اختر فرعاً...',
+      password: 'إنشاء كلمة مرور',
+      passwordPlaceholder: 'أدخل كلمة المرور (6 أحرف على الأقل)',
+      confirmPassword: 'تأكيد كلمة المرور',
+      confirmPasswordPlaceholder: 'أعد إدخال كلمة المرور',
+      captchaLabel: 'فحص الأمان',
+      captchaPlaceholder: 'أدخل الإجابة',
+      acceptTerms: 'أوافق على الشروط والأحكام',
+      registerButton: 'إكمال التسجيل',
+      registering: 'جاري إنشاء الحساب...'
     }
   };
 
@@ -750,12 +686,12 @@
         </div>
         
         <h1 class="text-xl font-semibold text-gray-800 mb-1">{t.title}</h1>
-        <p class="text-gray-500 text-sm">{currentLang === 'en' ? 'Check your eligibility and register' : 'تحقق من أهليتك وسجل'}</p>
+        <p class="text-gray-500 text-sm">{currentLang === 'en' ? 'Enter your mobile number to login' : 'أدخل رقم جوالك لتسجيل الدخول'}</p>
       </div>
 
-      <!-- Step 1: Check Eligibility -->
-      {#if currentStep === 'check'}
-        <form on:submit|preventDefault={checkEligibility} class="space-y-4">
+      <!-- Step 1: Mobile Number Input -->
+      {#if currentStep === 'mobile'}
+        <form on:submit|preventDefault={handleLogin} class="space-y-4">
           <div>
             <label for="mobile-input" class="block text-sm font-medium text-gray-700 mb-2 text-left">{t.mobileNumber}</label>
             <div class="relative">
@@ -769,9 +705,16 @@
                 placeholder={t.mobilePlaceholder}
                 bind:value={mobile}
                 on:input={handleMobileInput}
-                class="w-full pl-24 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900 font-mono"
+                class="w-full pl-24 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900 font-mono"
                 maxlength="10"
               />
+              {#if showGreenTick}
+                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                </div>
+              {/if}
             </div>
           </div>
 
@@ -789,7 +732,7 @@
                 {processStatus || t.loading}
               </span>
             {:else}
-              {t.checkEligibility}
+              {t.loginButton}
             {/if}
           </button>
         </form>
@@ -841,178 +784,20 @@
         </div>
       {/if}
 
-      <!-- Step 2: Registration Form -->
-      {#if currentStep === 'register'}
+      <!-- Step 2: Password Input for Registered Users -->
+      {#if currentStep === 'password'}
         <div>
-          <h2 class="text-xl font-semibold text-center text-gray-800 mb-6">{t.registrationForm}</h2>
+          <div class="text-center mb-4">
+            <div class="flex items-center justify-center gap-2 text-green-600 mb-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <span class="text-sm font-medium">Mobile verified!</span>
+            </div>
+            <h2 class="text-xl font-semibold text-gray-800">{t.enterPassword}</h2>
+          </div>
           
-          <form on:submit|preventDefault={completeRegistration} class="space-y-4">
-            <div>
-              <label for="fullname-input" class="block text-sm font-medium text-gray-700 mb-1">{t.fullName}</label>
-              <input
-                id="fullname-input"
-                bind:value={fullName}
-                type="text"
-                placeholder={t.fullNamePlaceholder}
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
-                required
-              />
-            </div>
-
-            <div>
-              <label for="place-input" class="block text-sm font-medium text-gray-700 mb-1">{t.place}</label>
-              <input
-                id="place-input"
-                bind:value={place}
-                type="text"
-                placeholder={t.placePlaceholder}
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
-                required
-              />
-            </div>
-
-            <div>
-              <label for="branch-select" class="block text-sm font-medium text-gray-700 mb-1">{t.nearestBranch}</label>
-              <select
-                id="branch-select"
-                bind:value={selectedBranch}
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
-                required
-              >
-                <option value="" class="text-gray-500">{t.selectBranch}</option>
-                {#each branches as branch}
-                  <option value={branch.id}>
-                    {currentLang === 'ar' ? branch.nameAr : branch.name}
-                  </option>
-                {/each}
-              </select>
-            </div>
-
-            <div>
-              <label for="password-input" class="block text-sm font-medium text-gray-700 mb-1">{t.enterPassword}</label>
-              <input
-                id="password-input"
-                bind:value={password}
-                type="password"
-                placeholder={t.passwordPlaceholder}
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
-                minlength="6"
-                required
-              />
-            </div>
-
-            <div>
-              <label for="confirm-password-input" class="block text-sm font-medium text-gray-700 mb-1">{t.confirmPassword}</label>
-              <input
-                id="confirm-password-input"
-                bind:value={confirmPassword}
-                type="password"
-                placeholder={t.confirmPasswordPlaceholder}
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
-                required
-              />
-            </div>
-
-            <!-- Captcha -->
-            <div class="p-3 rounded-lg bg-gray-50 border border-gray-200">
-              <label for="captcha-input" class="block text-sm font-medium text-gray-700 mb-2">{t.securityVerification}</label>
-              <div class="flex items-center gap-3">
-                <div class="bg-orange-500 text-white px-3 py-2 rounded font-mono text-sm">
-                  {captchaQuestion}
-                </div>
-                <span class="text-gray-500">=</span>
-                <input
-                  id="captcha-input"
-                  bind:value={userCaptchaAnswer}
-                  type="number"
-                  placeholder="?"
-                  class="w-16 h-8 text-center border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
-                  required
-                />
-                <button
-                  type="button"
-                  on:click={generateCaptcha}
-                  class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 text-xs"
-                  title="Generate new question"
-                >
-                  ↻
-                </button>
-              </div>
-            </div>
-
-            <!-- Terms and Conditions -->
-            <div class="flex items-start space-x-2">
-              <input
-                bind:checked={termsAccepted}
-                type="checkbox"
-                class="mt-1 h-4 w-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                required
-              />
-              <label class="text-xs text-gray-600">
-                {t.termsCheckbox} 
-                <button
-                  type="button"
-                  on:click={() => showTerms = !showTerms}
-                  class="text-orange-500 font-medium underline ml-1 hover:text-orange-600"
-                >
-                  {t.termsAndConditions}
-                </button>
-              </label>
-            </div>
-
-            <!-- Terms Accordion -->
-            {#if showTerms}
-              <div class="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700 max-h-32 overflow-y-auto">
-                {#if currentTermsContent}
-                  <h4 class="font-semibold text-gray-800 mb-2">{currentTermsContent[currentLang]?.title || t.termsAndConditionsTitle}</h4>
-                  <div class="space-y-1">
-                    {#each formattedTerms.slice(0, 5) as term}
-                      <p class="leading-relaxed"><strong>{term.title}:</strong> {term.content}</p>
-                    {/each}
-                  </div>
-                {:else}
-                  <h4 class="font-semibold text-gray-800 mb-2">{t.termsAndConditionsTitle}</h4>
-                  <p class="text-center text-gray-500">{t.loadingTerms}</p>
-                {/if}
-              </div>
-            {/if}
-
-            <button
-              type="submit"
-              disabled={!termsAccepted || isLoading || !isValidCaptcha}
-              class="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {#if isLoading}
-                <span class="flex items-center justify-center">
-                  <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  {processStatus}
-                </span>
-              {:else}
-                {t.createCard}
-              {/if}
-            </button>
-
-            <button
-              type="button"
-              on:click={() => currentStep = 'check'}
-              class="w-full text-gray-600 hover:text-gray-800 font-medium py-2 transition-colors text-sm"
-            >
-              ← {t.backToCheck}
-            </button>
-          </form>
-        </div>
-      {/if}
-
-      <!-- Step 3: Login for Existing Customers -->
-      {#if currentStep === 'login'}
-        <div>
-          <h2 class="text-xl font-semibold text-center text-gray-800 mb-4">{t.welcomeBack}</h2>
-          <p class="text-center text-gray-600 mb-6 text-sm">{t.enterYourPassword}</p>
-          
-          <form on:submit|preventDefault={loginExistingCustomer} class="space-y-4">
+          <form on:submit|preventDefault={handlePasswordLogin} class="space-y-4">
             <div>
               <input
                 bind:value={loginPassword}
@@ -1025,18 +810,179 @@
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !loginPassword}
               class="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {t.loginButton}
+              {#if isLoading}
+                <span class="flex items-center justify-center">
+                  <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {t.loading}
+                </span>
+              {:else}
+                {t.passwordLogin}
+              {/if}
             </button>
 
             <button
               type="button"
-              on:click={() => currentStep = 'check'}
+              on:click={() => { currentStep = 'mobile'; showGreenTick = false; loginPassword = ''; }}
               class="w-full text-gray-600 hover:text-gray-800 font-medium py-2 transition-colors text-sm"
             >
-              ← {t.backToCheck}
+              ← {t.backToMobile}
+            </button>
+          </form>
+        </div>
+      {/if}
+
+      <!-- Step 3: Registration Form for Unregistered Users -->
+      {#if currentStep === 'register'}
+        <div>
+          <div class="text-center mb-4">
+            <div class="flex items-center justify-center gap-2 text-green-600 mb-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <span class="text-sm font-medium">Mobile verified!</span>
+            </div>
+            <h2 class="text-xl font-semibold text-gray-800">{t.completeRegistration}</h2>
+          </div>
+          
+          <form on:submit|preventDefault={submitRegistration} class="space-y-4">
+            <!-- Full Name -->
+            <div>
+              <label for="reg-fullname" class="block text-sm font-medium text-gray-700 mb-1">{t.fullName}</label>
+              <input
+                id="reg-fullname"
+                bind:value={regFullName}
+                type="text"
+                placeholder={t.fullNamePlaceholder}
+                class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
+                required
+              />
+            </div>
+
+            <!-- Email (Optional) -->
+            <div>
+              <label for="reg-email" class="block text-sm font-medium text-gray-700 mb-1">{t.emailOptional}</label>
+              <input
+                id="reg-email"
+                bind:value={regEmail}
+                type="email"
+                placeholder={t.emailPlaceholder}
+                class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
+              />
+            </div>
+
+            <!-- Area -->
+            <div>
+              <label for="reg-area" class="block text-sm font-medium text-gray-700 mb-1">{t.place}</label>
+              <input
+                id="reg-area"
+                bind:value={regArea}
+                type="text"
+                placeholder={t.placePlaceholder}
+                class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
+                required
+              />
+            </div>
+
+            <!-- Branch Selection -->
+            <div>
+              <label for="reg-branch" class="block text-sm font-medium text-gray-700 mb-1">{t.nearestBranch}</label>
+              <select
+                id="reg-branch"
+                bind:value={regBranchId}
+                class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
+                required
+              >
+                <option value="">{t.selectBranch}</option>
+                {#each branches as branch}
+                  <option value={branch.id}>
+                    {currentLang === 'ar' ? branch.name_ar : branch.name_en}
+                  </option>
+                {/each}
+              </select>
+            </div>
+
+            <!-- Password -->
+            <div>
+              <label for="reg-password" class="block text-sm font-medium text-gray-700 mb-1">{t.password}</label>
+              <input
+                id="reg-password"
+                bind:value={regPassword}
+                type="password"
+                placeholder={t.passwordPlaceholder}
+                class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
+                required
+                minlength="6"
+              />
+            </div>
+
+            <!-- Confirm Password -->
+            <div>
+              <label for="reg-confirm-password" class="block text-sm font-medium text-gray-700 mb-1">{t.confirmPassword}</label>
+              <input
+                id="reg-confirm-password"
+                bind:value={regConfirmPassword}
+                type="password"
+                placeholder={t.confirmPasswordPlaceholder}
+                class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
+                required
+                minlength="6"
+              />
+            </div>
+
+            <!-- Captcha -->
+            <div>
+              <label for="reg-captcha" class="block text-sm font-medium text-gray-700 mb-1">{t.captchaLabel}</label>
+              <div class="flex space-x-2">
+                <span class="px-3 py-3 bg-gray-100 border border-gray-300 rounded-lg font-mono text-gray-800 min-w-[100px] text-center">
+                  {captchaQuestion}
+                </span>
+                <input
+                  id="reg-captcha"
+                  bind:value={userCaptchaAnswer}
+                  type="number"
+                  placeholder={t.captchaPlaceholder}
+                  class="flex-1 px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Terms Acceptance -->
+            <div class="flex items-start space-x-2">
+              <input
+                id="reg-terms"
+                bind:checked={termsAccepted}
+                type="checkbox"
+                class="mt-1 h-4 w-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                required
+              />
+              <label for="reg-terms" class="text-sm text-gray-700 flex-1">
+                {t.acceptTerms}
+              </label>
+            </div>
+
+            <!-- Submit Button -->
+            <button
+              type="submit"
+              disabled={isLoading || !termsAccepted || !isValidCaptcha}
+              class="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isLoading ? t.registering : t.registerButton}
+            </button>
+
+            <!-- Back Button -->
+            <button
+              type="button"
+              on:click={() => { currentStep = 'mobile'; showGreenTick = false; }}
+              class="w-full text-gray-600 hover:text-gray-800 font-medium py-2 transition-colors text-sm"
+            >
+              ← {t.backToMobile}
             </button>
           </form>
         </div>

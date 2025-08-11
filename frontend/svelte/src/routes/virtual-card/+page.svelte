@@ -1,16 +1,110 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import QRCode from 'qrcode';
   import { goto } from '$app/navigation';
   import { getCardTypeColor, getCardTypeGradient } from '$lib/stores/cardTypes';
   import { supabase } from '$lib/supabase';
   import { language, t } from '$lib/stores/language';
 
-  let qrCanvas: HTMLCanvasElement;
   let customerData: any = null;
   let cardTypeData: any = null;
   let isLoading = true;
   let error = '';
+  
+  // NFC Variables
+  let nfcSupported = false;
+  let nfcEnabled = false;
+  let nfcWriting = false;
+  let nfcStatus = '';
+  let nfcMessage = '';
+  
+  // Check NFC Support
+  function checkNFCSupport() {
+    if ('NDEFReader' in window) {
+      nfcSupported = true;
+      nfcStatus = $language === 'ar' ? 'NFC مدعوم' : 'NFC Supported';
+      console.log('✅ NFC is supported');
+    } else {
+      nfcSupported = false;
+      nfcStatus = $language === 'ar' ? 'NFC غير مدعوم' : 'NFC Not Supported';
+      console.log('❌ NFC is not supported');
+    }
+  }
+
+  // Enable NFC Writing
+  async function enableNFC() {
+    if (!nfcSupported) {
+      nfcMessage = $language === 'ar' ? 'NFC غير مدعوم على هذا الجهاز' : 'NFC not supported on this device';
+      return;
+    }
+
+    try {
+      const ndef = new (window as any).NDEFReader();
+      
+      // Request permission
+      await ndef.scan();
+      nfcEnabled = true;
+      nfcStatus = $language === 'ar' ? 'NFC جاهز للكتابة' : 'NFC Ready to Write';
+      nfcMessage = $language === 'ar' ? 'ضع بطاقة NFC بالقرب من الجهاز للكتابة' : 'Hold NFC card near device to write';
+      
+      console.log('✅ NFC enabled successfully');
+    } catch (error) {
+      console.error('❌ NFC enable error:', error);
+      nfcMessage = $language === 'ar' ? 'فشل في تمكين NFC. تحقق من إعدادات الجهاز' : 'Failed to enable NFC. Check device settings';
+      nfcEnabled = false;
+    }
+  }
+
+  // Write customer data to NFC card
+  async function writeToNFC() {
+    if (!nfcEnabled || !customerData) {
+      nfcMessage = $language === 'ar' ? 'يجب تمكين NFC أولاً' : 'NFC must be enabled first';
+      return;
+    }
+
+    try {
+      nfcWriting = true;
+      nfcStatus = $language === 'ar' ? 'جاري الكتابة...' : 'Writing...';
+      
+      const ndef = new (window as any).NDEFReader();
+      
+      // Prepare customer data for NFC
+      const customerInfo = {
+        id: customerData.customer_code || customerData.mobile,
+        name: customerData.full_name,
+        cardType: cardTypeData?.name || 'bronze',
+        cardNumber: customerData.customer_cards?.[0]?.card_number || customerData.customer_code
+      };
+      
+      // Write to NFC card
+      await ndef.write({
+        records: [
+          {
+            recordType: "text",
+            data: JSON.stringify(customerInfo)
+          },
+          {
+            recordType: "url", 
+            data: `${window.location.origin}/loyalty/${customerData.customer_code}`
+          }
+        ]
+      });
+      
+      nfcStatus = $language === 'ar' ? 'تم الكتابة بنجاح!' : 'Successfully Written!';
+      nfcMessage = $language === 'ar' ? 'تم حفظ بيانات العضوية على بطاقة NFC' : 'Membership data saved to NFC card';
+      
+      setTimeout(() => {
+        nfcStatus = $language === 'ar' ? 'NFC جاهز للكتابة' : 'NFC Ready to Write';
+        nfcMessage = $language === 'ar' ? 'يمكنك كتابة بطاقة أخرى' : 'You can write another card';
+      }, 3000);
+      
+    } catch (error) {
+      console.error('❌ NFC write error:', error);
+      nfcStatus = $language === 'ar' ? 'فشل في الكتابة' : 'Write Failed';
+      nfcMessage = $language === 'ar' ? 'تأكد من وضع البطاقة بالقرب من الجهاز' : 'Make sure card is close to device';
+    } finally {
+      nfcWriting = false;
+    }
+  }
 
   // Load customer data from database
   async function loadCustomerData() {
@@ -202,37 +296,8 @@
   // Generate QR Code
   onMount(() => {
     loadCustomerData();
+    checkNFCSupport();
   });
-
-  $: if (customerData && qrCanvas) {
-    generateQRCode();
-  }
-
-  async function generateQRCode() {
-    if (qrCanvas && customerData) {
-      try {
-        // Use card number from customer_cards table, fallback to customer_code
-        const qrData = customerData.customer_cards?.[0]?.card_number || customerData.customer_code || customerData.customer;
-        console.log('🔍 Generating QR code for:', qrData);
-        
-        // Responsive QR code size based on screen size
-        const isMobile = window.innerWidth < 640; // sm breakpoint
-        const qrSize = isMobile ? 80 : 120;
-        
-        await QRCode.toCanvas(qrCanvas, qrData, {
-          width: qrSize,
-          margin: 1,
-          color: {
-            dark: cardColor, // Use dynamic card color
-            light: '#ffffff'
-          },
-          errorCorrectionLevel: 'H'
-        });
-      } catch (err) {
-        console.error('Error generating QR code:', err);
-      }
-    }
-  }
 </script>
 
 
@@ -373,23 +438,44 @@
                   (cardTypeData?.name?.toUpperCase() || 'BRONZE')
                 }
               </div>
-              <!-- QR Code moved here -->
+              <!-- NFC Section moved here -->
               <div class="relative">
-                <!-- QR Code Background with Glassmorphism -->
+                <!-- NFC Background with Glassmorphism -->
                 <div class="relative backdrop-blur-sm p-2 sm:p-3 md:p-4 lg:p-5 rounded-2xl shadow-2xl border"
                      style={textTheme === 'gold' ? 'background: rgba(255,255,255,0.95); border-color: #999999;' : 'background: rgba(255,255,255,0.95); border-color: rgba(255,255,255,0.2);'}>
+                  
                   <!-- Decorative corners -->
                   <div class="absolute top-1 left-1 w-2 h-2 md:w-3 md:h-3 lg:w-4 lg:h-4 border-l-2 border-t-2 rounded-tl" style="border-color: {cardColor}"></div>
                   <div class="absolute top-1 right-1 w-2 h-2 md:w-3 md:h-3 lg:w-4 lg:h-4 border-r-2 border-t-2 rounded-tr" style="border-color: {cardColor}"></div>
                   <div class="absolute bottom-1 left-1 w-2 h-2 md:w-3 md:h-3 lg:w-4 lg:h-4 border-l-2 border-b-2 rounded-bl" style="border-color: {cardColor}"></div>
                   <div class="absolute bottom-1 right-1 w-2 h-2 md:w-3 md:h-3 lg:w-4 lg:h-4 border-r-2 border-b-2 rounded-br" style="border-color: {cardColor}"></div>
                   
-                  <!-- QR Code Canvas -->
-                  <canvas bind:this={qrCanvas} class="block relative z-10 w-16 sm:w-24 md:w-28 lg:w-32 xl:w-36 h-16 sm:h-24 md:h-28 lg:h-32 xl:h-36"></canvas>
+                  <!-- NFC Content -->
+                  <div class="flex flex-col items-center space-y-2 sm:space-y-3 w-16 sm:w-24 md:w-28 lg:w-32 xl:w-36 h-16 sm:h-24 md:h-28 lg:h-32 xl:h-36">
+                    <!-- NFC Icon -->
+                    <div class="flex-1 flex items-center justify-center">
+                      <svg class="w-8 sm:w-12 md:w-14 lg:w-16 xl:w-18 h-8 sm:h-12 md:h-14 lg:h-16 xl:h-18" 
+                           style="color: {cardColor}" 
+                           fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M20,2H4A2,2 0 0,0 2,4V20A2,2 0 0,0 4,22H20A2,2 0 0,0 22,20V4A2,2 0 0,0 20,2M20,20H4V4H20V20M18,6H16.5V7.5H15V9H16.5V10.5H18V9H19.5V7.5H18V6M12.5,6H11V7.5H9.5V9H11V10.5H12.5V9H14V7.5H12.5V6M7,6H5.5V7.5H4V9H5.5V10.5H7V9H8.5V7.5H7V6M18,12H16.5V13.5H15V15H16.5V16.5H18V15H19.5V13.5H18V12M12.5,12H11V13.5H9.5V15H11V16.5H12.5V15H14V13.5H12.5V12M7,12H5.5V13.5H4V15H5.5V16.5H7V15H8.5V13.5H7V12Z"/>
+                      </svg>
+                    </div>
+                    
+                    <!-- Status Text -->
+                    <div class="text-center">
+                      <div class="text-xs sm:text-xs md:text-sm font-bold text-gray-800">
+                        {nfcSupported ? 'NFC' : 'NO NFC'}
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 
-                <!-- Glow effect around QR -->
-                <div class="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-2xl blur-xl -z-10"></div>
+                <!-- Glow effect around NFC -->
+                <div class="absolute inset-0 rounded-2xl blur-xl -z-10"
+                     class:bg-gradient-to-r={!nfcEnabled}
+                     class:from-blue-400={!nfcEnabled}
+                     class:to-purple-400={!nfcEnabled}
+                     style="background: {nfcEnabled ? 'linear-gradient(to right, rgb(34 197 94 / 0.3), rgb(16 185 129 / 0.3))' : 'linear-gradient(to right, rgb(96 165 250 / 0.2), rgb(168 85 247 / 0.2))'}"></div>
               </div>
             </div>
           </div>
@@ -463,8 +549,8 @@
         <div class="flex items-center gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8 p-3 sm:p-4 md:p-5 lg:p-6 xl:p-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100" class:flex-row-reverse={$language === 'ar'}>
           <div class="w-8 sm:w-12 md:w-14 lg:w-16 xl:w-20 h-8 sm:h-12 md:h-14 lg:h-16 xl:h-20 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center font-bold shadow-lg text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl">1</div>
           <div class="flex-1">
-            <p class="font-semibold text-gray-800 text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl">{$t.showQR || 'Show QR code to cashier'}</p>
-            <p class="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-gray-600 mt-1 md:mt-2">{$language === 'ar' ? 'اعرض رمز الاستجابة السريعة عند الدفع' : 'Present your QR code at checkout'}</p>
+            <p class="font-semibold text-gray-800 text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl">{$language === 'ar' ? 'اقترب من قارئ NFC' : 'Tap card on NFC reader'}</p>
+            <p class="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-gray-600 mt-1 md:mt-2">{$language === 'ar' ? 'ضع البطاقة على قارئ NFC عند الدفع' : 'Hold your NFC card near the reader at checkout'}</p>
           </div>
         </div>
         
@@ -484,6 +570,61 @@
           </div>
         </div>
       </div>
+      
+      <!-- NFC Control Section -->
+      {#if customerData}
+        <div class="mt-6 sm:mt-8 p-4 sm:p-6 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl border border-indigo-200">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-full flex items-center justify-center">
+              <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20,2H4A2,2 0 0,0 2,4V20A2,2 0 0,0 4,22H20A2,2 0 0,0 22,20V4A2,2 0 0,0 20,2M20,20H4V4H20V20M18,6H16.5V7.5H15V9H16.5V10.5H18V9H19.5V7.5H18V6M12.5,6H11V7.5H9.5V9H11V10.5H12.5V9H14V7.5H12.5V6M7,6H5.5V7.5H4V9H5.5V10.5H7V9H8.5V7.5H7V6M18,12H16.5V13.5H15V15H16.5V16.5H18V15H19.5V13.5H18V12M12.5,12H11V13.5H9.5V15H11V16.5H12.5V15H14V13.5H12.5V12M7,12H5.5V13.5H4V15H5.5V16.5H7V15H8.5V13.5H7V12Z"/>
+              </svg>
+            </div>
+            <h4 class="font-bold text-gray-800 text-lg">{$language === 'ar' ? 'إعداد بطاقة NFC' : 'NFC Card Setup'}</h4>
+          </div>
+          
+          <div class="space-y-4">
+            <div class="text-sm text-gray-600">
+              <p class="font-semibold mb-2">{$language === 'ar' ? 'الحالة:' : 'Status:'} <span class="text-indigo-600">{nfcStatus}</span></p>
+              {#if nfcMessage}
+                <p class="text-gray-500 italic">{nfcMessage}</p>
+              {/if}
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-3">
+              {#if !nfcSupported}
+                <div class="flex-1 bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                  <p class="text-red-600 text-sm font-medium">{$language === 'ar' ? 'NFC غير مدعوم على هذا الجهاز' : 'NFC not supported on this device'}</p>
+                </div>
+              {:else if !nfcEnabled}
+                <button
+                  on:click={enableNFC}
+                  class="flex-1 bg-gradient-to-r from-indigo-500 to-blue-500 text-white py-3 px-4 rounded-lg font-semibold hover:from-indigo-600 hover:to-blue-600 transition-all duration-300 shadow-lg"
+                >
+                  {$language === 'ar' ? 'تمكين NFC' : 'Enable NFC'}
+                </button>
+              {:else}
+                <button
+                  on:click={writeToNFC}
+                  disabled={nfcWriting}
+                  class="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 px-4 rounded-lg font-semibold hover:from-green-600 hover:to-emerald-600 transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {#if nfcWriting}
+                    <span class="flex items-center justify-center gap-2">
+                      <svg class="animate-spin w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                      </svg>
+                      {$language === 'ar' ? 'جاري الكتابة...' : 'Writing...'}
+                    </span>
+                  {:else}
+                    {$language === 'ar' ? 'كتابة بيانات العضوية' : 'Write Membership Data'}
+                  {/if}
+                </button>
+              {/if}
+            </div>
+          </div>
+        </div>
+      {/if}
     </div>
     {/if}
   </div>

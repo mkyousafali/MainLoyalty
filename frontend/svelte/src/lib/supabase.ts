@@ -5,8 +5,21 @@ import { env } from '$env/dynamic/public';
 const supabaseUrl = env.PUBLIC_SUPABASE_URL || 'https://sfydwpimwnxocrgpiour.supabase.co';
 const supabaseAnonKey = env.PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeWR3cGltd254b2NyZ3Bpb3VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwMzI5MTYsImV4cCI6MjA2OTYwODkxNn0.GQmHZT5waxLrfcn6JQ40ImVJ1obTdqxdLFv0edZaanE';
 
-// Create Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create Supabase client with proper headers
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true
+  },
+  global: {
+    headers: {
+      'apikey': supabaseAnonKey,
+      'Authorization': `Bearer ${supabaseAnonKey}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    }
+  }
+});
 
 // Database table names (matching your schema)
 export const TABLES = {
