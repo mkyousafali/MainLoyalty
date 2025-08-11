@@ -36,6 +36,11 @@
 
   let branches: Array<{id: number, name: string, nameAr: string}> = [];
 
+  // PWA Installation
+  let showPWAInstall = false;
+  let deferredPrompt: any = null;
+  let isFirstTimeUser = false;
+
   onMount(() => {
     setTimeout(() => { pageLoaded = true; }, 100);
     setTimeout(() => { if (mobileInput) mobileInput.focus(); }, 600);
@@ -43,6 +48,7 @@
     generateCaptcha();
     loadTermsContent();
     loadWhatsAppLink();
+    checkPWAInstallability();
   });
 
   async function loadTermsContent() {
@@ -99,6 +105,153 @@
     captchaAnswer = (captchaNumbers.num1 + captchaNumbers.num2).toString();
     captchaQuestion = `${captchaNumbers.num1} + ${captchaNumbers.num2} = ?`;
     userCaptchaAnswer = '';
+  }
+
+  // PWA Installation Functions
+  function checkPWAInstallability() {
+    console.log('🔧 Checking PWA installability...');
+    
+    // Don't show if already dismissed in this session
+    if (sessionStorage.getItem('pwaInstallDismissed')) {
+      console.log('⏸️ PWA install dismissed in this session');
+      return;
+    }
+
+    // Check if user is first time (no auth token or previous visits)
+    isFirstTimeUser = !localStorage.getItem('hasVisitedBefore');
+    console.log('👤 First time user:', isFirstTimeUser);
+    
+    // Mark as visited
+    if (isFirstTimeUser) {
+      localStorage.setItem('hasVisitedBefore', 'true');
+    }
+
+    // Check if PWA is already installed
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isInStandaloneMode = (window.navigator as any).standalone;
+    
+    console.log('📱 PWA Status:', { isStandalone, isIOS, isInStandaloneMode });
+    
+    // Don't show install button if already installed
+    if (isStandalone || (isIOS && isInStandaloneMode)) {
+      console.log('✅ PWA already installed');
+      showPWAInstall = false;
+      return;
+    }
+
+    // Listen for the beforeinstallprompt event
+    window.addEventListener('beforeinstallprompt', (e: any) => {
+      console.log('🎯 beforeinstallprompt event fired');
+      e.preventDefault();
+      deferredPrompt = e;
+      
+      // Show install button for first-time users or after 5 seconds for returning users
+      const delay = isFirstTimeUser ? 2000 : 5000;
+      console.log(`⏰ Showing PWA install button in ${delay}ms`);
+      
+      setTimeout(() => { 
+        showPWAInstall = true;
+        console.log('💫 PWA install button shown');
+      }, delay);
+    });
+
+    // Hide button after successful installation
+    window.addEventListener('appinstalled', () => {
+      console.log('🎉 PWA installed successfully');
+      showPWAInstall = false;
+      deferredPrompt = null;
+    });
+
+    // For development and testing - show button even without beforeinstallprompt
+    if (typeof window !== 'undefined') {
+      const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      
+      if (isDev && !window.matchMedia('(display-mode: standalone)').matches) {
+        console.log('🔧 Development mode: Forcing PWA install button visibility for testing');
+        const delay = isFirstTimeUser ? 3000 : 6000;
+        
+        setTimeout(() => {
+          if (!deferredPrompt && currentStep === 'check') {
+            console.log('� Showing PWA install button for development testing');
+            showPWAInstall = true;
+            // Create a mock deferred prompt for testing
+            deferredPrompt = {
+              prompt: () => {
+                console.log('📝 Mock PWA install prompt - In production, this would show the browser\'s native install dialog');
+                alert('PWA Install Mock: In production, this would show the browser\'s native install prompt. Your PWA manifest is properly configured!');
+                return Promise.resolve({ outcome: 'accepted' });
+              }
+            };
+          }
+        }, delay);
+      }
+    }
+  }
+
+  async function installPWA() {
+    console.log('🚀 PWA install button clicked');
+    
+    if (!deferredPrompt) {
+      console.log('❌ No deferred prompt available');
+      console.log('💡 Real PWA install only works with HTTPS and when browser supports it');
+      console.log('🔧 For testing: deploy to production or use HTTPS tunneling (ngrok, cloudflare tunnel, etc.)');
+      return;
+    }
+
+    try {
+      console.log('📋 Showing real browser PWA install prompt...');
+      // Show the native browser install prompt
+      await deferredPrompt.prompt();
+      
+      // Wait for the user's choice
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log('👤 User choice:', outcome);
+      
+      if (outcome === 'accepted') {
+        console.log('🎉 PWA installation accepted');
+      } else {
+        console.log('❌ PWA installation dismissed by user');
+      }
+      
+      // Clean up
+      deferredPrompt = null;
+      showPWAInstall = false;
+    } catch (error) {
+      console.error('❌ Error during PWA installation:', error);
+      // Still hide the button even if there was an error
+      showPWAInstall = false;
+    }
+  }
+
+  function dismissPWAInstall() {
+    console.log('⏸️ PWA install dismissed by user');
+    showPWAInstall = false;
+    // Don't show again for this session
+    sessionStorage.setItem('pwaInstallDismissed', 'true');
+    console.log('💾 PWA install dismissal saved to session');
+  }
+
+  // Debug function for testing real PWA functionality
+  function forcePWAInstallButton() {
+    console.log('🔧 Checking for real PWA install availability...');
+    sessionStorage.removeItem('pwaInstallDismissed');
+    
+    // Only show if we have a real deferred prompt or can detect PWA support
+    if (deferredPrompt) {
+      showPWAInstall = true;
+      console.log('✅ Real PWA install available - showing button');
+    } else {
+      console.log('❌ No real PWA install prompt available');
+      console.log('💡 This means the browser hasn\'t fired the beforeinstallprompt event yet');
+      console.log('🔧 To test real PWA install:');
+      console.log('   1. Deploy to production with HTTPS');
+      console.log('   2. Use ngrok or similar to serve over HTTPS');
+      console.log('   3. Enable PWA testing flags in Chrome (chrome://flags)');
+      
+      // Show a console message instead of a mock alert
+      alert('No real PWA install available. Check console for details on how to test real PWA functionality.');
+    }
   }
 
   async function loadBranches() {
@@ -935,9 +1088,64 @@
 
     </div>
 
+    <!-- PWA Install Button -->
+    {#if showPWAInstall}
+      <div class="fixed bottom-20 left-4 right-4 z-50 animate-slide-up">
+        <div class="bg-white border border-orange-200 rounded-xl shadow-xl p-4 mx-auto max-w-sm backdrop-blur-sm bg-white/95">
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <div class="flex items-center mb-3">
+                <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="font-bold text-gray-900 text-sm">
+                    {currentLang === 'ar' ? 'تثبيت التطبيق' : 'Install App'}
+                  </h3>
+                  <p class="text-xs text-gray-600">
+                    {currentLang === 'ar' ? 'للحصول على تجربة أفضل وأسرع' : 'For better & faster experience'}
+                  </p>
+                </div>
+              </div>
+              
+              <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                <button
+                  on:click={installPWA}
+                  id="pwa-install-button"
+                  class="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg focus:outline-none focus:ring-3 focus:ring-orange-500/50 focus:ring-offset-2 active:scale-[0.98]"
+                >
+                >
+                  {currentLang === 'ar' ? 'تثبيت' : 'Install'}
+                </button>
+                
+                <button
+                  on:click={dismissPWAInstall}
+                  class="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm font-medium transition-colors focus:outline-none"
+                >
+                  {currentLang === 'ar' ? 'لاحقاً' : 'Later'}
+                </button>
+              </div>
+            </div>
+            
+            <button
+              on:click={dismissPWAInstall}
+              class="ml-2 p-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+              aria-label={currentLang === 'ar' ? 'إغلاق' : 'Close'}
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    {/if}
+
     <!-- Footer -->
     <div class="text-center mt-6 transform transition-all duration-500" class:translate-y-0={pageLoaded} class:translate-y-4={!pageLoaded} class:opacity-100={pageLoaded} class:opacity-0={!pageLoaded}>
-      <div class="flex justify-center items-center">
+      <div class="flex justify-center items-center space-x-4">
         <span 
           class="text-xl cursor-pointer hover:scale-110 transition-transform duration-300 select-none"
           on:click={handleSmileyClick}
@@ -947,6 +1155,17 @@
         >
           😊
         </span>
+        
+        <!-- Debug PWA Button (disabled - real PWA functionality only) -->
+        <!-- {#if typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')}
+          <button
+            on:click={forcePWAInstallButton}
+            class="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            title="Test PWA Install (Development Only)"
+          >
+            📱 Test PWA
+          </button>
+        {/if} -->
       </div>
     </div>
   </div>

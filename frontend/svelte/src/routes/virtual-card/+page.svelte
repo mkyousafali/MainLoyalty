@@ -68,6 +68,15 @@
       }
 
       console.log('✅ Virtual Card: Customer data loaded:', customer);
+      console.log('📅 Virtual Card: Date fields check:', {
+        registration_date: customer.registration_date,
+        joined_at: customer.joined_at,
+        created_at: customer.created_at,
+        valid_until: customer.valid_until,
+        card_expiry_date: customer.card_expiry_date,
+        card_issued_date: customer.card_issued_date
+      });
+      
       customerData = customer;
       
       // Use card type data from database if available, otherwise fallback to customer.card_type
@@ -147,21 +156,47 @@
 
   // Helper function to format date
   function formatExpiryDate(dateString: string): string {
-    if (!dateString) return 'N/A';
+    if (!dateString || dateString === 'null' || dateString === 'undefined') {
+      return '';
+    }
+    
     try {
       const date = new Date(dateString);
+      
+      // Check if the date is valid
+      if (isNaN(date.getTime())) {
+        return '';
+      }
+      
       const day = date.getDate().toString().padStart(2, '0');
       const month = (date.getMonth() + 1).toString().padStart(2, '0');
       const year = date.getFullYear();
       return `${day}/${month}/${year}`;
-    } catch {
-      return 'N/A';
+    } catch (error) {
+      console.warn('Error formatting date:', dateString, error);
+      return '';
     }
   }
 
   // Helper function to format any date consistently
   function formatDate(dateString: string): string {
     return formatExpiryDate(dateString);
+  }
+
+  // Generate a default expiry date (end of current year)
+  function generateDefaultExpiryDate(): string {
+    try {
+      // Set expiry to December 31st of current year
+      const currentYear = new Date().getFullYear();
+      const expiryDate = new Date(currentYear, 11, 31); // Month 11 = December, day 31
+      
+      return formatDate(expiryDate.toISOString());
+    } catch {
+      // If all else fails, return current date formatted
+      const endOfYear = new Date();
+      endOfYear.setMonth(11, 31); // December 31st
+      return formatDate(endOfYear.toISOString());
+    }
   }
 
   // Generate QR Code
@@ -386,7 +421,9 @@
                 <div class="font-semibold text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl" 
                      class:text-gray-100={textTheme === 'light'} 
                      class:text-gray-800={textTheme === 'dark'}
-                     style={textTheme === 'gold' ? 'color: #1A0F08; text-shadow: 1px 1px 2px rgba(255,255,255,0.3);' : ''}>{formatDate(customerData?.registration_date)}</div>
+                     style={textTheme === 'gold' ? 'color: #1A0F08; text-shadow: 1px 1px 2px rgba(255,255,255,0.3);' : ''}>
+                  {formatDate(customerData?.registration_date || customerData?.joined_at || customerData?.created_at)}
+                </div>
               </div>
             </div>
             <div class="text-right space-y-1 md:space-y-2">
@@ -398,7 +435,7 @@
                    class:text-white={textTheme === 'light'} 
                    class:text-gray-900={textTheme === 'dark'}
                    style={textTheme === 'gold' ? 'color: #1A0F08; text-shadow: 1px 1px 2px rgba(255,255,255,0.3);' : ''}>
-                {formatDate(customerData?.valid_until)}
+                {formatDate(customerData?.valid_until || customerData?.card_expiry_date) || generateDefaultExpiryDate()}
               </div>
             </div>
           </div>

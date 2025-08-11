@@ -48,6 +48,21 @@ body {
   @apply bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200;
 }
 
+.currency-symbol {
+  width: 1.2em;
+  height: 1.2em;
+  display: inline-block;
+  vertical-align: baseline;
+  margin-right: 0.25em;
+  filter: drop-shadow(0 0 2px rgba(240, 131, 0, 0.3));
+}
+
+/* RTL currency symbol */
+[dir="rtl"] .currency-symbol {
+  margin-right: 0;
+  margin-left: 0.25em;
+}
+
 .card {
   @apply bg-white rounded-xl shadow-lg border border-gray-100 p-6;
 }
@@ -147,4 +162,20 @@ body {
     color: #000 !important;
     box-shadow: none !important;
   }
+}
+
+/* PWA Install Animation */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out forwards;
 }

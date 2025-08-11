@@ -96,36 +96,32 @@
         const { data, error } = await supabase
           .from(TABLES.CUSTOMER_TRANSACTIONS)
           .delete()
-          .lte('transaction_date', untilDate);
+          .lte('processed_at', untilDate + 'T23:59:59.999Z');
           
         if (error) throw error;
         deletedCount = data?.length || 0;
         
       } else if (deleteType === 'customers') {
         // Delete transactions for selected customers
-        const customerMobiles = customers
-          .filter(c => selectedCustomers.includes(c.id))
-          .map(c => c.customer_code);
+        const selectedCustomerIds = selectedCustomers;
           
         const { data, error } = await supabase
           .from(TABLES.CUSTOMER_TRANSACTIONS)
           .delete()
-          .in('customer_mobile', customerMobiles);
+          .in('customer_id', selectedCustomerIds);
           
         if (error) throw error;
         deletedCount = data?.length || 0;
         
       } else { // both
         // Delete transactions for selected customers until specified date
-        const customerMobiles = customers
-          .filter(c => selectedCustomers.includes(c.id))
-          .map(c => c.customer_code);
+        const selectedCustomerIds = selectedCustomers;
           
         const { data, error } = await supabase
           .from(TABLES.CUSTOMER_TRANSACTIONS)
           .delete()
-          .in('customer_mobile', customerMobiles)
-          .lte('transaction_date', untilDate);
+          .in('customer_id', selectedCustomerIds)
+          .lte('processed_at', untilDate + 'T23:59:59.999Z');
           
         if (error) throw error;
         deletedCount = data?.length || 0;
@@ -160,10 +156,12 @@
         .from(TABLES.CUSTOMERS)
         .select(`
           id,
+          customer_code,
           mobile,
+          full_name,
           name,
           email,
-          address,
+          phone,
           created_at
         `)
         .order('created_at', { ascending: false });
@@ -172,17 +170,40 @@
         console.error('Error loading customers:', error);
         customers = [];
       } else {
-        // Transform data to match expected format
-        customers = (data || []).map(customer => ({
-          id: customer.id,
-          customer_code: customer.mobile,
-          full_name: customer.name || `Customer ${customer.mobile}`,
-          email: customer.email || '',
-          phone: customer.mobile,
-          total_transactions: 0, // TODO: Calculate from transactions
-          total_amount: 0, // TODO: Calculate from transactions
-          created_at: customer.created_at
-        }));
+        // Get transaction data for each customer
+        const customersWithTransactions = await Promise.all(
+          (data || []).map(async (customer) => {
+            // Get transaction count and total amount for this customer
+            const { data: transactionData, error: transactionError } = await supabase
+              .from(TABLES.CUSTOMER_TRANSACTIONS)
+              .select('amount, points_earned')
+              .eq('customer_id', customer.id);
+
+            let total_transactions = 0;
+            let total_amount = 0;
+
+            if (!transactionError && transactionData) {
+              total_transactions = transactionData.length;
+              total_amount = transactionData.reduce((sum, transaction) => {
+                return sum + (parseFloat(transaction.amount) || 0);
+              }, 0);
+            }
+
+            return {
+              id: customer.id,
+              customer_code: customer.customer_code || customer.mobile || `CUST${customer.id}`,
+              full_name: customer.full_name || customer.name || `Customer ${customer.customer_code || customer.mobile}`,
+              email: customer.email || '',
+              phone: customer.phone || customer.mobile || '',
+              total_transactions,
+              total_amount,
+              created_at: customer.created_at
+            };
+          })
+        );
+
+        customers = customersWithTransactions;
+        console.log('✅ Loaded customers with transaction data:', customers.length);
       }
     } catch (error) {
       console.error('Error loading customers:', error);
