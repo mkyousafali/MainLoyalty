@@ -11,13 +11,26 @@
   let showModal = false;
   let editingBranch: any = null;
   let formData = {
+    name: '',
     name_en: '',
     name_ar: '',
+    location_en: '',
+    location_ar: '',
+    address: '',
+    email: '',
     website: '',
     instagram: '',
     snapchat: '',
+    tiktok: '',
     contact_number: '',
-    address: ''
+    manager_name: '',
+    manager_phone: '',
+    manager_email: '',
+    code: '',
+    opening_hours: '',
+    latitude: '',
+    longitude: '',
+    is_active: true
   };
 
   onMount(() => {
@@ -66,13 +79,26 @@
   function openCreateModal() {
     editingBranch = null;
     formData = {
+      name: '',
       name_en: '',
       name_ar: '',
+      location_en: '',
+      location_ar: '',
+      address: '',
+      email: '',
       website: '',
       instagram: '',
       snapchat: '',
+      tiktok: '',
       contact_number: '',
-      address: ''
+      manager_name: '',
+      manager_phone: '',
+      manager_email: '',
+      code: '',
+      opening_hours: '',
+      latitude: '',
+      longitude: '',
+      is_active: true
     };
     showModal = true;
   }
@@ -80,13 +106,26 @@
   function openEditModal(branch: any) {
     editingBranch = branch;
     formData = {
-      name_en: branch.name_en,
+      name: branch.name || '',
+      name_en: branch.name_en || '',
       name_ar: branch.name_ar || '',
+      location_en: branch.location_en || '',
+      location_ar: branch.location_ar || '',
+      address: branch.address || '',
+      email: branch.email || '',
       website: branch.website || '',
       instagram: branch.instagram || '',
       snapchat: branch.snapchat || '',
+      tiktok: branch.tiktok || '',
       contact_number: branch.contact_number || '',
-      address: branch.address || ''
+      manager_name: branch.manager_name || '',
+      manager_phone: branch.manager_phone || '',
+      manager_email: branch.manager_email || '',
+      code: branch.code || '',
+      opening_hours: branch.opening_hours || '',
+      latitude: branch.latitude?.toString() || '',
+      longitude: branch.longitude?.toString() || '',
+      is_active: branch.is_active !== false
     };
     showModal = true;
   }
@@ -103,13 +142,26 @@
       isLoading = true;
 
       const payload = {
+        name: formData.name.trim() || formData.name_en.trim(),
         name_en: formData.name_en.trim(),
         name_ar: formData.name_ar.trim() || null,
+        location_en: formData.location_en.trim() || null,
+        location_ar: formData.location_ar.trim() || null,
+        address: formData.address.trim() || null,
+        email: formData.email.trim() || null,
         website: formData.website.trim() || null,
         instagram: formData.instagram.trim() || null,
         snapchat: formData.snapchat.trim() || null,
+        tiktok: formData.tiktok.trim() || null,
         contact_number: formData.contact_number.trim() || null,
-        address: formData.address.trim() || null
+        manager_name: formData.manager_name.trim() || null,
+        manager_phone: formData.manager_phone.trim() || null,
+        manager_email: formData.manager_email.trim() || null,
+        code: formData.code.trim() || null,
+        opening_hours: formData.opening_hours.trim() || null,
+        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+        is_active: formData.is_active
       };
 
       if (editingBranch) {
@@ -229,7 +281,7 @@
           </div>
 
           <!-- Social Media Links -->
-          {#if branch.website || branch.instagram || branch.snapchat}
+          {#if branch.website || branch.instagram || branch.snapchat || branch.tiktok}
             <div class="flex space-x-3 mb-4">
               {#if branch.website}
                 <button
@@ -256,6 +308,15 @@
                   title="Snapchat"
                 >
                   👻
+                </button>
+              {/if}
+              {#if branch.tiktok}
+                <button
+                  on:click={() => openSocialLink(branch.tiktok)}
+                  class="text-black hover:text-gray-700"
+                  title="TikTok"
+                >
+                  🎵
                 </button>
               {/if}
             </div>
@@ -314,85 +375,240 @@
     <!-- Create/Edit Modal -->
     {#if showModal}
       <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-10 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+        <div class="relative top-5 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
           <div class="mt-3">
             <h3 class="text-lg font-medium text-gray-900 mb-4">
               {editingBranch ? 'Edit Branch' : 'Create Branch'}
             </h3>
             
-            <form on:submit|preventDefault={saveBranch} class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Name (English) *</label>
-                <input
-                  type="text"
-                  bind:value={formData.name_en}
-                  required
-                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="e.g., Main Branch"
-                />
+            <form on:submit|preventDefault={saveBranch} class="space-y-4 max-h-96 overflow-y-auto">
+              <!-- Basic Information -->
+              <div class="border-b pb-4 mb-4">
+                <h4 class="text-md font-medium text-gray-800 mb-3">Basic Information</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name (English) *</label>
+                    <input
+                      type="text"
+                      bind:value={formData.name_en}
+                      required
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., Main Branch"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name (Arabic)</label>
+                    <input
+                      type="text"
+                      bind:value={formData.name_ar}
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., الفرع الرئيسي"
+                    />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Branch Code</label>
+                    <input
+                      type="text"
+                      bind:value={formData.code}
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., MAIN001"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      bind:value={formData.email}
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="branch@example.com"
+                    />
+                  </div>
+                </div>
+
+                <div class="mt-4">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <input
+                      type="checkbox"
+                      bind:checked={formData.is_active}
+                      class="mr-2"
+                    />
+                    Active Branch
+                  </label>
+                </div>
+              </div>
+
+              <!-- Location Information -->
+              <div class="border-b pb-4 mb-4">
+                <h4 class="text-md font-medium text-gray-800 mb-3">Location Information</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Location (English)</label>
+                    <input
+                      type="text"
+                      bind:value={formData.location_en}
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., Riyadh, Saudi Arabia"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Location (Arabic)</label>
+                    <input
+                      type="text"
+                      bind:value={formData.location_ar}
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., الرياض، المملكة العربية السعودية"
+                    />
+                  </div>
+                </div>
+
+                <div class="mt-4">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                  <textarea
+                    bind:value={formData.address}
+                    rows="2"
+                    class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Full address..."
+                  ></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      bind:value={formData.latitude}
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="24.7136"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Longitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      bind:value={formData.longitude}
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="46.6753"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Contact Information -->
+              <div class="border-b pb-4 mb-4">
+                <h4 class="text-md font-medium text-gray-800 mb-3">Contact Information</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
+                    <input
+                      type="tel"
+                      bind:value={formData.contact_number}
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., +966501234567"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Opening Hours</label>
+                    <input
+                      type="text"
+                      bind:value={formData.opening_hours}
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., 9:00 AM - 10:00 PM"
+                    />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Manager Name</label>
+                    <input
+                      type="text"
+                      bind:value={formData.manager_name}
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="John Doe"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Manager Phone</label>
+                    <input
+                      type="tel"
+                      bind:value={formData.manager_phone}
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="+966501234567"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Manager Email</label>
+                    <input
+                      type="email"
+                      bind:value={formData.manager_email}
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="manager@example.com"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Social Media -->
+              <div class="pb-4">
+                <h4 class="text-md font-medium text-gray-800 mb-3">Social Media & Website</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Website URL</label>
+                    <input
+                      type="url"
+                      bind:value={formData.website}
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="https://example.com"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Instagram URL</label>
+                    <input
+                      type="url"
+                      bind:value={formData.instagram}
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="https://instagram.com/username"
+                    />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Snapchat URL</label>
+                    <input
+                      type="url"
+                      bind:value={formData.snapchat}
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="https://snapchat.com/add/username"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">TikTok URL</label>
+                    <input
+                      type="url"
+                      bind:value={formData.tiktok}
+                      class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="https://tiktok.com/@username"
+                    />
+                  </div>
+                </div>
               </div>
               
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Name (Arabic)</label>
-                <input
-                  type="text"
-                  bind:value={formData.name_ar}
-                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="e.g., الفرع الرئيسي"
-                />
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
-                <input
-                  type="tel"
-                  bind:value={formData.contact_number}
-                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="e.g., +966501234567"
-                />
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                <textarea
-                  bind:value={formData.address}
-                  rows="2"
-                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Full address..."
-                ></textarea>
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Website URL</label>
-                <input
-                  type="url"
-                  bind:value={formData.website}
-                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="https://example.com"
-                />
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Instagram URL</label>
-                <input
-                  type="url"
-                  bind:value={formData.instagram}
-                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="https://instagram.com/username"
-                />
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Snapchat URL</label>
-                <input
-                  type="url"
-                  bind:value={formData.snapchat}
-                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="https://snapchat.com/add/username"
-                />
-              </div>
-              
-              <div class="flex justify-end space-x-2 mt-6">
+              <div class="flex justify-end space-x-2 mt-6 pt-4 border-t">
                 <button
                   type="button"
                   on:click={closeModal}
