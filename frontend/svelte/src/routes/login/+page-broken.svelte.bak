@@ -1,0 +1,1897 @@
+<script lang="ts">
+  import { goto } from '$app/navigation';
+  import { loginCustomer } from '$lib/stores/auth';
+  import { supabase, TABLES } from '$lib/supabase';
+  import { onMount } from 'svelte';
+  import PWAInstall from '$lib/components/PWAInstall.svelte';
+  
+  let currentLang: 'en' | 'ar' = 'en';
+  let mobile = '';
+  let error = '';
+  let isLoading = false;
+  let currentStep: 'check' | 'register' | 'login' | 'success' = 'check';
+  let processStatus = '';
+  let showProcessStatus = false;
+  let pageLoaded = false;
+  let mobileInput: HTMLInputElement;
+  
+  // Registration form fields (Step 2)
+  let fullName = '';
+  let place = '';
+  let selectedBranch = '';
+  let password = '';
+  let confirmPassword = '';
+  let customerData: any = null;
+  let termsAccepted = false;
+
+  // Login form fields (for existing customers)
+  let loginPassword = '';
+
+  // Captcha variables
+  let captchaQuestion = '';
+  let captchaAnswer = '';
+  let userCaptchaAnswer = '';
+  let captchaNumbers = { num1: 0, num2: 0 };
+
+  // Hidden admin access
+  let smileyClickCount = 0;
+  let smileyClickTimer: any = null;
+
+  // Country codes for dropdown
+  const countryCodes = [
+    { code: '+966', country: 'Saudi Arabia', flag: '🇸🇦' },
+    { code: '+971', country: 'UAE', flag: '🇦🇪' },
+    { code: '+965', country: 'Kuwait', flag: '🇰🇼' },
+    { code: '+973', country: 'Bahrain', flag: '🇧🇭' },
+    { code: '+974', country: 'Qatar', flag: '🇶🇦' }
+  ];
+  let selectedCountryCode = '+966';
+
+let branches: Array<{id: number, name: string, nameAr: string}> = [];
+
+onMount(() => {
+  // Page load animation
+  setTimeout(() => {
+    pageLoaded = true;
+  }, 100);
+
+  // Auto-focus mobile input after animation
+  setTimeout(() => {
+    if (mobileInput) {
+      mobileInput.focus();
+    }
+  }, 600);
+
+  // Fetch branches from Supabase
+  loadBranches();
+  
+  // Generate initial captcha
+  generateCaptcha();
+});
+
+// Simple wrapper function to avoid scoping issues
+async function handleRegistrationSubmit(event: Event) {
+  console.log('🎯 Registration form submitted');
+  event.preventDefault();
+  await simpleRegistration();
+}
+
+// Simplified registration function for testing
+async function simpleRegistration() {
+  console.log('🚀 Simple registration starting...');
+  console.log('📝 Form data:', { fullName, place, selectedBranch, password, confirmPassword });
+  
+  error = '';
+  isLoading = true;
+  showProcessStatus = true;
+
+  // Basic validation
+  if (!fullName.trim()) {
+    error = 'Please enter your full name';
+    isLoading = false;
+    showProcessStatus = false;
+    return;
+  }
+  
+  if (!selectedBranch) {
+    error = 'Please select a branch';
+    isLoading = false;
+    showProcessStatus = false;
+    return;
+  }
+  
+  if (!password || password.length < 6) {
+    error = 'Password must be at least 6 characters';
+    isLoading = false;
+    showProcessStatus = false;
+    return;
+  }
+  
+  if (password !== confirmPassword) {
+    error = 'Passwords do not match';
+    isLoading = false;
+    showProcessStatus = false;
+    return;
+  }
+
+  try {
+    processStatus = 'Creating your account...';
+    console.log('💾 Starting database insertion...');
+    
+    // Simple customer record
+    const customerRecord = {
+      customer_code: mobile,
+      mobile: mobile,
+      phone: mobile,
+      card_number: mobile,
+      name: fullName.trim(),
+      full_name: fullName.trim(),
+      email: place.trim(),
+      password: password,
+      branch_id: selectedBranch,
+      status: 'active',
+      card_status: 'registered'
+    };
+    
+    console.log('📤 Inserting:', {...customerRecord, password: '***'});
+    
+    const { data, error: insertError } = await supabase
+      .from('customers')
+      .insert(customerRecord)
+      .select()
+      .single();
+    
+    if (insertError) {
+      console.error('❌ Insert error:', insertError);
+      throw new Error(insertError.message);
+    }
+    
+    console.log('✅ Insert successful:', data);
+    
+    // Success
+    processStatus = 'Account created successfully!';
+    currentStep = 'success';
+    
+    alert('Registration successful! Your card number is: ' + mobile);
+    
+  } catch (err) {
+    console.error('❌ Registration failed:', err);
+    error = `Registration failed: ${err.message}`;
+  } finally {
+    isLoading = false;
+    showProcessStatus = false;
+  }
+}
+
+function generateCaptcha() {
+  captchaNumbers.num1 = Math.floor(Math.random() * 10) + 1;
+  captchaNumbers.num2 = Math.floor(Math.random() * 10) + 1;
+  captchaAnswer = (captchaNumbers.num1 + captchaNumbers.num2).toString();
+  captchaQuestion = `${captchaNumbers.num1} + ${captchaNumbers.num2} = ?`;
+  userCaptchaAnswer = ''; // Reset user input
+}
+
+async function loadBranches() {
+  try {
+    const { data, error } = await supabase
+      .from('branches')
+      .select('id, name_en, name_ar')
+      .order('id', { ascending: true });
+
+    if (error) throw error;
+
+    branches = data.map(branch => ({
+      id: branch.id,
+      name: branch.name_en,  // Use name_en from schema
+      nameAr: branch.name_ar
+    }));
+  } catch (err) {
+    console.error('❌ Failed to load branches:', err);
+  }
+}
+
+  // Input formatting for mobile number
+  function formatMobileInput(value: string) {
+    // Remove all non-digits and return only digits
+    const digits = value.replace(/\D/g, '');
+    
+    // Return digits without any spacing
+    return digits.slice(0, 10); // Limit to 10 digits
+  }
+
+  function handleMobileInput(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const formatted = formatMobileInput(target.value);
+    mobile = formatted;
+    target.value = formatted;
+  }
+
+  // Check if mobile is valid for button state
+  $: isValidMobile = mobile.length === 10 && mobile.startsWith('05');
+  $: buttonClass = isValidMobile 
+    ? 'w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95'
+    : 'w-full bg-gray-300 text-gray-500 py-3 px-4 rounded-lg font-semibold cursor-not-allowed transition-all';
+
+  const translations = {
+    en: {
+      title: 'Urban Market Loyalty',
+      subtitle: 'Check your eligibility and register',
+      mobileNumber: 'Mobile Number',
+      enterMobile: 'Enter your mobile number',
+      mobilePlaceholder: '05XXXXXXXX',
+      checkEligibility: 'Check Eligibility',
+      loading: 'Checking...',
+      validating: 'Validating mobile number...',
+      searching: 'Searching customer database...',
+      verifying: 'Verifying account status...',
+      processing: 'Processing your request...',
+      notFound: 'Not found. Please contact support or visit a branch.',
+      alreadyRegistered: 'Welcome back! Redirecting to dashboard...',
+      registrationForm: 'Complete Your Registration',
+      fullName: 'Full Name',
+      fullNamePlaceholder: 'Enter your full name',
+      place: 'Place / Area',
+      placePlaceholder: 'Enter your area or city',
+      nearestBranch: 'Select Nearest Branch',
+      selectBranch: 'Choose your preferred branch',
+      createCard: 'Create My Card',
+      registering: 'Creating your card...',
+      creatingAccount: 'Creating your account...',
+      savingDetails: 'Saving your details...',
+      activatingCard: 'Activating your loyalty card...',
+      finalizing: 'Finalizing registration...',
+      success: 'Registration Successful!',
+      successMessage: 'Your loyalty card has been created successfully.',
+      goToDashboard: 'Go to Dashboard',
+      contactSupport: 'Contact Support',
+      visitBranch: 'Visit Branch',
+      backToCheck: 'Back to Check',
+      eligible: 'Great! You\'re eligible to register.',
+      completeRegistration: 'Please complete your registration below.',
+      needHelp: 'Need help with login?',
+      whatsappSupport: 'Contact WhatsApp Support',
+      whatsappChat: 'Chat on WhatsApp',
+      termsAndConditions: 'Terms & Conditions',
+      readTerms: 'Read Terms',
+      agreeToTerms: 'I agree to the Terms & Conditions',
+      mustAcceptTerms: 'You must accept the Terms & Conditions to proceed',
+      termsCheckbox: 'I have read and agree to the',
+      invalidMobile: 'Please enter a valid 10-digit Saudi mobile number',
+      pleaseEnterName: 'Please enter your full name',
+      pleaseEnterPlace: 'Please enter your place/area',
+      pleaseSelectBranch: 'Please select your nearest branch',
+      pleaseEnterPassword: 'Please enter a password',
+      pleaseConfirmPassword: 'Please confirm your password',
+      passwordMismatch: 'Passwords do not match',
+      passwordTooShort: 'Password must be at least 6 characters',
+      incorrectCaptcha: 'Incorrect captcha answer. Please try again.',
+      enterPassword: 'Enter Password',
+      confirmPassword: 'Confirm Password',
+      passwordPlaceholder: 'Enter a secure password (min 6 characters)',
+      confirmPasswordPlaceholder: 'Re-enter your password',
+      securityVerification: 'Security Verification',
+      solveMath: 'Solve this math problem:',
+      captchaPlaceholder: 'Enter your answer',
+      refreshCaptcha: '🔄 New Question',
+      welcomeBack: 'Welcome Back!',
+      enterYourPassword: 'Enter your password to continue',
+      loginButton: 'Login to Dashboard',
+      forgotPassword: 'Forgot Password?',
+      incorrectPassword: 'Incorrect password. Please try again.',
+      loginFailed: 'Login failed. Please check your credentials.',
+      registrationFailed: 'Registration failed. Please try again.',
+      copyrightText: '© 2024 Urban Market Loyalty Program',
+      privacyPolicy: 'Privacy Policy',
+      termsOfUse: 'Terms of Use',
+      whatsappMessage: "Hello, I need help with my Urban Market loyalty account. I'm having trouble with login.",
+      mobileLabel: 'Mobile:',
+      cardActiveMessage: 'Your loyalty card is now active!',
+      adminAccess: 'more...'
+    },
+    ar: {
+      title: 'برنامج ولاء ايربين ماركت',
+      subtitle: 'تحقق من أهليتك وسجل',
+      mobileNumber: 'رقم الجوال',
+      enterMobile: 'أدخل رقم جوالك',
+      mobilePlaceholder: '05XXXXXXXX',
+      checkEligibility: 'تحقق من الأهلية',
+      loading: 'جاري التحقق...',
+      validating: 'جاري التحقق من صحة رقم الجوال...',
+      searching: 'جاري البحث في قاعدة بيانات العملاء...',
+      verifying: 'جاري التحقق من حالة الحساب...',
+      processing: 'جاري معالجة طلبك...',
+      notFound: 'غير موجود. يرجى التواصل مع الدعم أو زيارة الفرع.',
+      alreadyRegistered: 'مرحباً بعودتك! جاري التوجيه للوحة التحكم...',
+      registrationForm: 'أكمل تسجيلك',
+      fullName: 'الاسم الكامل',
+      fullNamePlaceholder: 'أدخل اسمك الكامل',
+      place: 'المكان / المنطقة',
+      placePlaceholder: 'أدخل منطقتك أو مدينتك',
+      nearestBranch: 'اختر أقرب فرع',
+      selectBranch: 'اختر الفرع المفضل لديك',
+      createCard: 'إنشاء البطاقة',
+      registering: 'جاري إنشاء بطاقتك...',
+      creatingAccount: 'جاري إنشاء حسابك...',
+      savingDetails: 'جاري حفظ بياناتك...',
+      activatingCard: 'جاري تفعيل بطاقة الولاء...',
+      finalizing: 'جاري إنهاء التسجيل...',
+      success: 'تم التسجيل بنجاح!',
+      successMessage: 'تم إنشاء بطاقة الولاء الخاصة بك بنجاح.',
+      goToDashboard: 'الذهاب للوحة التحكم',
+      contactSupport: 'التواصل مع الدعم',
+      visitBranch: 'زيارة الفرع',
+      backToCheck: 'العودة للتحقق',
+      eligible: 'رائع! أنت مؤهل للتسجيل.',
+      completeRegistration: 'يرجى إكمال تسجيلك أدناه.',
+      needHelp: 'تحتاج مساعدة في تسجيل الدخول؟',
+      whatsappSupport: 'التواصل عبر واتساب',
+      whatsappChat: 'دردشة واتساب',
+      termsAndConditions: 'الشروط والأحكام',
+      readTerms: 'اقرأ الشروط',
+      agreeToTerms: 'أوافق على الشروط والأحكام',
+      mustAcceptTerms: 'يجب عليك قبول الشروط والأحكام للمتابعة',
+      termsCheckbox: 'لقد قرأت ووافقت على',
+      invalidMobile: 'يرجى إدخال رقم جوال سعودي صحيح مكون من 10 أرقام',
+      pleaseEnterName: 'يرجى إدخال اسمك الكامل',
+      pleaseEnterPlace: 'يرجى إدخال المكان/المنطقة',
+      pleaseSelectBranch: 'يرجى اختيار أقرب فرع',
+      pleaseEnterPassword: 'يرجى إدخال كلمة مرور',
+      pleaseConfirmPassword: 'يرجى تأكيد كلمة المرور',
+      passwordMismatch: 'كلمات المرور غير متطابقة',
+      passwordTooShort: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
+      incorrectCaptcha: 'إجابة التحقق غير صحيحة. يرجى المحاولة مرة أخرى.',
+      enterPassword: 'إدخال كلمة المرور',
+      confirmPassword: 'تأكيد كلمة المرور',
+      passwordPlaceholder: 'أدخل كلمة مرور آمنة (6 أحرف على الأقل)',
+      confirmPasswordPlaceholder: 'أعد إدخال كلمة المرور',
+      securityVerification: 'التحقق الأمني',
+      solveMath: 'حل هذه المسألة الحسابية:',
+      captchaPlaceholder: 'أدخل إجابتك',
+      refreshCaptcha: '🔄 سؤال جديد',
+      welcomeBack: 'مرحباً بعودتك!',
+      enterYourPassword: 'أدخل كلمة المرور للمتابعة',
+      loginButton: 'تسجيل الدخول للوحة التحكم',
+      forgotPassword: 'نسيت كلمة المرور؟',
+      incorrectPassword: 'كلمة مرور غير صحيحة. يرجى المحاولة مرة أخرى.',
+      loginFailed: 'فشل تسجيل الدخول. يرجى التحقق من بياناتك.',
+      registrationFailed: 'فشل التسجيل. يرجى المحاولة مرة أخرى.',
+      copyrightText: '© 2024 برنامج ولاء ايربين ماركت',
+      privacyPolicy: 'سياسة الخصوصية',
+      termsOfUse: 'شروط الاستخدام',
+      whatsappMessage: 'مرحباً، أحتاج مساعدة في حساب الولاء الخاص بي في ايربين ماركت. أواجه مشكلة في تسجيل الدخول.',
+      mobileLabel: 'الجوال:',
+      cardActiveMessage: 'بطاقة الولاء الخاصة بك نشطة الآن!',
+      adminAccess: 'المزيد...'
+    }
+  } as const;
+
+  $: t = translations[currentLang];
+
+  function handleLanguageToggle() {
+    currentLang = currentLang === 'en' ? 'ar' : 'en';
+  }
+
+  function validateMobile(mobile: string): boolean {
+    return /^05\d{8}$/.test(mobile);
+  }
+
+  function openWhatsAppSupport() {
+    // Get the global WhatsApp support link from admin settings
+    let whatsappUrl = 'https://wa.me/966500000000'; // Default fallback
+    
+    try {
+      const savedLink = localStorage.getItem('globalWhatsAppSupportLink');
+      if (savedLink && savedLink.startsWith('https://wa.me/')) {
+        // If it's a complete wa.me link, use it directly
+        whatsappUrl = savedLink;
+        
+        // Add the support message if the link doesn't already have text parameter
+        if (!savedLink.includes('?text=') && !savedLink.includes('&text=')) {
+          const message = encodeURIComponent(t.whatsappMessage);
+          const separator = savedLink.includes('?') ? '&' : '?';
+          whatsappUrl = `${savedLink}${separator}text=${message}`;
+        }
+      } else {
+        // Fallback to default with message
+        const message = encodeURIComponent(t.whatsappMessage);
+        whatsappUrl = `https://wa.me/966500000000?text=${message}`;
+      }
+    } catch (error) {
+      console.error('Error loading WhatsApp link from localStorage:', error);
+      // Use fallback URL
+      const message = encodeURIComponent(t.whatsappMessage);
+      whatsappUrl = `https://wa.me/966500000000?text=${message}`;
+    }
+    
+    window.open(whatsappUrl, '_blank');
+  }
+
+  function openTermsAndConditions() {
+    window.open('/terms-conditions', '_blank');
+  }
+
+  function openFAQs() {
+    window.open('/faqs', '_blank');
+  }
+
+  function callSupport() {
+    window.open('tel:+966500000000');
+  }
+
+  async function checkEligibility() {
+    if (!isValidMobile) return;
+    
+    error = '';
+    isLoading = true;
+    showProcessStatus = true;
+
+    if (!validateMobile(mobile)) {
+      error = t.invalidMobile;
+      isLoading = false;
+      showProcessStatus = false;
+      return;
+    }
+
+    try {
+      // Step 1: Validating mobile number
+      processStatus = t.validating;
+      await new Promise(resolve => setTimeout(resolve, 800)); // Show status for better UX
+      
+      // Step 2: Searching database
+      processStatus = t.searching;
+      await new Promise(resolve => setTimeout(resolve, 600));
+      
+      console.log('🔍 Step 1: Checking if customer already exists...');
+      
+      // First, check if customer is already fully registered
+      console.log('🔍 SEARCHING for existing customer with mobile:', mobile);
+      console.log('🔍 Query: SELECT * FROM customers WHERE customer_code =', mobile);
+      
+      const { data: existingCustomer, error: existingError } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('customer_code', mobile);
+        
+      console.log('🔍 RAW Supabase Response:', { data: existingCustomer, error: existingError, dataType: typeof existingCustomer, isArray: Array.isArray(existingCustomer) });
+
+      console.log('📊 Existing customer check result:', { 
+        existingCustomer, 
+        existingError,
+        customerCount: existingCustomer ? existingCustomer.length : 0,
+        firstCustomer: existingCustomer && existingCustomer.length > 0 ? existingCustomer[0] : null
+      });
+      console.log('📋 Customer details if found:', existingCustomer && existingCustomer.length > 0 ? {
+        id: existingCustomer[0].id,
+        customer_code: existingCustomer[0].customer_code,
+        card_status: existingCustomer[0].card_status,
+        full_name: existingCustomer[0].full_name,
+        hasFullName: !!(existingCustomer[0].full_name && existingCustomer[0].full_name.trim())
+      } : 'No customer found');
+
+      // Use the first customer from the array, handle both array and single object responses
+      let customer = null;
+      if (existingCustomer) {
+        if (Array.isArray(existingCustomer) && existingCustomer.length > 0) {
+          customer = existingCustomer[0];
+          console.log('📋 Using first customer from array:', customer.id);
+        } else if (!Array.isArray(existingCustomer) && existingCustomer.id) {
+          customer = existingCustomer;
+          console.log('📋 Using single customer object:', customer.id);
+        }
+      }
+      
+      console.log('📋 Final customer selection:', customer ? { id: customer.id, customer_code: customer.customer_code, card_status: customer.card_status } : 'null');
+
+      // Step 3: Verifying account status (remove delay)
+      processStatus = t.verifying;
+      console.log('✅ Verification step started');
+
+      // If customer exists and is fully registered
+      if (customer && customer.full_name && customer.full_name.trim()) {
+        console.log('👤 BRANCH A: Customer already exists and is fully registered, showing login form');
+        console.log('👤 Customer details:', {
+          customer_code: customer.customer_code,
+          full_name: customer.full_name,
+          card_status: customer.card_status
+        });
+        customerData = customer;
+        currentStep = 'login';
+        showProcessStatus = false;
+        return;
+      }
+
+      // If customer exists but registration is incomplete, prepare for update
+      if (customer) {
+        console.log('🔍 BRANCH B: Found existing customer in customers table:', customer);
+        console.log('🔍 Analyzing customer for UPDATE potential...');
+        
+        if (customer.card_status === 'unregistered' || 
+            !customer.full_name || 
+            !customer.full_name.trim()) {
+          console.log('🔄 BRANCH B1: Customer exists but unregistered, will UPDATE instead of INSERT');
+          console.log('🚩 Setting updateExistingCustomer flag with data:', {
+            id: customer.id,
+            customer_code: customer.customer_code,
+            card_status: customer.card_status,
+            full_name: customer.full_name
+          });
+          
+          // Set flag to update instead of insert
+          window.updateExistingCustomer = customer;
+        } else if (customer.card_status === 'registered' && 
+                   customer.full_name && 
+                   customer.full_name.trim()) {
+          console.log('👤 BRANCH B2: Customer already fully registered, showing login form');
+          console.log('👤 This should not happen - we should have caught this in BRANCH A');
+          customerData = customer;
+          currentStep = 'login';
+          showProcessStatus = false;
+          return;
+        } else {
+          console.log('🤔 BRANCH B3: Customer exists but in unknown state:', {
+            card_status: customer.card_status,
+            has_full_name: !!(customer.full_name && customer.full_name.trim()),
+            full_name: customer.full_name
+          });
+        }
+      } else {
+        console.log('🆕 BRANCH C: No existing customer found, will proceed to eligibility check');
+      }
+
+      console.log('🔍 Step 2: Checking eligibility in customer_numbers...');
+      
+      // TEMPORARY: For testing, allow registration even if not in customer_numbers
+      // Remove this after testing
+      const skipEligibilityCheck = mobile.startsWith('501'); // Test numbers starting with 501
+      
+      if (skipEligibilityCheck) {
+        console.log('🧪 TESTING MODE: Skipping eligibility check for mobile:', mobile);
+        customerData = {
+          customer_code: mobile,
+          mobile: mobile,
+          status: 'eligible'
+        };
+        currentStep = 'register';
+        showProcessStatus = false;
+        return;
+      }
+      
+      // If not in customers table, check eligibility in customer_numbers table
+      const { data: eligibilityRecord, error: eligibilityError } = await supabase
+        .from('customer_numbers')
+        .select('*')
+        .eq('customer', mobile)
+        .single();
+
+      console.log('📊 Eligibility check result:', { eligibilityRecord, eligibilityError });
+
+      if (eligibilityError || !eligibilityRecord) {
+        console.log('❌ Customer not eligible for registration');
+        // Customer not found in eligibility list
+        error = currentLang === 'en' 
+          ? 'Customer number not found. Please contact admin to add your customer number to the system.'
+          : 'رقم العميل غير موجود. يرجى الاتصال بالإدارة لإضافة رقم العميل إلى النظام.';
+        isLoading = false;
+        showProcessStatus = false;
+        return;
+      }
+
+      console.log('✅ Customer is eligible! Status:', eligibilityRecord.status);
+
+      // Customer is eligible but not registered yet
+      if (eligibilityRecord.status === 'not_registered') {
+        console.log('🚀 Proceeding to registration step');
+        // Proceed to registration step
+        customerData = {
+          customer_code: mobile,
+          mobile: mobile,
+          status: 'eligible'
+        };
+        currentStep = 'register';
+        showProcessStatus = false;
+        return;
+      }
+
+      console.log('🔄 Customer status is:', eligibilityRecord.status);
+      
+      // Step 4: Processing result
+      processStatus = t.processing;
+      await new Promise(resolve => setTimeout(resolve, 400));
+    } catch (error) {
+      console.error('Error checking eligibility:', error);
+      error = currentLang === 'en' 
+        ? 'Something went wrong. Please try again.'
+        : 'حدث خطأ ما. يرجى المحاولة مرة أخرى.';
+    } finally {
+      isLoading = false;
+      showProcessStatus = false;
+    }
+  }
+
+  async function loginExistingCustomer() {
+    if (!loginPassword.trim()) {
+      error = t.pleaseEnterPassword;
+      return;
+    }
+
+    error = '';
+    isLoading = true;
+    showProcessStatus = true;
+
+    try {
+      processStatus = currentLang === 'en' ? 'Verifying password...' : 'جاري التحقق من كلمة المرور...';
+
+      // Verify password (in production, this should compare hashed passwords)
+      if (customerData.password !== loginPassword) {
+        error = t.incorrectPassword;
+        isLoading = false;
+        showProcessStatus = false;
+        return;
+      }
+
+      processStatus = currentLang === 'en' ? 'Logging you in...' : 'جاري تسجيل الدخول...';
+
+      // Login successful
+      loginCustomer({
+        mobile: mobile,
+        name: customerData.full_name,
+        loginTime: new Date().toISOString()
+      });
+      
+      // Store complete customer data for dashboard
+      localStorage.setItem('currentCustomer', JSON.stringify(customerData));
+      
+      // Redirect to dashboard immediately
+      showProcessStatus = false;
+      goto('/dashboard');
+
+    } catch (error) {
+      console.error('Login error:', error);
+      error = t.loginFailed;
+    } finally {
+      isLoading = false;
+      showProcessStatus = false;
+    }
+  }
+
+  async function completeRegistration() {
+    error = '';
+    isLoading = true;
+    showProcessStatus = true;
+
+    // Debug: Log the attempt
+    console.log('🔄 Starting registration for:', mobile);
+
+    // Terms and Conditions validation first
+    if (!termsAccepted) {
+      error = t.mustAcceptTerms;
+      isLoading = false;
+      showProcessStatus = false;
+      return;
+    }
+
+    // Other validations
+    if (!fullName.trim()) {
+      error = t.pleaseEnterName;
+      isLoading = false;
+      showProcessStatus = false;
+      return;
+    }
+    if (!place.trim()) {
+      error = t.pleaseEnterPlace;
+      isLoading = false;
+      showProcessStatus = false;
+      return;
+    }
+    if (!selectedBranch) {
+      error = t.pleaseSelectBranch;
+      isLoading = false;
+      showProcessStatus = false;
+      return;
+    }
+    
+    // Password validation
+    if (!password.trim()) {
+      error = t.pleaseEnterPassword;
+      isLoading = false;
+      showProcessStatus = false;
+      return;
+    }
+    if (password.length < 6) {
+      error = t.passwordTooShort;
+      isLoading = false;
+      showProcessStatus = false;
+      return;
+    }
+    if (!confirmPassword.trim()) {
+      error = t.pleaseConfirmPassword;
+      isLoading = false;
+      showProcessStatus = false;
+      return;
+    }
+    if (password !== confirmPassword) {
+      error = t.passwordMismatch;
+      isLoading = false;
+      showProcessStatus = false;
+      return;
+    }
+    
+    // Captcha validation
+    if (!userCaptchaAnswer.trim()) {
+      error = t.incorrectCaptcha;
+      isLoading = false;
+      showProcessStatus = false;
+      return;
+    }
+    if (userCaptchaAnswer.trim() !== captchaAnswer) {
+      error = t.incorrectCaptcha;
+      generateCaptcha(); // Generate new captcha
+      isLoading = false;
+      showProcessStatus = false;
+      return;
+    }
+  }
+  
+  async function checkEligibility() {
+    error = '';
+    isLoading = true;
+    processStatus = t.validating;
+
+    // Validate mobile number format
+    if (!isValidMobile) {
+      error = t.invalidMobile;
+      isLoading = false;
+      return;
+    }
+
+    try {
+      // Step 1: Check if customer exists in customer_numbers (eligibility)
+      processStatus = t.searching;
+      
+      const { data: eligibilityData, error: eligibilityError } = await supabase
+        .from('customer_numbers')
+        .select('*')
+        .eq('customer', mobile)
+        .single();
+      
+      if (eligibilityError || !eligibilityData) {
+        // Not eligible for loyalty program
+        currentStep = 'check';
+        error = t.notFound;
+        isLoading = false;
+        return;
+      }
+      
+      // Step 2: Check if already registered
+      processStatus = t.verifying;
+      
+      const { data: existingCustomer, error: customerError } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('customer_code', mobile)
+        .single();
+      
+      if (!customerError && existingCustomer) {
+        if (existingCustomer.card_status === 'registered') {
+          // Already registered, redirect to login
+          currentStep = 'login';
+          customerData = existingCustomer;
+          processStatus = t.alreadyRegistered;
+        } else {
+          // Unregistered customer from upload, allow registration
+          currentStep = 'register';
+          customerData = existingCustomer;
+        }
+      } else {
+        // New customer, proceed to registration
+        currentStep = 'register';
+        customerData = null;
+      }
+      
+    } catch (err) {
+      console.error('Eligibility check error:', err);
+      error = 'An error occurred while checking eligibility. Please try again.';
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  async function loginExistingCustomer() {
+        .select('*')
+        .eq('customer_code', mobile);
+      
+      console.log('🔍 Pre-registration check:', { 
+        existingCustomers, 
+        checkError, 
+        count: existingCustomers?.length || 0 
+      });
+      
+      let shouldUpdate = false;
+      let existingCustomer = null;
+      
+      if (existingCustomers && existingCustomers.length > 0) {
+        existingCustomer = existingCustomers[0];
+        console.log('� Found existing customer:', {
+          id: existingCustomer.id,
+          card_status: existingCustomer.card_status,
+          full_name: existingCustomer.full_name
+        });
+        
+        // Check if we should UPDATE instead of INSERT
+        if (existingCustomer.card_status === 'unregistered' || 
+            !existingCustomer.full_name || 
+            existingCustomer.full_name.trim() === '') {
+          shouldUpdate = true;
+          console.log('✅ Will UPDATE existing unregistered customer');
+        } else {
+          console.log('⚠️ Customer already registered, this should not happen');
+        }
+      } else {
+        console.log('✅ No existing customer found, will INSERT new customer');
+      }
+      
+      // STEP 2: Execute UPDATE or INSERT based on findings
+      if (shouldUpdate && existingCustomer) {
+        console.log('� UPDATING existing customer:', existingCustomer.id);
+        
+        const updateResult = await supabase
+          .from('customers')
+          .update({
+            full_name: fullName.trim(),
+            name: fullName.trim(),
+            email: place.trim(),
+            password: password,
+            branch_id: selectedBranch,
+            card_status: 'registered',
+            status: 'active',
+            registration_date: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            valid_until: expiryDate.toISOString().split('T')[0]
+          })
+          .eq('id', existingCustomer.id)
+          .select()
+          .single();
+          
+        data = updateResult.data;
+        insertError = updateResult.error;
+        
+        console.log('� UPDATE result:', { data, insertError });
+        
+      } else {
+        console.log('🚀 INSERTING new customer');
+        
+        const insertResult = await supabase
+          .from('customers')
+          .insert(customerRecord)
+          .select()
+          .single();
+
+        data = insertResult.data;
+        insertError = insertResult.error;
+        
+        console.log('📊 INSERT result:', { data, insertError });
+      }
+      
+      // Handle the registration result
+
+          
+        data = updateResult.data;
+        insertError = updateResult.error;
+        
+        console.log('� Update response data:', data);
+        console.log('❌ Update response error:', insertError);
+        
+        // Clean up the flag
+        delete window.updateExistingCustomer;
+        
+      } else {
+        console.log('🚀 Creating new customer record...');
+        console.log('📋 Record data:', {...customerRecord, password: '***'});
+        
+        // CRITICAL FIX: Before inserting, double-check if customer exists
+        console.log('🔍 FINAL CHECK: Verifying no customer exists before INSERT...');
+        const { data: finalCheck, error: finalCheckError } = await supabase
+          .from('customers')
+          .select('id, customer_code, card_status, full_name')
+          .eq('customer_code', mobile)
+          .single();
+          
+        console.log('🔍 FINAL CHECK result:', { finalCheck, finalCheckError });
+        
+        if (finalCheck && !finalCheckError) {
+          console.log('🚨 CRITICAL: Customer found in final check! Converting to UPDATE...');
+          console.log('🚨 This should not happen - detection logic failed earlier');
+          
+          // Emergency conversion to UPDATE
+          const updateResult = await supabase
+            .from('customers')
+            .update({
+              full_name: fullName.trim(),
+              name: fullName.trim(),
+              email: place.trim(),
+              password: password,
+              branch_id: selectedBranch,
+              card_status: 'registered',
+              status: 'active',
+              registration_date: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              valid_until: expiryDate.toISOString().split('T')[0]
+            })
+            .eq('id', finalCheck.id)
+            .select()
+            .single();
+            
+          data = updateResult.data;
+          insertError = updateResult.error;
+          console.log('🔄 Emergency UPDATE completed:', { data, insertError });
+          
+        } else {
+          // Proceed with INSERT as planned
+          const insertResult = await supabase
+            .from('customers')
+            .insert(customerRecord)
+            .select()
+            .single();
+
+          data = insertResult.data;
+          insertError = insertResult.error;
+          
+          console.log('📊 Insert response data:', data);
+          console.log('❌ Insert response error:', insertError);
+        }
+      }
+
+      if (insertError) {
+        console.error('❌ Database operation failed:', insertError);
+        console.error('🔍 Error details:', {
+          code: insertError.code,
+          message: insertError.message,
+          details: insertError.details,
+          hint: insertError.hint
+        });
+        
+        // Handle duplicate key error by converting to UPDATE
+        if (insertError.code === '23505' && insertError.message?.includes('customers_customer_code_key')) {
+          console.log('🔄 Duplicate key detected, attempting to update existing customer...');
+          
+          try {
+            // First, find the existing customer
+            const { data: existingCustomer, error: findError } = await supabase
+              .from('customers')
+              .select('*')
+              .eq('customer_code', mobile)
+              .single();
+            
+            if (findError) {
+              throw new Error(`Failed to find existing customer: ${findError.message}`);
+            }
+            
+            if (existingCustomer) {
+              console.log('🎯 Found existing customer, updating with registration details...');
+              
+              // Update the existing customer
+              const { data: updatedCustomer, error: updateError } = await supabase
+                .from('customers')
+                .update({
+                  full_name: fullName.trim(),
+                  name: fullName.trim(),
+                  email: place.trim(),
+                  password: password,
+                  branch_id: selectedBranch,
+                  card_status: 'registered',
+                  status: 'active',
+                  registration_date: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                  valid_until: expiryDate.toISOString().split('T')[0]
+                })
+                .eq('id', existingCustomer.id)
+                .select()
+                .single();
+              
+              if (updateError) {
+                throw new Error(`Failed to update customer: ${updateError.message}`);
+              }
+              
+              // Success! Use the updated data
+              data = updatedCustomer;
+              insertError = null;
+              
+              console.log('✅ Successfully updated existing customer to registered');
+            }
+          } catch (updateAttemptError) {
+            console.error('❌ Failed to handle duplicate key with update:', updateAttemptError);
+            throw new Error(`Registration conflict: ${updateAttemptError.message}`);
+          }
+        }
+        
+        // If we still have an error after attempting the update, handle it
+        if (insertError) {
+          // Specific error handling
+          if (insertError.code === '23505') {
+            throw new Error('This mobile number is already registered');
+          }
+          if (insertError.code === '23503') {
+            throw new Error('Invalid branch selected');
+          }
+          if (insertError.message?.includes('password')) {
+            throw new Error('Password field missing - run database migration');
+          }
+          if (insertError.message?.includes('permission')) {
+            throw new Error('Database permission denied - check RLS policies');
+          }
+          if (insertError.message?.includes('column')) {
+            throw new Error(`Database column error: ${insertError.message}`);
+          }
+          
+          throw new Error(`Registration failed: ${insertError.message}`);
+        }
+      }
+      
+      console.log('✅ Customer record created successfully:', data);
+
+      // Step 3: Activating card and updating eligibility status
+      processStatus = t.activatingCard;
+
+      // Update customer_numbers table status to 'registered'
+      const { error: updateError } = await supabase
+        .from('customer_numbers')
+        .update({
+          status: 'registered',
+          uploaded_at: new Date().toISOString()
+        })
+        .eq('customer', mobile);
+
+      if (updateError) {
+        console.warn('Failed to update customer_numbers status:', updateError);
+        // Don't throw error here as the main registration succeeded
+      }
+      
+      // Step 4: Finalizing - minimal delay
+      processStatus = t.finalizing;
+      await new Promise(resolve => setTimeout(resolve, 200)); // Very short delay for UX
+      
+      // Clear timeout - registration successful
+      clearTimeout(registrationTimeout);
+      console.log('✅ Registration completed within timeout');
+      
+      // Registration success - store user data using auth system
+      const userData = {
+        mobile: mobile,
+        name: fullName.trim(),
+        email: place.trim(),
+        loginTime: new Date().toISOString()
+      };
+
+      loginCustomer(userData);
+      
+      currentStep = 'success';
+      showProcessStatus = false;
+      
+      // Redirect to dashboard after short delay
+      setTimeout(() => {
+        goto('/dashboard');
+      }, 1500); // Reduced from 3000ms to 1500ms
+      
+    } catch (err) {
+      // Clear timeout on error
+      clearTimeout(registrationTimeout);
+      console.error('❌ Registration error:', err);
+      console.error('🔍 Full error object:', err);
+      
+      // Provide specific error messages
+      if (err.message?.includes('duplicate key')) {
+        error = currentLang === 'en' 
+          ? 'This mobile number is already registered. Please try logging in instead. If you believe this is an error, please contact support.'
+          : 'رقم الجوال هذا مسجل بالفعل. يرجى محاولة تسجيل الدخول بدلاً من ذلك. إذا كنت تعتقد أن هذا خطأ، يرجى الاتصال بالدعم.';
+      } else if (err.message?.includes('foreign key')) {
+        error = currentLang === 'en' 
+          ? 'Invalid branch selected. Please choose a valid branch.'
+          : 'فرع غير صالح. يرجى اختيار فرع صالح.';
+      } else if (err.message?.includes('password')) {
+        error = currentLang === 'en' 
+          ? 'Password field is missing. Please check your database schema.'
+          : 'حقل كلمة المرور مفقود. يرجى التحقق من مخطط قاعدة البيانات.';
+      } else {
+        error = currentLang === 'en' 
+          ? `Registration failed: ${err.message || 'Unknown error. Please try again.'}`
+          : `فشل التسجيل: ${err.message || 'خطأ غير معروف. يرجى المحاولة مرة أخرى.'}`;
+      }
+      
+      // Log detailed error for debugging
+      console.error('Detailed error info:', {
+        error: err,
+        mobile: mobile,
+        fullName: fullName,
+        selectedBranch: selectedBranch,
+        hasPassword: !!password
+      });
+      
+      showProcessStatus = false;
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  function goToAdmin() {
+    goto('/admin-login');
+  }
+
+  function handleSmileyClick() {
+    smileyClickCount++;
+    
+    // Reset timer if it exists
+    if (smileyClickTimer) {
+      clearTimeout(smileyClickTimer);
+    }
+    
+    // Reset count after 3 seconds of inactivity
+    smileyClickTimer = setTimeout(() => {
+      smileyClickCount = 0;
+    }, 3000);
+    
+    // If clicked 10 times, go to admin login
+    if (smileyClickCount >= 10) {
+      smileyClickCount = 0;
+      clearTimeout(smileyClickTimer);
+      goto('/admin-login');
+    }
+  }
+
+  function goToDashboard() {
+    goto('/dashboard');
+  }
+
+  function backToCheck() {
+    currentStep = 'check';
+    mobile = '';
+    fullName = '';
+    place = '';
+    selectedBranch = '';
+    password = '';
+    confirmPassword = '';
+    loginPassword = '';
+    userCaptchaAnswer = '';
+    customerData = null;
+    termsAccepted = false;
+    error = '';
+    generateCaptcha(); // Generate new captcha
+  }
+</script>
+
+<div class="min-h-screen relative overflow-hidden flex items-center justify-center p-6" 
+     class:rtl={currentLang === 'ar'} 
+     style="background: radial-gradient(ellipse at center, rgba(240, 131, 0, 0.03) 0%, rgba(19, 165, 56, 0.03) 70%, transparent 100%), linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);">
+  
+  <!-- PWA Install Component -->
+  <PWAInstall {currentLang} />
+  
+  <!-- Subtle Background Elements -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-10 left-10 w-32 h-32 bg-gradient-to-br from-orange-100 to-green-100 rounded-full opacity-10 animate-float"></div>
+    <div class="absolute top-32 right-20 w-24 h-24 bg-gradient-to-br from-green-100 to-orange-100 rounded-full opacity-10 animate-float-delayed"></div>
+    <div class="absolute bottom-20 left-32 w-40 h-40 bg-gradient-to-br from-orange-50 to-green-50 rounded-full opacity-15 animate-float"></div>
+    <div class="absolute bottom-32 right-16 w-20 h-20 bg-gradient-to-br from-green-100 to-orange-100 rounded-full opacity-10 animate-float-delayed"></div>
+  </div>
+
+  <!-- Language Toggle - Top Right Outside Card -->
+  <div class="absolute top-6 right-6 z-20">
+    <div class="flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg border border-orange-200 hover:border-orange-300 transition-all hover:scale-105">
+      <span class="text-lg">🌐</span>
+      <button 
+        on:click={handleLanguageToggle}
+        class="font-bold text-sm transition-colors"
+        style="color: #C0A32A;"
+      >
+        {currentLang === 'ar' ? 'English' : 'عربي'}
+      </button>
+    </div>
+  </div>
+
+  <div class="w-full max-w-md space-y-8 relative z-10" class:opacity-0={!pageLoaded} class:animate-fade-in={pageLoaded}>
+    <!-- Main Card with Brand Design -->
+    <div class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-10 space-y-8 relative border border-white/30 drop-shadow-lg">
+      <!-- Header with Enhanced Logo -->
+      <div class="text-center" class:text-right={currentLang === 'ar'}>
+        <div class="flex justify-center mb-8">
+          <div class="relative">
+            <img 
+              src="/logo.png" 
+              alt="Urban Market Logo" 
+              class="max-w-full max-h-40 object-contain animate-logo-entrance drop-shadow-lg"
+              style="width: auto; height: auto; max-width: 300px; max-height: 140px;"
+              on:error={(e) => {
+                const target = e.target as HTMLImageElement;
+                if (target) {
+                  target.style.display = 'none';
+                  const fallback = target.nextElementSibling as HTMLElement;
+                  if (fallback) fallback.style.display = 'flex';
+                }
+              }}
+            />
+            <!-- Fallback icon -->
+            <div class="w-16 h-16 bg-gradient-to-r from-orange-500 to-green-600 rounded-full items-center justify-center shadow-lg" style="display: none;">
+              <span class="text-white text-2xl">🏪</span>
+            </div>
+          </div>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-900 mb-3">{t.title}</h1>
+        <p class="text-gray-600 text-lg">{t.subtitle}</p>
+      </div>
+
+      {#if currentStep === 'check'}
+        <!-- Step 1: Enhanced Check Eligibility Form -->
+        <form on:submit|preventDefault={checkEligibility} class="space-y-8">
+          <!-- Mobile Number with Country Code -->
+          <div class="space-y-3">
+            <label for="mobile" class="block text-sm font-bold text-gray-800 uppercase tracking-wide" class:text-right={currentLang === 'ar'}>
+              {t.mobileNumber}
+            </label>
+            <div class="flex gap-3">
+              <!-- Country Code Dropdown -->
+              <select 
+                bind:value={selectedCountryCode}
+                class="px-4 py-4 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:border-transparent transition-all text-sm font-medium shadow-sm"
+                style="focus:ring-color: #77AB39; focus:border-color: #77AB39;"
+              >
+                {#each countryCodes as country}
+                  <option value={country.code}>
+                    {country.flag} {country.code}
+                  </option>
+                {/each}
+              </select>
+              
+              <!-- Mobile Input with Brand Colors -->
+              <input
+                bind:this={mobileInput}
+                id="mobile"
+                value={mobile}
+                on:input={handleMobileInput}
+                type="tel"
+                maxlength="12"
+                class="flex-1 px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:border-transparent transition-all focus:shadow-lg focus:scale-[1.02] text-lg font-medium"
+                style="color: #C0A32A; focus:ring-color: #77AB39; focus:border-color: #77AB39;"
+                placeholder={t.mobilePlaceholder}
+                class:text-right={currentLang === 'ar'}
+                class:border-green-400={isValidMobile}
+                class:bg-green-50={isValidMobile}
+                required
+              />
+            </div>
+          </div>
+
+          {#if error}
+            <div class="text-red-600 text-sm bg-red-50 p-4 rounded-xl border-2 border-red-200 animate-shake" class:text-right={currentLang === 'ar'}>
+              <div class="flex items-center gap-2">
+                <span class="text-red-500">⚠️</span>
+                <span>{error}</span>
+              </div>
+            </div>
+          {/if}
+
+          {#if showProcessStatus && processStatus}
+            <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 animate-pulse">
+              <div class="flex items-center gap-3" class:flex-row-reverse={currentLang === 'ar'}>
+                <div class="flex space-x-1">
+                  <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                  <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                  <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                </div>
+                <span class="text-blue-700 font-medium text-sm" class:text-right={currentLang === 'ar'}>
+                  {processStatus}
+                </span>
+              </div>
+            </div>
+          {/if}
+
+          {#if error === t.alreadyRegistered}
+            <div class="text-green-600 text-sm bg-green-50 p-4 rounded-xl border-2 border-green-200 animate-bounce-in" class:text-right={currentLang === 'ar'}>
+              <div class="flex items-center gap-2">
+                <span class="text-green-500">✅</span>
+                <span>{error}</span>
+              </div>
+            </div>
+          {/if}
+
+          <!-- Enhanced CTA Button with Brand Orange -->
+          <button
+            type="submit"
+            disabled={!isValidMobile || isLoading}
+            class="w-full py-4 px-6 rounded-xl font-bold text-white text-lg uppercase tracking-wide transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
+            style="background: #f08300; hover:filter: brightness(1.1);"
+          >
+            {#if isLoading}
+              <div class="flex items-center justify-center gap-3">
+                <div class="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                <span>{showProcessStatus && processStatus ? processStatus : t.loading}</span>
+              </div>
+            {:else}
+              <div class="flex items-center justify-center gap-2">
+                <span>{t.checkEligibility}</span>
+                <span class="transform transition-transform group-hover:translate-x-1">→</span>
+              </div>
+            {/if}
+          </button>
+        </form>
+
+      {:else if currentStep === 'register'}
+        <!-- Step 2: Registration Form with Brand Styling -->
+        <div class="space-y-8">
+          <div class="text-center p-6 rounded-xl" style="background: #EAFBEF; border: 2px solid #77AB39;">
+            <p class="font-bold text-lg" style="color: #13A538;">{t.eligible}</p>
+            <p class="text-gray-700 mt-2">{t.completeRegistration}</p>
+          </div>
+
+          <form on:submit|preventDefault={handleRegistrationSubmit} class="space-y-6">
+            <div>
+              <label for="fullName" class="block text-sm font-bold text-gray-800 mb-2 uppercase tracking-wide" class:text-right={currentLang === 'ar'}>
+                {t.fullName}
+              </label>
+              <input
+                id="fullName"
+                bind:value={fullName}
+                type="text"
+                placeholder={t.fullNamePlaceholder}
+                class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:border-transparent transition-all text-lg font-medium"
+                style="color: #C0A32A; focus:ring-color: #77AB39; focus:border-color: #77AB39;"
+                class:text-right={currentLang === 'ar'}
+                required
+              />
+            </div>
+
+            <div>
+              <label for="place" class="block text-sm font-bold text-gray-800 mb-2 uppercase tracking-wide" class:text-right={currentLang === 'ar'}>
+                {t.place}
+              </label>
+              <input
+                id="place"
+                bind:value={place}
+                type="text"
+                placeholder={t.placePlaceholder}
+                class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:border-transparent transition-all text-lg font-medium"
+                style="color: #C0A32A; focus:ring-color: #77AB39; focus:border-color: #77AB39;"
+                class:text-right={currentLang === 'ar'}
+                required
+              />
+            </div>
+
+            <!-- Password Fields -->
+            <div>
+              <label for="password" class="block text-sm font-bold text-gray-800 mb-2 uppercase tracking-wide" class:text-right={currentLang === 'ar'}>
+                {t.enterPassword}
+              </label>
+              <input
+                id="password"
+                bind:value={password}
+                type="password"
+                placeholder={t.passwordPlaceholder}
+                class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:border-transparent transition-all text-lg font-medium"
+                style="color: #C0A32A; focus:ring-color: #77AB39; focus:border-color: #77AB39;"
+                class:text-right={currentLang === 'ar'}
+                minlength="6"
+                required
+              />
+            </div>
+
+            <div>
+              <label for="confirmPassword" class="block text-sm font-bold text-gray-800 mb-2 uppercase tracking-wide" class:text-right={currentLang === 'ar'}>
+                {t.confirmPassword}
+              </label>
+              <input
+                id="confirmPassword"
+                bind:value={confirmPassword}
+                type="password"
+                placeholder={t.confirmPasswordPlaceholder}
+                class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:border-transparent transition-all text-lg font-medium"
+                style="color: #C0A32A; focus:ring-color: #77AB39; focus:border-color: #77AB39;"
+                class:text-right={currentLang === 'ar'}
+                minlength="6"
+                required
+              />
+            </div>
+
+            <div>
+              <label for="branch" class="block text-sm font-bold text-gray-800 mb-2 uppercase tracking-wide" class:text-right={currentLang === 'ar'}>
+                {t.nearestBranch}
+              </label>
+              <select
+                id="branch"
+                bind:value={selectedBranch}
+                class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:border-transparent transition-all text-lg font-medium"
+                style="color: #C0A32A; focus:ring-color: #77AB39; focus:border-color: #77AB39;"
+                class:text-right={currentLang === 'ar'}
+                required
+              >
+                <option value="">{t.selectBranch}</option>
+                {#each branches as branch}
+                  <option value={branch.id}>
+                    {currentLang === 'ar' ? branch.nameAr : branch.name}
+                  </option>
+                {/each}
+              </select>
+            </div>
+
+            <!-- Security Captcha -->
+            <div class="space-y-3">
+              <label for="captcha" class="block text-sm font-bold text-gray-800 uppercase tracking-wide" class:text-right={currentLang === 'ar'}>
+                {t.securityVerification}
+              </label>
+              <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4">
+                <div class="flex items-center justify-between mb-3" class:flex-row-reverse={currentLang === 'ar'}>
+                  <span class="text-blue-800 font-medium">{t.solveMath}</span>
+                  <button
+                    type="button"
+                    on:click={generateCaptcha}
+                    class="text-blue-600 hover:text-blue-800 font-medium text-sm hover:bg-blue-100 px-2 py-1 rounded transition-all"
+                  >
+                    {t.refreshCaptcha}
+                  </button>
+                </div>
+                <div class="text-center mb-3">
+                  <div class="text-2xl font-bold text-blue-900 bg-white border-2 border-blue-300 rounded-lg py-3 px-6 inline-block shadow-sm">
+                    {captchaQuestion}
+                  </div>
+                </div>
+                <input
+                  id="captcha"
+                  bind:value={userCaptchaAnswer}
+                  type="number"
+                  placeholder={t.captchaPlaceholder}
+                  class="w-full px-4 py-3 border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-lg font-medium text-center"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Terms and Conditions Checkbox -->
+            <div class="space-y-4">
+              <div class="flex items-start gap-4 p-4 rounded-xl" style="background: #F3FFF8; border: 1px solid #77AB39;" class:flex-row-reverse={currentLang === 'ar'}>
+                <input
+                  id="termsAccepted"
+                  type="checkbox"
+                  bind:checked={termsAccepted}
+                  class="mt-1 h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded transition-all"
+                  required
+                />
+                <label for="termsAccepted" class="text-sm text-gray-700 flex-1" class:text-right={currentLang === 'ar'}>
+                  <span>{t.termsCheckbox}</span>
+                  <button
+                    type="button"
+                    on:click={openTermsAndConditions}
+                    class="font-medium mx-1 hover:underline transition-colors"
+                    style="color: #13A538;"
+                  >
+                    {t.termsAndConditions}
+                  </button>
+                </label>
+              </div>
+              
+              {#if !termsAccepted && error === t.mustAcceptTerms}
+                <div class="text-red-600 text-sm bg-red-50 p-4 rounded-xl border-2 border-red-200" class:text-right={currentLang === 'ar'}>
+                  <div class="flex items-center gap-2">
+                    <span class="text-red-500">⚠️</span>
+                    <span>{t.mustAcceptTerms}</span>
+                  </div>
+                </div>
+              {/if}
+            </div>
+
+            {#if error && error !== t.mustAcceptTerms}
+              <div class="text-red-600 text-sm bg-red-50 p-4 rounded-xl border-2 border-red-200" class:text-right={currentLang === 'ar'}>
+                {error}
+              </div>
+            {/if}
+
+            {#if showProcessStatus && processStatus}
+              <div class="bg-green-50 border-2 border-green-200 rounded-xl p-4 animate-pulse">
+                <div class="flex items-center gap-3" class:flex-row-reverse={currentLang === 'ar'}>
+                  <div class="flex space-x-1">
+                    <div class="w-2 h-2 bg-green-500 rounded-full animate-bounce"></div>
+                    <div class="w-2 h-2 bg-green-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                    <div class="w-2 h-2 bg-green-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                  </div>
+                  <span class="text-green-700 font-medium text-sm" class:text-right={currentLang === 'ar'}>
+                    {processStatus}
+                  </span>
+                </div>
+              </div>
+            {/if}
+
+            <div class="flex gap-4">
+              <button
+                type="button"
+                on:click={backToCheck}
+                class="flex-1 bg-gray-200 text-gray-700 py-4 px-6 rounded-xl font-bold hover:bg-gray-300 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+              >
+                {t.backToCheck}
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading || !termsAccepted}
+                class="flex-1 text-white py-4 px-6 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+                style="background: #13A538;"
+              >
+                {isLoading ? (showProcessStatus && processStatus ? processStatus : t.registering) : t.createCard}
+              </button>
+            </div>
+          </form>
+        </div>
+
+      {:else if currentStep === 'login'}
+        <!-- Existing Customer Login Form -->
+        <div class="space-y-8">
+          <div class="text-center p-6 rounded-xl" style="background: #E6F7FF; border: 2px solid #1890FF;">
+            <div class="flex items-center justify-center gap-3 mb-3">
+              <span class="text-3xl">👋</span>
+              <h2 class="text-2xl font-bold" style="color: #0050B3;">{t.welcomeBack}</h2>
+            </div>
+            <p class="text-lg font-medium" style="color: #1890FF;">
+              {customerData?.full_name || 'Customer'}
+            </p>
+            <p class="text-gray-700 mt-2">{t.enterYourPassword}</p>
+          </div>
+
+          <form on:submit|preventDefault={loginExistingCustomer} class="space-y-6">
+            <!-- Password Field for Login -->
+            <div>
+              <label for="loginPassword" class="block text-sm font-bold text-gray-800 mb-2 uppercase tracking-wide" class:text-right={currentLang === 'ar'}>
+                {t.enterPassword}
+              </label>
+              <input
+                id="loginPassword"
+                bind:value={loginPassword}
+                type="password"
+                placeholder={t.passwordPlaceholder}
+                class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:border-transparent transition-all text-lg font-medium focus:shadow-lg"
+                style="color: #1890FF; focus:ring-color: #1890FF; focus:border-color: #1890FF;"
+                class:text-right={currentLang === 'ar'}
+                required
+              />
+            </div>
+
+            {#if error}
+              <div class="text-red-600 text-sm bg-red-50 p-4 rounded-xl border-2 border-red-200 animate-shake" class:text-right={currentLang === 'ar'}>
+                <div class="flex items-center gap-2">
+                  <span class="text-red-500">⚠️</span>
+                  <span>{error}</span>
+                </div>
+              </div>
+            {/if}
+
+            {#if showProcessStatus && processStatus}
+              <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 animate-pulse">
+                <div class="flex items-center gap-3" class:flex-row-reverse={currentLang === 'ar'}>
+                  <div class="flex space-x-1">
+                    <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                    <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                    <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                  </div>
+                  <span class="text-blue-700 font-medium text-sm" class:text-right={currentLang === 'ar'}>
+                    {processStatus}
+                  </span>
+                </div>
+              </div>
+            {/if}
+
+            <div class="flex gap-4">
+              <button
+                type="button"
+                on:click={backToCheck}
+                class="flex-1 bg-gray-200 text-gray-700 py-4 px-6 rounded-xl font-bold hover:bg-gray-300 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+              >
+                {t.backToCheck}
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading || !loginPassword.trim()}
+                class="flex-1 text-white py-4 px-6 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+                style="background: #1890FF;"
+              >
+                {isLoading ? (showProcessStatus && processStatus ? processStatus : (currentLang === 'en' ? 'Logging in...' : 'جاري تسجيل الدخول...')) : t.loginButton}
+              </button>
+            </div>
+
+            <!-- Forgot Password Link -->
+            <div class="text-center">
+              <button
+                type="button"
+                class="text-sm font-medium hover:underline transition-colors"
+                style="color: #1890FF;"
+                on:click={() => {
+                  // In production, implement forgot password functionality
+                  alert(currentLang === 'en' 
+                    ? 'Please contact support for password reset.' 
+                    : 'يرجى الاتصال بالدعم لإعادة تعيين كلمة المرور.');
+                }}
+              >
+                {t.forgotPassword}
+              </button>
+            </div>
+          </form>
+        </div>
+
+      {:else if currentStep === 'success'}
+        <!-- Step 3: Success with Brand Colors -->
+        <div class="text-center space-y-8">
+          <div class="w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-lg" style="background: #EAFBEF; border: 3px solid #13A538;">
+            <span class="text-5xl">✅</span>
+          </div>
+          
+          <div>
+            <h2 class="text-3xl font-bold text-gray-900 mb-3">{t.success}</h2>
+            <p class="text-gray-600 text-lg">{t.successMessage}</p>
+          </div>
+
+          <div class="p-6 rounded-xl" style="background: #F3FFF8; border: 2px solid #77AB39;">
+            <p class="font-bold text-lg mb-2" style="color: #13A538;">{t.mobileLabel} {mobile}</p>
+            <p class="text-gray-700">{t.cardActiveMessage}</p>
+          </div>
+
+          <button
+            on:click={goToDashboard}
+            class="w-full py-4 px-6 rounded-xl font-bold text-white text-lg uppercase tracking-wide transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
+            style="background: #f08300;"
+          >
+            {t.goToDashboard}
+          </button>
+        </div>
+      {/if}
+
+      <!-- Enhanced Support Section with Brand Colors -->
+      <div class="mt-10 pt-6 border-t border-gray-100">
+        <!-- Help Card with Brand Green Background -->
+        <div class="rounded-xl p-6 border-2 shadow-lg" style="background: #EAFBEF; border-color: #77AB39;">
+          <div class="text-center">
+            <div class="flex items-center justify-center gap-3 mb-4">
+              <span class="text-2xl">💬</span>
+              <p class="font-bold text-lg" style="color: #13A538;">{t.needHelp}</p>
+            </div>
+            
+            <!-- Support Options -->
+            <div class="flex gap-3 justify-center flex-wrap">
+              <!-- WhatsApp Button -->
+              <button 
+                on:click={openWhatsAppSupport}
+                class="flex items-center gap-2 text-white px-6 py-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl active:scale-[0.98]"
+                style="background: #25D366;"
+                type="button"
+              >
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                </svg>
+                <span>{t.whatsappChat}</span>
+              </button>
+              
+              <!-- Terms Button with Brand Green -->
+              <button 
+                on:click={openTermsAndConditions}
+                class="flex items-center gap-2 text-white px-6 py-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl active:scale-[0.98]"
+                style="background: #13A538;"
+                type="button"
+              >
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                </svg>
+                <span>{t.readTerms}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Login Link -->
+      {#if currentStep === 'check'}
+        <!-- Hidden Admin Access Smiley -->
+        <div class="text-center">
+          <button
+            on:click={handleSmileyClick}
+            class="text-2xl hover:scale-110 transition-transform duration-200 p-2 rounded-full"
+            title="😊"
+            type="button"
+          >
+            😊
+          </button>
+          {#if smileyClickCount > 0 && smileyClickCount < 10}
+            <div class="text-xs text-gray-400 mt-1">
+              {10 - smileyClickCount} {t.adminAccess}
+            </div>
+          {/if}
+        </div>
+      {/if}
+    </div>
+
+    <!-- Enhanced Footer with Brand Colors -->
+    <div class="text-center space-y-3 mt-8">
+      <p class="text-gray-600 font-medium">{t.copyrightText}</p>
+      <div class="flex justify-center gap-6 text-sm">
+        <a href="/privacy" class="transition-colors hover:underline" style="color: #13A538; hover:color: #f08300;">{t.privacyPolicy}</a>
+        <span class="text-gray-400">•</span>
+        <a href="/terms" class="transition-colors hover:underline" style="color: #13A538; hover:color: #f08300;">{t.termsOfUse}</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .rtl {
+    direction: rtl;
+    font-family: 'Cairo', sans-serif;
+  }
+  
+  .rtl input, .rtl select {
+    text-align: right;
+  }
+
+  /* Enhanced Animations */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes bounce-in {
+    0% {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    50% {
+      transform: translateY(0px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  @keyframes float-delayed {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-15px);
+    }
+  }
+
+  @keyframes logo-entrance {
+    from {
+      opacity: 0;
+      transform: scale(0.8) rotate(-5deg);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.6s ease-out;
+  }
+
+  .animate-bounce-in {
+    animation: bounce-in 0.5s ease-out;
+  }
+
+  .animate-shake {
+    animation: shake 0.5s ease-in-out;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-float-delayed {
+    animation: float-delayed 6s ease-in-out infinite 2s;
+  }
+
+  .animate-logo-entrance {
+    animation: logo-entrance 0.8s ease-out 0.2s both;
+  }
+
+  /* Enhanced Input Focus Effects with Brand Colors */
+  input:focus, select:focus {
+    box-shadow: 0 0 0 3px rgba(119, 171, 57, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border-color: #77AB39 !important;
+  }
+
+  /* Button hover effects */
+  button {
+    transition: all 0.2s ease;
+  }
+
+  button:active {
+    transform: scale(0.98);
+  }
+
+  /* Brand Orange Button Hover */
+  button[style*="#f08300"]:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 10px 25px rgba(240, 131, 0, 0.3);
+  }
+
+  /* Brand Green Button Hover */
+  button[style*="#13A538"]:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 10px 25px rgba(19, 165, 56, 0.3);
+  }
+
+  /* WhatsApp Button Hover */
+  button[style*="#25D366"]:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 10px 25px rgba(37, 211, 102, 0.3);
+  }
+
+  /* Background blur effect for glass morphism */
+  .backdrop-blur-sm {
+    backdrop-filter: blur(12px);
+  }
+
+  /* Enhanced placeholder styling */
+  input::placeholder, select::placeholder {
+    color: #C0A32A;
+    opacity: 0.7;
+  }
+
+  /* Custom scrollbar for mobile */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(240, 131, 0, 0.3) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: rgba(240, 131, 0, 0.3);
+    border-radius: 2px;
+  }
+
+  /* Subtle glow effect for focused elements */
+  input:focus, select:focus, button:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(119, 171, 57, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  /* RTL specific improvements */
+  .rtl input[type="tel"] {
+    direction: ltr;
+    text-align: left;
+  }
+</style>
+
+
+is it hanlig regitrations ?
