@@ -570,55 +570,173 @@
 
       // Skip header row
       const transactionRows = jsonData.slice(1).filter((row: any) => row.length > 0);
-      processingMessage = `Queuing ${transactionRows.length} transactions for background processing...`;
+      processingMessage = `Processing ${transactionRows.length} transactions directly...`;
 
-      // Transform Excel data to transaction records
-      const transactions = transactionRows.map((row: any, index: number) => {
-        let customer = row[3]?.toString().trim() || '';
-        
-        // Preserve original format - add leading 0 if missing
-        if (customer.length === 9 && customer.startsWith('5')) {
-          customer = '0' + customer;
+      // Transform Excel data to transaction records and process them directly
+      let processedCount = 0;
+      let failedCount = 0;
+      const errors: any[] = [];
+
+      for (let i = 0; i < transactionRows.length; i++) {
+        const row = transactionRows[i];
+        try {
+          // Extract data from Excel row
+          const billNo = row[0]?.toString().trim() || `AUTO-${Date.now()}-${i}`;
+          const billDate = row[1]?.toString().trim() || new Date().toISOString().split('T')[0];
+          const billAmount = parseFloat(row[2]?.toString().trim() || '0');
+          let customerMobile = row[3]?.toString().trim() || '';
+          const addAmt = parseFloat(row[4]?.toString().trim() || '0');
+          const redeem = parseFloat(row[5]?.toString().trim() || '0');
+
+          // Normalize mobile number - ensure 10 digits starting with 0
+          customerMobile = customerMobile.replace(/\D/g, '');
+          if (customerMobile.length === 9 && customerMobile.startsWith('5')) {
+            customerMobile = '0' + customerMobile;
+          }
+          if (customerMobile.length !== 10 || !customerMobile.startsWith('0')) {
+            throw new Error(`Invalid mobile number format: ${row[3]} -> ${customerMobile}`);
+          }
+
+          console.log(`Processing row ${i + 1}: ${billNo}, ${customerMobile}, Amount: ${billAmount}, Add: ${addAmt}, Redeem: ${redeem}`);
+
+          // Find or create customer
+          let customer = null;
+          const { data: existingCustomers, error: customerLookupError } = await supabase
+            .from('customers')
+            .select('id, customer_code, mobile, branch_id, total_points')
+            .eq('mobile', customerMobile)
+            .limit(1);
+
+          if (customerLookupError) {
+            throw new Error(`Customer lookup failed: ${customerLookupError.message}`);
+          }
+
+          if (existingCustomers && existingCustomers.length > 0) {
+            customer = existingCustomers[0];
+            console.log(`Found existing customer: ${customer.id}`);
+          } else {
+            // Create new customer
+            const { data: defaultCardType } = await supabase
+              .from('card_types')
+              .select('id')
+              .eq('name', 'bronze')
+              .single();
+
+            const newCustomerData = {
+              customer_code: customerMobile,
+              mobile: customerMobile,
+              branch_id: selectedBranch,
+              card_type_id: defaultCardType?.id,
+              status: 'active',
+              card_status: 'unregistered',
+              points: 0,
+              total_points: 0,
+              created_at: new Date().toISOString()
+            };
+
+            const { data: newCustomer, error: customerError } = await supabase
+              .from('customers')
+              .insert([newCustomerData])
+              .select('id, customer_code, mobile, branch_id, total_points')
+              .single();
+
+            if (customerError) {
+              throw new Error(`Failed to create customer: ${customerError.message}`);
+            }
+            customer = newCustomer;
+            console.log(`Created new customer: ${customer.id}`);
+          }
+
+          // Convert decimal values to integers as expected by database
+          const pointsEarnedInt = Math.round(addAmt);
+          const pointsRedeemedInt = Math.round(redeem);
+          const addAmtInt = Math.round(addAmt);
+          const redeemInt = Math.round(redeem);
+
+          // Create transaction with INTEGER values
+          const transactionData = {
+            bill_no: billNo,
+            bill_date: billDate,
+            bill_amount: billAmount,
+            customer_id: customer.id,
+            customer_mobile: customerMobile,
+            customer_code: customerMobile,
+            branch_id: selectedBranch,
+            transaction_type: 'upload',
+            amount: billAmount,
+            points_earned: pointsEarnedInt,
+            points_redeemed: pointsRedeemedInt,
+            add_amt: addAmtInt,
+            redeem: redeemInt,
+            notes: `Excel Upload - Bill #${billNo}`,
+            transaction_date: new Date().toISOString(),
+            status: 'completed',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+
+          console.log(`Inserting transaction:`, transactionData);
+
+          const { error: transactionError } = await supabase
+            .from('customer_transactions')
+            .insert([transactionData]);
+
+          if (transactionError) {
+            throw new Error(`Transaction insert failed: ${transactionError.message}`);
+          }
+
+          // Update customer total points
+          const newTotalPoints = (customer.total_points || 0) + addAmtInt - redeemInt;
+          const { error: updateError } = await supabase
+            .from('customers')
+            .update({ 
+              total_points: Math.max(0, newTotalPoints),
+              points: Math.max(0, newTotalPoints),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', customer.id);
+
+          if (updateError) {
+            console.warn(`Failed to update customer points: ${updateError.message}`);
+          }
+
+          processedCount++;
+          processingMessage = `Processed ${processedCount}/${transactionRows.length} transactions...`;
+
+        } catch (err: any) {
+          failedCount++;
+          const errorMsg = `Row ${i + 1}: ${err.message}`;
+          errors.push({ row: i + 1, error: errorMsg });
+          console.error(errorMsg);
         }
 
-        return {
-          customer_mobile: customer,
-          amount: parseFloat(row[2]?.toString().trim() || '0'),
-          transaction_id: row[0]?.toString().trim() || '',
-          date: row[1]?.toString().trim() || '',
-          notes: `Points Add: ${row[4] || 0}, Points Redeem: ${row[5] || 0}`,
-          // Include original Excel row data for processing
-          _row: {
-            bill_no: row[0]?.toString().trim() || '',
-            bill_date: row[1]?.toString().trim() || '',
-            bill_amount: parseFloat(row[2]?.toString().trim() || '0'),
-            add_amt: parseFloat(row[4]?.toString().trim() || '0'),
-            redeem: parseFloat(row[5]?.toString().trim() || '0'),
-            rowNumber: index + 2
-          }
-        };
-      });
+        // Update progress (simple progress tracking)
+        uploadProgress = ((i + 1) / transactionRows.length) * 100;
+      }
 
-      processingMessage = 'Submitting to upload queue...';
+      // Final results
+      uploadStats.total = transactionRows.length;
+      uploadStats.successful = processedCount;
+      uploadStats.errors = failedCount;
+      uploadErrors = errors;
 
-      // Queue the upload job
-      uploadJobId = await uploadManager.startUpload(
-        selectedFile!,
-        selectedBranch
-      );
+      if (processedCount > 0) {
+        success = `Upload completed! Successfully processed ${processedCount} out of ${transactionRows.length} transactions.`;
+        if (failedCount > 0) {
+          success += ` ${failedCount} transactions failed - see error details below.`;
+        }
+        
+        // Log the upload
+        await logUpload(selectedFile!.name, transactionRows.length, processedCount, failedCount, errors);
+      } else {
+        error = `Upload failed! No transactions were processed successfully.`;
+      }
 
-      success = `Upload queued successfully! Job ID: ${uploadJobId}. Processing will continue in background.`;
-      processingMessage = 'Upload queued for background processing';
-
-      // Start monitoring progress
-      startProgressMonitoring();
-
-      // Refresh the status displays
-      loadLastUploadStatus();
-      loadRecentUploads();
+      processingMessage = 'Upload completed!';
 
     } catch (err: any) {
-      error = `Failed to queue upload: ${err.message}`;
+      error = `Upload failed: ${err.message}`;
+      console.error('Upload error:', err);
     } finally {
       isLoading = false;
     }
