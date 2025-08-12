@@ -1074,17 +1074,35 @@
       </div>
     {/if}
 
+    <!-- Job Management Actions -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900">Job Management</h2>
+          <p class="text-sm text-gray-600">Monitor and manage all upload operations</p>
+        </div>
+        <div class="flex gap-3">
+          <a 
+            href="/admin/upload-jobs" 
+            class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-200"
+          >
+            📋 View All Job Details
+          </a>
+          <a 
+            href="/admin/upload-status" 
+            class="text-blue-600 hover:text-blue-700 font-medium px-4 py-3 border border-blue-200 rounded-lg hover:bg-blue-50 transition-all duration-200"
+          >
+            Upload Dashboard →
+          </a>
+        </div>
+      </div>
+    </div>
+
     <!-- Recent Uploads Summary -->
     {#if recentUploads.length > 0}
       <div class="bg-white rounded-lg shadow p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-semibold">Recent Uploads</h2>
-          <a 
-            href="/admin/upload-status" 
-            class="text-blue-600 hover:text-blue-700 text-sm font-medium"
-          >
-            View Dashboard →
-          </a>
         </div>
 
         <div class="overflow-x-auto">

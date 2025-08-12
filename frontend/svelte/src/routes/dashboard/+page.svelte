@@ -505,6 +505,26 @@
 
 
 
+<!-- Logo Header Section -->
+<div class="text-center py-6 sm:py-8">
+  <div class="max-w-6xl mx-auto px-3 sm:px-4 md:px-6">
+    <div class="relative inline-block transform hover:scale-105 transition-all duration-300">
+      <div class="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-3xl blur-lg opacity-20 animate-pulse"></div>
+      <div class="relative bg-white p-4 sm:p-6 rounded-3xl shadow-2xl border border-gray-100">
+        <img src="/logo.png" alt="Urban Market Logo" class="h-12 sm:h-16 w-auto mx-auto" />
+      </div>
+    </div>
+    <div class="mt-4">
+      <div class="inline-flex items-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 px-3 sm:px-4 py-2 rounded-full border border-green-200">
+        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+        <span class="text-sm font-medium text-green-700" class:text-right={$language === 'ar'}>
+          {$language === 'ar' ? 'لوحة تحكم العميل' : 'Customer Dashboard'}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Dashboard Widgets -->
 <main class="p-3 sm:p-4 md:p-6 max-w-6xl mx-auto mt-4 sm:mt-6 md:mt-8">
   {#if isLoading}
@@ -620,131 +640,151 @@
         
         <!-- Mobile-Optimized Points Display -->
         <div class="text-center mb-6 md:mb-8">
-          <div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 md:gap-8 mb-6 md:mb-8">
-            <!-- Current Points - Mobile Responsive Card -->
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8 md:gap-12 mb-8 md:mb-10">
+            <!-- Current Points - Enhanced Modern Card -->
             <div class="relative group w-full sm:w-auto">
-              <!-- Animated background glow -->
-              <div class="absolute -inset-1 bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-600 rounded-2xl blur opacity-25 group-hover:opacity-40 animate-pulse"></div>
+              <!-- Enhanced animated background glow -->
+              <div class="absolute -inset-2 bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-600 rounded-3xl blur-xl opacity-30 group-hover:opacity-50 animate-pulse transition-opacity duration-500"></div>
               
-              <!-- Main card - Responsive sizing -->
-              <div class="relative w-full sm:w-32 md:w-36 h-32 sm:h-36 md:h-44 rounded-2xl overflow-hidden" style="background: linear-gradient(135deg, rgba(19, 165, 56, 0.9) 0%, rgba(119, 171, 57, 0.9) 100%); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2);">
-                <!-- Holographic grid pattern -->
-                <div class="absolute inset-0 opacity-10" style="background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px), repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px);"></div>
+              <!-- Main card - Enhanced styling -->
+              <div class="relative w-full sm:w-40 md:w-44 h-40 sm:h-44 md:h-48 rounded-3xl overflow-hidden transform hover:scale-105 transition-all duration-500" style="background: linear-gradient(135deg, #13A538 0%, #10B981 50%, #059669 100%); box-shadow: 0 20px 40px rgba(19, 165, 56, 0.2);">
                 
-                <!-- Animated corner accents - Responsive -->
-                <div class="absolute top-0 left-0 w-4 h-4 sm:w-6 sm:h-6 border-t-2 border-l-2 border-white opacity-50"></div>
-                <div class="absolute top-0 right-0 w-4 h-4 sm:w-6 sm:h-6 border-t-2 border-r-2 border-white opacity-50"></div>
-                <div class="absolute bottom-0 left-0 w-4 h-4 sm:w-6 sm:h-6 border-b-2 border-l-2 border-white opacity-50"></div>
-                <div class="absolute bottom-0 right-0 w-4 h-4 sm:w-6 sm:h-6 border-b-2 border-r-2 border-white opacity-50"></div>
+                <!-- Enhanced holographic pattern -->
+                <div class="absolute inset-0 opacity-15" style="background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3) 0%, transparent 50%), linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%);"></div>
                 
-                <!-- Content - Responsive -->
-                <div class="relative z-10 h-full flex flex-col justify-center items-center p-3 sm:p-4">
-                  <!-- LED-style indicator -->
-                  <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-cyan-400 shadow-lg animate-pulse mb-1 sm:mb-2" style="box-shadow: 0 0 10px #00ffff;"></div>
+                <!-- Floating particles effect -->
+                <div class="absolute top-4 left-4 w-1 h-1 bg-white rounded-full animate-ping opacity-60"></div>
+                <div class="absolute top-8 right-6 w-1.5 h-1.5 bg-cyan-300 rounded-full animate-pulse opacity-70"></div>
+                <div class="absolute bottom-6 left-6 w-1 h-1 bg-white rounded-full animate-ping opacity-50" style="animation-delay: 1s;"></div>
+                
+                <!-- Enhanced corner accents -->
+                <div class="absolute top-0 left-0 w-6 h-6 sm:w-8 sm:h-8 border-t-3 border-l-3 border-white opacity-60 rounded-tl-3xl"></div>
+                <div class="absolute top-0 right-0 w-6 h-6 sm:w-8 sm:h-8 border-t-3 border-r-3 border-white opacity-60 rounded-tr-3xl"></div>
+                <div class="absolute bottom-0 left-0 w-6 h-6 sm:w-8 sm:h-8 border-b-3 border-l-3 border-white opacity-60 rounded-bl-3xl"></div>
+                <div class="absolute bottom-0 right-0 w-6 h-6 sm:w-8 sm:h-8 border-b-3 border-r-3 border-white opacity-60 rounded-br-3xl"></div>
+                
+                <!-- Content - Enhanced -->
+                <div class="relative z-10 h-full flex flex-col justify-center items-center p-4 sm:p-5">
+                  <!-- Enhanced LED indicator -->
+                  <div class="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-cyan-400 shadow-2xl animate-pulse mb-2 sm:mb-3" style="box-shadow: 0 0 20px #22d3ee, 0 0 40px #22d3ee;"></div>
                   
-                  <!-- Number display - Responsive text -->
-                  <div class="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 sm:mb-2 font-mono tracking-wider" style="text-shadow: 0 0 20px rgba(255,255,255,0.5), 0 0 10px rgba(19,165,56,0.8);">
+                  <!-- Enhanced number display -->
+                  <div class="text-2xl sm:text-3xl md:text-4xl font-black text-white mb-2 sm:mb-3 font-mono tracking-wider drop-shadow-2xl" style="text-shadow: 0 0 30px rgba(255,255,255,0.8), 0 0 15px rgba(19,165,56,0.9);">
                     {isLoading ? '...' : currentBalance.toFixed(2)}
                   </div>
                   
-                  <!-- Label with futuristic styling - Responsive -->
-                  <div class="text-xs sm:text-xs text-white uppercase tracking-widest font-bold opacity-90 px-2 py-1 rounded border border-white border-opacity-30" style="background: rgba(255,255,255,0.1); text-shadow: 0 0 10px rgba(255,255,255,0.8);">
+                  <!-- Enhanced label -->
+                  <div class="text-xs sm:text-sm text-white uppercase tracking-widest font-black opacity-95 px-3 py-1.5 rounded-lg border border-white border-opacity-40" style="background: rgba(255,255,255,0.15); text-shadow: 0 0 15px rgba(255,255,255,1); backdrop-filter: blur(10px);">
                     {$language === 'ar' ? 'الحالي' : 'CURRENT'}
                   </div>
                   
-                  <!-- Scanning line animation -->
-                  <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-pulse"></div>
+                  <!-- Enhanced scanning line -->
+                  <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-pulse" style="box-shadow: 0 0 10px #22d3ee;"></div>
                 </div>
                 
-                <!-- Holographic shimmer effect -->
-                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-10 transform -skew-x-12 animate-pulse"></div>
+                <!-- Enhanced shimmer effect -->
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 animate-pulse transition-opacity duration-700"></div>
               </div>
             </div>
             
-            <!-- Lifetime Points - Mobile Responsive Card -->
+            <!-- Lifetime Points - Enhanced Modern Card -->
             <div class="relative group w-full sm:w-auto">
-              <!-- Animated background glow -->
-              <div class="absolute -inset-1 bg-gradient-to-r from-orange-400 via-amber-500 to-orange-600 rounded-2xl blur opacity-25 group-hover:opacity-40 animate-pulse"></div>
+              <!-- Enhanced animated background glow -->
+              <div class="absolute -inset-2 bg-gradient-to-r from-orange-400 via-amber-500 to-orange-600 rounded-3xl blur-xl opacity-30 group-hover:opacity-50 animate-pulse transition-opacity duration-500"></div>
               
-              <!-- Main card - Responsive sizing -->
-              <div class="relative w-full sm:w-32 md:w-36 h-32 sm:h-36 md:h-44 rounded-2xl overflow-hidden" style="background: linear-gradient(135deg, rgba(240, 131, 0, 0.9) 0%, rgba(255, 149, 0, 0.9) 100%); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2);">
-                <!-- Holographic grid pattern -->
-                <div class="absolute inset-0 opacity-10" style="background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px), repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px);"></div>
+              <!-- Main card - Enhanced styling -->
+              <div class="relative w-full sm:w-40 md:w-44 h-40 sm:h-44 md:h-48 rounded-3xl overflow-hidden transform hover:scale-105 transition-all duration-500" style="background: linear-gradient(135deg, #f08300 0%, #fb923c 50%, #ea580c 100%); box-shadow: 0 20px 40px rgba(240, 131, 0, 0.2);">
                 
-                <!-- Animated corner accents - Responsive -->
-                <div class="absolute top-0 left-0 w-4 h-4 sm:w-6 sm:h-6 border-t-2 border-l-2 border-white opacity-50"></div>
-                <div class="absolute top-0 right-0 w-4 h-4 sm:w-6 sm:h-6 border-t-2 border-r-2 border-white opacity-50"></div>
-                <div class="absolute bottom-0 left-0 w-4 h-4 sm:w-6 sm:h-6 border-b-2 border-l-2 border-white opacity-50"></div>
-                <div class="absolute bottom-0 right-0 w-4 h-4 sm:w-6 sm:h-6 border-b-2 border-r-2 border-white opacity-50"></div>
+                <!-- Enhanced holographic pattern -->
+                <div class="absolute inset-0 opacity-15" style="background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3) 0%, transparent 50%), linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%);"></div>
                 
-                <!-- Content - Responsive -->
-                <div class="relative z-10 h-full flex flex-col justify-center items-center p-3 sm:p-4">
-                  <!-- LED-style indicator -->
-                  <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-yellow-400 shadow-lg animate-pulse mb-1 sm:mb-2" style="box-shadow: 0 0 10px #ffff00;"></div>
+                <!-- Floating particles effect -->
+                <div class="absolute top-4 right-4 w-1 h-1 bg-white rounded-full animate-ping opacity-60"></div>
+                <div class="absolute top-8 left-6 w-1.5 h-1.5 bg-yellow-300 rounded-full animate-pulse opacity-70"></div>
+                <div class="absolute bottom-6 right-6 w-1 h-1 bg-white rounded-full animate-ping opacity-50" style="animation-delay: 1s;"></div>
+                
+                <!-- Enhanced corner accents -->
+                <div class="absolute top-0 left-0 w-6 h-6 sm:w-8 sm:h-8 border-t-3 border-l-3 border-white opacity-60 rounded-tl-3xl"></div>
+                <div class="absolute top-0 right-0 w-6 h-6 sm:w-8 sm:h-8 border-t-3 border-r-3 border-white opacity-60 rounded-tr-3xl"></div>
+                <div class="absolute bottom-0 left-0 w-6 h-6 sm:w-8 sm:h-8 border-b-3 border-l-3 border-white opacity-60 rounded-bl-3xl"></div>
+                <div class="absolute bottom-0 right-0 w-6 h-6 sm:w-8 sm:h-8 border-b-3 border-r-3 border-white opacity-60 rounded-br-3xl"></div>
+                
+                <!-- Content - Enhanced -->
+                <div class="relative z-10 h-full flex flex-col justify-center items-center p-4 sm:p-5">
+                  <!-- Enhanced LED indicator -->
+                  <div class="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-yellow-400 shadow-2xl animate-pulse mb-2 sm:mb-3" style="box-shadow: 0 0 20px #facc15, 0 0 40px #facc15;"></div>
                   
-                  <!-- Number display - Responsive text -->
-                  <div class="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 sm:mb-2 font-mono tracking-wider" style="text-shadow: 0 0 20px rgba(255,255,255,0.5), 0 0 10px rgba(240,131,0,0.8);">
+                  <!-- Enhanced number display -->
+                  <div class="text-2xl sm:text-3xl md:text-4xl font-black text-white mb-2 sm:mb-3 font-mono tracking-wider drop-shadow-2xl" style="text-shadow: 0 0 30px rgba(255,255,255,0.8), 0 0 15px rgba(240,131,0,0.9);">
                     {isLoading ? '...' : lifetimeEarned.toFixed(2)}
                   </div>
                   
-                  <!-- Label with futuristic styling - Responsive -->
-                  <div class="text-xs sm:text-xs text-white uppercase tracking-widest font-bold opacity-90 px-2 py-1 rounded border border-white border-opacity-30" style="background: rgba(255,255,255,0.1); text-shadow: 0 0 10px rgba(255,255,255,0.8);">
+                  <!-- Enhanced label -->
+                  <div class="text-xs sm:text-sm text-white uppercase tracking-widest font-black opacity-95 px-3 py-1.5 rounded-lg border border-white border-opacity-40" style="background: rgba(255,255,255,0.15); text-shadow: 0 0 15px rgba(255,255,255,1); backdrop-filter: blur(10px);">
                     {$language === 'ar' ? 'مدى الحياة' : 'LIFETIME'}
                   </div>
                   
-                  <!-- Scanning line animation -->
-                  <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-yellow-400 to-transparent animate-pulse"></div>
+                  <!-- Enhanced scanning line -->
+                  <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-400 to-transparent animate-pulse" style="box-shadow: 0 0 10px #facc15;"></div>
                 </div>
                 
-                <!-- Holographic shimmer effect -->
-                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-10 transform -skew-x-12 animate-pulse"></div>
+                <!-- Enhanced shimmer effect -->
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 animate-pulse transition-opacity duration-700"></div>
               </div>
             </div>
           </div>
           
-          <!-- Mobile-Optimized Description Cards -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 text-center">
+          <!-- Enhanced Mobile-Optimized Description Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 text-center">
             <div class="relative group">
-              <!-- Glow background -->
-              <div class="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-green-500 rounded-xl blur opacity-20 group-hover:opacity-30 transition-opacity"></div>
+              <!-- Enhanced glow background -->
+              <div class="absolute -inset-2 bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-600 rounded-2xl blur-lg opacity-25 group-hover:opacity-40 transition-opacity duration-500"></div>
               
-              <!-- Card content - Mobile responsive padding -->
-              <div class="relative p-3 sm:p-4 rounded-xl border border-emerald-500 border-opacity-30" style="background: linear-gradient(135deg, rgba(19, 165, 56, 0.1) 0%, rgba(119, 171, 57, 0.1) 100%); backdrop-filter: blur(5px);">
-                <!-- LED indicator -->
-                <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 mx-auto mb-1 sm:mb-2 animate-pulse" style="box-shadow: 0 0 8px #10b981;"></div>
+              <!-- Enhanced card content -->
+              <div class="relative p-5 sm:p-6 rounded-2xl border-2 border-emerald-400 border-opacity-40 transform hover:scale-105 transition-all duration-300" style="background: linear-gradient(135deg, rgba(19, 165, 56, 0.08) 0%, rgba(119, 171, 57, 0.12) 100%); backdrop-filter: blur(15px); box-shadow: 0 8px 32px rgba(19, 165, 56, 0.15);">
+                <!-- Enhanced LED indicator -->
+                <div class="w-3 h-3 rounded-full bg-emerald-400 mx-auto mb-3 sm:mb-4 animate-pulse" style="box-shadow: 0 0 20px #10b981, 0 0 40px rgba(16, 185, 129, 0.3);"></div>
                 
-                <h3 class="text-base sm:text-lg font-bold mb-1 sm:mb-2" style="color: #13A538; text-shadow: 0 0 10px rgba(19, 165, 56, 0.5);">
+                <h3 class="text-lg sm:text-xl font-black mb-2 sm:mb-3" style="color: #13A538; text-shadow: 0 0 15px rgba(19, 165, 56, 0.4); background: linear-gradient(45deg, #13A538, #10B981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
                   {$t.yourBalance}
                 </h3>
-                <p class="text-gray-600 text-xs sm:text-sm font-mono opacity-80">
+                <p class="text-gray-700 text-sm sm:text-base font-semibold opacity-90 leading-relaxed">
                   {selectedBranch === 'all' ? 
                     $t.totalAvailable : 
                     ($language === 'ar' ? 
                       (branches.find(b => b.id.toString() === selectedBranch)?.name_ar || branches.find(b => b.id.toString() === selectedBranch)?.name_en || 'Selected Branch') : 
                       (branches.find(b => b.id.toString() === selectedBranch)?.name_en || branches.find(b => b.id.toString() === selectedBranch)?.name || 'Selected Branch'))}
                 </p>
+                
+                <!-- Decorative elements -->
+                <div class="absolute top-2 right-2 w-2 h-2 bg-emerald-300 rounded-full animate-ping opacity-60"></div>
+                <div class="absolute bottom-2 left-2 w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse opacity-70"></div>
               </div>
             </div>
             
             <div class="relative group">
-              <!-- Glow background -->
-              <div class="absolute -inset-1 bg-gradient-to-r from-orange-400 to-amber-500 rounded-xl blur opacity-20 group-hover:opacity-30 transition-opacity"></div>
+              <!-- Enhanced glow background -->
+              <div class="absolute -inset-2 bg-gradient-to-r from-orange-400 via-amber-500 to-orange-600 rounded-2xl blur-lg opacity-25 group-hover:opacity-40 transition-opacity duration-500"></div>
               
-              <!-- Card content - Mobile responsive padding -->
-              <div class="relative p-3 sm:p-4 rounded-xl border border-orange-500 border-opacity-30" style="background: linear-gradient(135deg, rgba(240, 131, 0, 0.1) 0%, rgba(255, 149, 0, 0.1) 100%); backdrop-filter: blur(5px);">
-                <!-- LED indicator -->
-                <div class="w-1.5 h-1.5 rounded-full bg-orange-400 mx-auto mb-1 sm:mb-2 animate-pulse" style="box-shadow: 0 0 8px #f97316;"></div>
+              <!-- Enhanced card content -->
+              <div class="relative p-5 sm:p-6 rounded-2xl border-2 border-orange-400 border-opacity-40 transform hover:scale-105 transition-all duration-300" style="background: linear-gradient(135deg, rgba(240, 131, 0, 0.08) 0%, rgba(255, 149, 0, 0.12) 100%); backdrop-filter: blur(15px); box-shadow: 0 8px 32px rgba(240, 131, 0, 0.15);">
+                <!-- Enhanced LED indicator -->
+                <div class="w-3 h-3 rounded-full bg-orange-400 mx-auto mb-3 sm:mb-4 animate-pulse" style="box-shadow: 0 0 20px #fb923c, 0 0 40px rgba(251, 146, 60, 0.3);"></div>
                 
-                <h3 class="text-base sm:text-lg font-bold mb-1 sm:mb-2" style="color: #f08300; text-shadow: 0 0 10px rgba(240, 131, 0, 0.5);">
+                <h3 class="text-lg sm:text-xl font-black mb-2 sm:mb-3" style="color: #f08300; text-shadow: 0 0 15px rgba(240, 131, 0, 0.4); background: linear-gradient(45deg, #f08300, #fb923c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
                   {$t.lifetimeEarned}
                 </h3>
-                <p class="text-gray-600 text-xs sm:text-sm font-mono opacity-80">
+                <p class="text-gray-700 text-sm sm:text-base font-semibold opacity-90 leading-relaxed">
                   {selectedBranch === 'all' ? 
                     $t.totalAmountEarned : 
                     ($language === 'ar' ? 
                       (branches.find(b => b.id.toString() === selectedBranch)?.name_ar || branches.find(b => b.id.toString() === selectedBranch)?.name_en || 'Selected Branch') : 
                       (branches.find(b => b.id.toString() === selectedBranch)?.name_en || branches.find(b => b.id.toString() === selectedBranch)?.name || 'Selected Branch'))}
                 </p>
+                
+                <!-- Decorative elements -->
+                <div class="absolute top-2 right-2 w-2 h-2 bg-orange-300 rounded-full animate-ping opacity-60"></div>
+                <div class="absolute bottom-2 left-2 w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse opacity-70"></div>
               </div>
             </div>
           </div>
@@ -768,48 +808,107 @@
         </p>
       </div>
 
-      <!-- Quick Actions Widget -->
-      <div class="bg-white p-4 sm:p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
-        <h3 class="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center" style="color: #13A538;">
-          {$t.quickActions}
-        </h3>
+      <!-- Enhanced Quick Actions Widget -->
+      <div class="relative group">
+        <!-- Enhanced glow background -->
+        <div class="absolute -inset-1 bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-600 rounded-3xl blur-lg opacity-20 group-hover:opacity-30 animate-pulse transition-opacity duration-500"></div>
         
-        <div class="space-y-3 sm:space-y-4">
-          <!-- Virtual Card Button -->
-          <a href="/virtual-card" class="block">
-            <div class="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl transition-all duration-300 hover:shadow-md transform hover:scale-[1.02] cursor-pointer" style="background: linear-gradient(135deg, #f08300 0%, #ff9500 100%); color: white;">
-              <div class="text-2xl sm:text-3xl">💳</div>
-              <div class="flex-1 min-w-0">
-                <h4 class="font-bold text-base sm:text-lg truncate">{$t.virtualCard}</h4>
-                <p class="text-orange-100 text-xs sm:text-sm truncate">{$t.viewYourCard}</p>
-              </div>
-              <div class="text-xl sm:text-2xl opacity-70 flex-shrink-0">→</div>
+        <!-- Main container -->
+        <div class="relative bg-white p-6 sm:p-8 md:p-10 rounded-3xl shadow-2xl border border-gray-100 hover:shadow-3xl transition-all duration-500" style="backdrop-filter: blur(20px);">
+          
+          <!-- Enhanced header -->
+          <div class="text-center mb-6 sm:mb-8">
+            <div class="inline-flex items-center gap-3 mb-4">
+              <div class="w-3 h-3 bg-indigo-500 rounded-full animate-pulse" style="box-shadow: 0 0 20px #6366f1;"></div>
+              <h3 class="text-2xl sm:text-3xl font-black" style="background: linear-gradient(135deg, #13A538 0%, #3b82f6 50%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-shadow: 0 0 30px rgba(19, 165, 56, 0.3);">
+                {$t.quickActions}
+              </h3>
+              <div class="w-3 h-3 bg-indigo-500 rounded-full animate-pulse" style="box-shadow: 0 0 20px #6366f1; animation-delay: 0.5s;"></div>
             </div>
-          </a>
+          </div>
+        
+          <div class="space-y-4 sm:space-y-5">
+            <!-- Enhanced My Offers Button - Moved to Top -->
+            <a href="/my-offers" class="block group/offers" class:flex-row-reverse={$language === 'ar'}>
+              <div class="relative overflow-hidden rounded-2xl transform hover:scale-[1.03] transition-all duration-500">
+                <!-- Animated background -->
+                <div class="absolute inset-0 bg-gradient-to-r from-yellow-600 via-amber-500 to-yellow-700 opacity-90"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover/offers:opacity-10 transform -skew-x-12 translate-x-[-100%] group-hover/offers:translate-x-[100%] transition-all duration-700"></div>
+                
+                <!-- Content -->
+                <div class="relative flex items-center gap-4 sm:gap-5 p-4 sm:p-5 text-white" class:flex-row-reverse={$language === 'ar'}>
+                  <div class="flex-shrink-0 p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                    <div class="text-3xl sm:text-4xl">🎁</div>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h4 class="font-black text-lg sm:text-xl truncate drop-shadow-lg">{$t.myOffers}</h4>
+                    <p class="text-yellow-100 text-sm sm:text-base truncate font-medium">{$t.viewSpecialOffers}</p>
+                  </div>
+                  <div class="flex-shrink-0 p-2 bg-white/20 rounded-lg backdrop-blur-sm transform group-hover/offers:translate-x-1 transition-transform duration-300">
+                    <div class="text-2xl sm:text-3xl opacity-90">→</div>
+                  </div>
+                </div>
+                
+                <!-- Decorative elements -->
+                <div class="absolute top-2 right-2 w-2 h-2 bg-white rounded-full animate-ping opacity-60"></div>
+                <div class="absolute bottom-2 left-2 w-1.5 h-1.5 bg-yellow-200 rounded-full animate-pulse opacity-70"></div>
+              </div>
+            </a>
 
-          <!-- Customer Support Button -->
-          <a href="/customer-support" class="block">
-            <div class="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl transition-all duration-300 hover:shadow-md transform hover:scale-[1.02] cursor-pointer" style="background: linear-gradient(135deg, #13A538 0%, #77AB39 100%); color: white;" class:flex-row-reverse={$language === 'ar'}>
-              <div class="text-2xl sm:text-3xl">💬</div>
-              <div class="flex-1 min-w-0">
-                <h4 class="font-bold text-base sm:text-lg truncate">{$t.customerSupport}</h4>
-                <p class="text-green-100 text-xs sm:text-sm truncate">{$t.needHelp}</p>
+            <!-- Enhanced Virtual Card Button -->
+            <a href="/virtual-card" class="block group/card">
+              <div class="relative overflow-hidden rounded-2xl transform hover:scale-[1.03] transition-all duration-500">
+                <!-- Animated background -->
+                <div class="absolute inset-0 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 opacity-90"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover/card:opacity-10 transform -skew-x-12 translate-x-[-100%] group-hover/card:translate-x-[100%] transition-all duration-700"></div>
+                
+                <!-- Content -->
+                <div class="relative flex items-center gap-4 sm:gap-5 p-4 sm:p-5 text-white">
+                  <div class="flex-shrink-0 p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                    <div class="text-3xl sm:text-4xl">�</div>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h4 class="font-black text-lg sm:text-xl truncate drop-shadow-lg">{$t.virtualCard}</h4>
+                    <p class="text-orange-100 text-sm sm:text-base truncate font-medium">{$t.viewYourCard}</p>
+                  </div>
+                  <div class="flex-shrink-0 p-2 bg-white/20 rounded-lg backdrop-blur-sm transform group-hover/card:translate-x-1 transition-transform duration-300">
+                    <div class="text-2xl sm:text-3xl opacity-90">→</div>
+                  </div>
+                </div>
+                
+                <!-- Decorative elements -->
+                <div class="absolute top-2 right-2 w-2 h-2 bg-white rounded-full animate-ping opacity-60"></div>
+                <div class="absolute bottom-2 left-2 w-1.5 h-1.5 bg-orange-200 rounded-full animate-pulse opacity-70"></div>
               </div>
-              <div class="text-xl sm:text-2xl opacity-70 flex-shrink-0">→</div>
-            </div>
-          </a>
+            </a>
 
-          <!-- My Offers Button -->
-          <a href="/my-offers" class="block">
-            <div class="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl transition-all duration-300 hover:shadow-md transform hover:scale-[1.02] cursor-pointer" style="background: linear-gradient(135deg, #C0A32A 0%, #D4B836 100%); color: white;" class:flex-row-reverse={$language === 'ar'}>
-              <div class="text-2xl sm:text-3xl">🎁</div>
-              <div class="flex-1 min-w-0">
-                <h4 class="font-bold text-base sm:text-lg truncate">{$t.myOffers}</h4>
-                <p class="text-yellow-100 text-xs sm:text-sm truncate">{$t.viewSpecialOffers}</p>
+            <!-- Enhanced Customer Support Button -->
+            <a href="/customer-support" class="block group/support" class:flex-row-reverse={$language === 'ar'}>
+              <div class="relative overflow-hidden rounded-2xl transform hover:scale-[1.03] transition-all duration-500">
+                <!-- Animated background -->
+                <div class="absolute inset-0 bg-gradient-to-r from-green-600 via-emerald-500 to-green-700 opacity-90"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover/support:opacity-10 transform -skew-x-12 translate-x-[-100%] group-hover/support:translate-x-[100%] transition-all duration-700"></div>
+                
+                <!-- Content -->
+                <div class="relative flex items-center gap-4 sm:gap-5 p-4 sm:p-5 text-white" class:flex-row-reverse={$language === 'ar'}>
+                  <div class="flex-shrink-0 p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                    <div class="text-3xl sm:text-4xl">💬</div>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h4 class="font-black text-lg sm:text-xl truncate drop-shadow-lg">{$t.customerSupport}</h4>
+                    <p class="text-green-100 text-sm sm:text-base truncate font-medium">{$t.needHelp}</p>
+                  </div>
+                  <div class="flex-shrink-0 p-2 bg-white/20 rounded-lg backdrop-blur-sm transform group-hover/support:translate-x-1 transition-transform duration-300">
+                    <div class="text-2xl sm:text-3xl opacity-90">→</div>
+                  </div>
+                </div>
+                
+                <!-- Decorative elements -->
+                <div class="absolute top-2 right-2 w-2 h-2 bg-white rounded-full animate-ping opacity-60"></div>
+                <div class="absolute bottom-2 left-2 w-1.5 h-1.5 bg-green-200 rounded-full animate-pulse opacity-70"></div>
               </div>
-              <div class="text-xl sm:text-2xl opacity-70 flex-shrink-0">→</div>
-            </div>
-          </a>
+            </a>
+          </div>
         </div>
       </div>
     </div>

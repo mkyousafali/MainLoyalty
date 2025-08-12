@@ -314,6 +314,22 @@
       </div>
     </div>
   {:else}
+  <!-- Logo Section -->
+  <div class="text-center mb-8">
+    <div class="relative inline-block transform hover:scale-105 transition-all duration-300">
+      <div class="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-3xl blur-lg opacity-20 animate-pulse"></div>
+      <div class="relative bg-white p-4 rounded-3xl shadow-2xl border border-gray-100">
+        <img src="/logo.png" alt="Urban Market Logo" class="h-12 w-auto mx-auto" />
+      </div>
+    </div>
+    <div class="mt-4">
+      <div class="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-50 to-blue-50 px-4 py-2 rounded-full border border-indigo-200">
+        <div class="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+        <span class="text-sm font-medium text-indigo-700">Admin Control Panel</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Header -->
   <div class="flex justify-between items-center mb-8 pr-6">
     <div class="flex-1">
