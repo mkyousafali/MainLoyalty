@@ -40,18 +40,13 @@ class UploadManager {
     }
 
     async startUpload(file: File, branchId: string, transactions: TransactionRecord[]): Promise<string> {
-        const response = await fetch('/api/uploads/queue', {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('branchId', branchId);
+        
+        const response = await fetch('/api/upload-queue', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                // Add auth header if you have authentication
-                // 'Authorization': `Bearer ${getAuthToken()}`
-            },
-            body: JSON.stringify({
-                branch_id: branchId,
-                file_name: file.name,
-                transactions: transactions
-            })
+            body: formData
         });
 
         if (!response.ok) {
@@ -60,7 +55,7 @@ class UploadManager {
         }
 
         const result = await response.json();
-        const uploadId = result.job_id;
+        const uploadId = result.jobId;
 
         // Add to active uploads
         const newJob: UploadJob = {
@@ -85,7 +80,7 @@ class UploadManager {
 
     async getUploadStatus(uploadId: string): Promise<UploadJob | null> {
         try {
-            const response = await fetch(`/api/uploads/status/${uploadId}`, {
+            const response = await fetch(`/api/upload-queue/status/${uploadId}`, {
                 headers: {
                     // Add auth header if needed
                     // 'Authorization': `Bearer ${getAuthToken()}`
@@ -105,7 +100,7 @@ class UploadManager {
 
     async getUserJobs(): Promise<UploadJob[]> {
         try {
-            const response = await fetch('/api/uploads/jobs', {
+            const response = await fetch('/api/upload-queue/recent', {
                 headers: {
                     // Add auth header if needed
                     // 'Authorization': `Bearer ${getAuthToken()}`
@@ -126,7 +121,7 @@ class UploadManager {
 
     async cancelJob(uploadId: string): Promise<boolean> {
         try {
-            const response = await fetch(`/api/uploads/cancel/${uploadId}`, {
+            const response = await fetch(`/api/upload-queue/cancel/${uploadId}`, {
                 method: 'DELETE',
                 headers: {
                     // Add auth header if needed

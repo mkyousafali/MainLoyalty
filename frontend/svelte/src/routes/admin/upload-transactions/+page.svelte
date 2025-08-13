@@ -57,34 +57,27 @@
     
     // Debug: Test upload manager
     console.log('Upload Manager:', uploadManager);
-    console.log('Active uploads store:', uploadManager.activeUploadsStore);
-    console.log('Completed uploads store:', uploadManager.completedUploadsStore);
+    console.log('Active uploads store:', uploadManager.activeUploads);
+    console.log('Completed uploads store:', uploadManager.completedUploads);
   });
 
   // Load last upload status from upload manager
   async function loadLastUploadStatus() {
     try {
       // Get active uploads
-      uploadManager.activeUploadsStore.subscribe(uploads => {
-        const uploadArray = Array.from(uploads.values());
+      uploadManager.activeUploads.subscribe(uploads => {
+        const uploadArray = Object.values(uploads);
         if (uploadArray.length > 0) {
-          // Convert UploadProgress to UploadJob format for display
+          // Use the first active upload for display
           const activeUpload = uploadArray[0];
-          lastUploadStatus = {
-            id: activeUpload.jobId,
-            fileName: activeUpload.fileName,
-            status: activeUpload.status,
-            progress: activeUpload.progress,
-            created_at: new Date().toISOString(),
-            error_msg: activeUpload.error
-          };
+          lastUploadStatus = activeUpload;
           showLastUploadStatus = true;
           console.log('Active upload found:', lastUploadStatus);
         }
       });
 
       // Get completed uploads
-      uploadManager.completedUploadsStore.subscribe(uploads => {
+      uploadManager.completedUploads.subscribe(uploads => {
         if (uploads.length > 0 && !lastUploadStatus) {
           lastUploadStatus = uploads[0]; // Most recent completed upload
           showLastUploadStatus = true;
@@ -560,22 +553,37 @@
       isLoading = true;
       error = '';
       success = '';
-      processingMessage = 'Reading Excel file...';
+      processingMessage = 'Submitting file to upload queue...';
 
-      const arrayBuffer = await selectedFile!.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      if (!selectedFile) {
+        throw new Error('No file selected');
+      }
 
-      // Skip header row
-      const transactionRows = jsonData.slice(1).filter((row: any) => row.length > 0);
-      processingMessage = `Processing ${transactionRows.length} transactions directly...`;
+      if (!selectedBranch) {
+        throw new Error('Please select a branch');
+      }
 
-      // Transform Excel data to transaction records and process them directly
-      let processedCount = 0;
-      let failedCount = 0;
-      const errors: any[] = [];
+      // Use uploadManager to handle the upload
+      const jobId = await uploadManager.startUpload(selectedFile, selectedBranch, []);
+      uploadJobId = jobId;
+      
+      processingMessage = `Upload queued successfully! Job ID: ${jobId}`;
+      success = `File uploaded to queue successfully! Job ID: ${jobId}. Processing will continue in the background.`;
+      
+      // Refresh the upload status display
+      await loadLastUploadStatus();
+      
+      isLoading = false;
+      
+      console.log('✅ Upload submitted to queue:', jobId);
+      
+    } catch (err) {
+      isLoading = false;
+      error = `Upload failed: ${err instanceof Error ? err.message : 'Unknown error'}`;
+      console.error('Upload error:', err);
+      processingMessage = '';
+    }
+  }
 
       for (let i = 0; i < transactionRows.length; i++) {
         const row = transactionRows[i];
