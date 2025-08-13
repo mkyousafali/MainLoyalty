@@ -48,6 +48,9 @@
 
   // Unsubscribers for Svelte store subscriptions
   const unsubscribers: Array<() => void> = [];
+  
+  // Real-time update interval for estimated time
+  let updateInterval: NodeJS.Timeout | null = null;
 
   // ────────────────────────────────────────────────────────────────────────────────
   // Lifecycle
@@ -62,6 +65,9 @@
         if (activeArray.length > 0) {
           lastUploadStatus = activeArray[0];
           showLastUploadStatus = true;
+          startRealTimeUpdates();
+        } else {
+          stopRealTimeUpdates();
         }
         updateRecentUploads(activeArray, null);
       });
@@ -70,6 +76,7 @@
         if ((!lastUploadStatus || lastUploadStatus.status !== 'processing') && completed.length > 0) {
           lastUploadStatus = completed[0];
           showLastUploadStatus = true;
+          stopRealTimeUpdates();
         }
         updateRecentUploads(null, completed);
       });
@@ -82,7 +89,27 @@
 
   onDestroy(() => {
     unsubscribers.forEach((u) => u?.());
+    stopRealTimeUpdates();
   });
+
+  function startRealTimeUpdates() {
+    if (updateInterval) return; // Already running
+    
+    updateInterval = setInterval(() => {
+      // Force reactivity update for time-dependent calculations
+      if (lastUploadStatus && lastUploadStatus.status === 'processing') {
+        // Trigger reactivity by reassigning
+        lastUploadStatus = { ...lastUploadStatus };
+      }
+    }, 2000); // Update every 2 seconds
+  }
+
+  function stopRealTimeUpdates() {
+    if (updateInterval) {
+      clearInterval(updateInterval);
+      updateInterval = null;
+    }
+  }
 
   // ────────────────────────────────────────────────────────────────────────────────
   // Data loaders
@@ -128,6 +155,115 @@
   function validateMobile(mobile: string): boolean {
     const cleanMobile = (mobile || '').replace(/\s/g, '');
     return /^5\d{8}$/.test(cleanMobile) || /^05\d{8}$/.test(cleanMobile);
+  }
+
+  function calculateEstimatedTime(uploadStatus: any): string {
+    if (!uploadStatus || uploadStatus.status === 'completed' || uploadStatus.status === 'failed') {
+      return '';
+    }
+
+    const { progress } = uploadStatus;
+    const processed = Number(progress?.processed || 0);
+    const total = Number(progress?.total || 0);
+    
+    // Handle edge cases
+    if (total <= 0) {
+      return 'Unknown';
+    }
+    
+    if (processed <= 0) {
+      return 'Starting...';
+    }
+
+    if (processed >= total) {
+      return 'Finalizing...';
+    }
+
+    // Calculate elapsed time from when processing actually started
+    let startTime;
+    if (uploadStatus.started_at) {
+      startTime = new Date(uploadStatus.started_at);
+    } else if (uploadStatus.created_at) {
+      startTime = new Date(uploadStatus.created_at);
+    } else {
+      return 'Calculating...';
+    }
+
+    const currentTime = new Date();
+    const elapsedMs = currentTime.getTime() - startTime.getTime();
+    
+    // Need at least 3 seconds of data for reasonable estimation
+    if (elapsedMs < 3000) {
+      return 'Calculating...';
+    }
+
+    // Calculate rate (records per second)
+    const ratePerSecond = processed / (elapsedMs / 1000);
+    const remaining = total - processed;
+    
+    if (remaining <= 0) {
+      return 'Almost done...';
+    }
+
+    if (ratePerSecond <= 0) {
+      return 'Calculating...';
+    }
+
+    // Estimate remaining time in seconds
+    const remainingSeconds = Math.ceil(remaining / ratePerSecond);
+
+    // Format the time nicely
+    if (remainingSeconds < 60) {
+      return `${remainingSeconds} second${remainingSeconds !== 1 ? 's' : ''}`;
+    } else if (remainingSeconds < 3600) {
+      const minutes = Math.ceil(remainingSeconds / 60);
+      return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+    } else {
+      const hours = Math.floor(remainingSeconds / 3600);
+      const minutes = Math.ceil((remainingSeconds % 3600) / 60);
+      if (minutes === 0) {
+        return `${hours} hour${hours !== 1 ? 's' : ''}`;
+      } else {
+        return `${hours}h ${minutes}m`;
+      }
+    }
+  }
+
+  function formatDuration(startTime: string, endTime?: string): string {
+    const start = new Date(startTime);
+    const end = endTime ? new Date(endTime) : new Date();
+    const durationMs = end.getTime() - start.getTime();
+    
+    if (durationMs < 1000) {
+      return 'Just now';
+    }
+    
+    const seconds = Math.floor(durationMs / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    
+    if (hours > 0) {
+      const remainingMinutes = minutes % 60;
+      return `${hours}h ${remainingMinutes}m`;
+    } else if (minutes > 0) {
+      const remainingSeconds = seconds % 60;
+      return `${minutes}m ${remainingSeconds}s`;
+    } else {
+      return `${seconds}s`;
+    }
+  }
+
+  function getProcessingStats(uploadStatus: any): { recordsPerMin: number; percentPerMin: number } {
+    if (!uploadStatus || uploadStatus.status !== 'processing' || !uploadStatus.progress.processed) {
+      return { recordsPerMin: 0, percentPerMin: 0 };
+    }
+
+    const startTime = new Date(uploadStatus.started_at || uploadStatus.created_at);
+    const elapsedMinutes = Math.max(0.1, (new Date().getTime() - startTime.getTime()) / 60000);
+    const recordsPerMin = Math.round((uploadStatus.progress.processed / elapsedMinutes) * 10) / 10;
+    const percentPerMin = Math.round(((uploadStatus.progress.processed / uploadStatus.progress.total) * 100) / elapsedMinutes * 10) / 10;
+
+    return { recordsPerMin, percentPerMin };
   }
 
   // IMPORTANT: preview should NOT mutate DB. Use dryRun=true in preview.
@@ -266,7 +402,24 @@
       isLoading = true;
       error = '';
 
+      // Create a temporary upload status for manual transaction
+      const startTime = new Date().toISOString();
+      lastUploadStatus = {
+        id: 'manual-' + Date.now(),
+        fileName: `Manual Entry - Bill ${manualTransaction.bill_no}`,
+        status: 'processing',
+        progress: { processed: 0, total: 1, failed: 0 },
+        created_at: startTime,
+        started_at: startTime
+      };
+      showLastUploadStatus = true;
+      startRealTimeUpdates();
+
       const customer = await validateCustomer(manualTransaction.customer, selectedBranch);
+
+      // Update progress
+      lastUploadStatus.progress.processed = 0.5;
+      lastUploadStatus = { ...lastUploadStatus };
 
       const addAmt = parseFloat(manualTransaction.add_amt) || 0;
       const redeemAmt = parseFloat(manualTransaction.redeem) || 0;
@@ -308,9 +461,31 @@
 
       await logUpload('manual_entry', 1, 1, 0, []);
 
+      // Complete the manual transaction progress
+      lastUploadStatus.progress.processed = 1;
+      lastUploadStatus.status = 'completed';
+      lastUploadStatus.completed_at = new Date().toISOString();
+      lastUploadStatus = { ...lastUploadStatus };
+      
+      // Stop real-time updates after a brief delay
+      setTimeout(() => {
+        stopRealTimeUpdates();
+        // Clear the status after showing completion for 3 seconds
+        setTimeout(() => {
+          showLastUploadStatus = false;
+        }, 3000);
+      }, 1000);
+
       success = 'Transaction added successfully!';
       manualTransaction = { bill_no: '', bill_date: '', bill_amount: '', customer: '', add_amt: '', redeem: '' };
     } catch (e: any) {
+      // Handle error state
+      if (lastUploadStatus) {
+        lastUploadStatus.status = 'failed';
+        lastUploadStatus.error_msg = e.message;
+        lastUploadStatus = { ...lastUploadStatus };
+        stopRealTimeUpdates();
+      }
       error = `Failed to add transaction: ${e.message}`;
     } finally {
       isLoading = false;
@@ -418,16 +593,31 @@
         queueProgress = status.progress ?? { processed: 0, total: 0, failed: 0 };
         uploadProgress = uploadManager.getProgressPercentage(status) ?? 0;
 
+        // Update lastUploadStatus for real-time estimated time calculation
+        lastUploadStatus = {
+          ...status,
+          id: status.id || uploadJobId,
+          fileName: selectedFile?.name || 'Unknown file',
+          progress: status.progress,
+          created_at: status.created_at || new Date().toISOString(),
+          started_at: status.started_at || status.created_at || new Date().toISOString()
+        };
+        showLastUploadStatus = true;
+        startRealTimeUpdates();
+
         if (status.status === 'processing') {
           processingMessage = `Processing: ${queueProgress.processed}/${queueProgress.total} transactions`;
           showProcessStatus = true;
         } else if (status.status === 'completed') {
           showProcessStatus = false;
           success = `Upload completed! ${queueProgress.processed} processed, ${queueProgress.failed} failed.`;
+          lastUploadStatus.completed_at = new Date().toISOString();
+          stopRealTimeUpdates();
           clearInterval(interval);
         } else if (status.status === 'failed') {
           showProcessStatus = false;
           error = `Upload failed: ${status.error_msg || 'Unknown error'}`;
+          stopRealTimeUpdates();
           clearInterval(interval);
         }
       }
@@ -528,7 +718,7 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
         <div>
           <p class="text-sm text-gray-600">File Name</p>
           <p class="font-medium break-all">{lastUploadStatus.fileName}</p>
@@ -548,13 +738,40 @@
             {/if}
           </p>
         </div>
+        <div>
+          <p class="text-sm text-gray-600">
+            {#if lastUploadStatus.status === 'processing'}
+              Estimated Time Left
+            {:else if lastUploadStatus.status === 'completed'}
+              Total Duration
+            {:else}
+              Time Info
+            {/if}
+          </p>
+          <p class="font-medium text-blue-600">
+            {#if lastUploadStatus.status === 'processing'}
+              {calculateEstimatedTime(lastUploadStatus)}
+            {:else if lastUploadStatus.status === 'completed' && lastUploadStatus.completed_at}
+              {formatDuration(lastUploadStatus.created_at, lastUploadStatus.completed_at)}
+            {:else if lastUploadStatus.created_at}
+              {formatDuration(lastUploadStatus.created_at)} elapsed
+            {:else}
+              -
+            {/if}
+          </p>
+        </div>
       </div>
 
       <!-- Progress Bar -->
       <div class="mb-3">
         <div class="flex justify-between text-sm text-gray-600 mb-1">
           <span>Progress</span>
-          <span>{uploadManager.getProgressPercentage(lastUploadStatus)}%</span>
+          <div class="flex gap-3">
+            <span>{uploadManager.getProgressPercentage(lastUploadStatus)}%</span>
+            {#if lastUploadStatus.status === 'processing'}
+              <span class="text-blue-600">• {calculateEstimatedTime(lastUploadStatus)} remaining</span>
+            {/if}
+          </div>
         </div>
         <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
           <div class="h-2 rounded-full transition-all duration-300"
@@ -582,11 +799,32 @@
       {/if}
 
       <!-- Timestamps -->
-      <div class="flex flex-wrap gap-4 text-sm text-gray-600">
-        <span>Started: {new Date(lastUploadStatus.created_at).toLocaleString()}</span>
-        {#if lastUploadStatus.started_at}<span>Processing: {new Date(lastUploadStatus.started_at).toLocaleString()}</span>{/if}
-        {#if lastUploadStatus.completed_at}<span>Completed: {new Date(lastUploadStatus.completed_at).toLocaleString()}</span>{/if}
+      <div class="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
+        <span>📅 Started: {new Date(lastUploadStatus.created_at).toLocaleString()}</span>
+        {#if lastUploadStatus.started_at}
+          <span>⚙️ Processing: {new Date(lastUploadStatus.started_at).toLocaleString()}</span>
+        {/if}
+        {#if lastUploadStatus.completed_at}
+          <span>✅ Completed: {new Date(lastUploadStatus.completed_at).toLocaleString()}</span>
+        {/if}
+        {#if lastUploadStatus.status === 'processing'}
+          <span class="text-blue-600">⏱️ Running for: {formatDuration(lastUploadStatus.started_at || lastUploadStatus.created_at)}</span>
+        {/if}
       </div>
+
+      <!-- Performance Stats -->
+      {#if lastUploadStatus.status === 'processing' && lastUploadStatus.progress.processed > 0}
+        <div class="bg-blue-50 rounded-lg p-3 mb-3">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-blue-700 font-medium">Processing Rate:</span>
+            <div class="flex gap-4 text-blue-600">
+              <span>{getProcessingStats(lastUploadStatus).recordsPerMin} records/min</span>
+              <span>•</span>
+              <span>{getProcessingStats(lastUploadStatus).percentPerMin}% per min</span>
+            </div>
+          </div>
+        </div>
+      {/if}
 
       {#if lastUploadStatus.error_msg}
         <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
