@@ -13,10 +13,9 @@ export default defineConfig({
 		sveltekit(),
 		SvelteKitPWA({
 			srcDir: './src',
-			mode: 'production',
+			mode: 'development',
 			scope: '/',
 			base: '/',
-			selfDestroying: process.env.NODE_ENV === 'production',
 			manifest: {
 				name: 'Urban Market Loyalty',
 				short_name: 'Urban Market',
@@ -73,8 +72,7 @@ export default defineConfig({
 							expiration: {
 								maxEntries: 10,
 								maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-							},
-							cacheKeyWillBeUsed: async ({ request }) => `${request.url}`
+							}
 						}
 					},
 					{
@@ -91,10 +89,8 @@ export default defineConfig({
 				]
 			},
 			devOptions: {
-				enabled: process.env.NODE_ENV === 'development',
-				suppressWarnings: true,
-				navigateFallback: '/',
-				navigateFallbackAllowlist: [/^\/$/]
+				enabled: true,
+				suppressWarnings: true
 			}
 		})
 	],
