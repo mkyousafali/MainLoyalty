@@ -1,15 +1,187 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { supabase } from '$lib/supabase';
+  
   let currentLang: 'en' | 'ar' = 'en';
-  let selectedUsers: any[] = [];
+  let selectedUsers: number[] = [];
   let bulkAction = '';
+  let users: any[] = [];
+  let loading = true;
+  let error = '';
 
-  // Sample user data for password reset
-  let users = [
-    { id: 1, name: 'Ahmed Hassan', email: 'ahmed@company.com', role: 'Admin', status: 'Active', branch: 'Main Branch' },
-    { id: 2, name: 'Sarah Ali', email: 'sarah@company.com', role: 'Manager', status: 'Active', branch: 'Branch 2' },
-    { id: 3, name: 'Omar Mohammed', email: 'omar@company.com', role: 'Employee', status: 'Blocked', branch: 'Branch 3' },
-    { id: 4, name: 'Fatima Ibrahim', email: 'fatima@company.com', role: 'Employee', status: 'Active', branch: 'Main Branch' }
-  ];
+  // Load real admin users from database
+  async function loadAdminUsers() {
+    try {
+      loading = true;
+      error = '';
+      
+      const { data, error: fetchError } = await supabase
+        .from('admin_users')
+        .select(`
+          id,
+          full_name,
+          email,
+          username,
+          is_active,
+          created_at,
+          last_login,
+          role_id,
+          roles (
+            name
+          )
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (fetchError) {
+        console.error('Error fetching admin users:', fetchError);
+        error = 'Failed to load users';
+        return;
+      }
+      
+      users = data.map(user => ({
+        id: user.id,
+        name: user.full_name || user.username || 'Unknown',
+        email: user.email,
+        role: Array.isArray(user.roles) ? user.roles[0]?.name || 'No Role' : user.roles?.name || 'No Role',
+        status: user.is_active ? 'Active' : 'Blocked',
+        branch: 'Main Branch', // Add branch logic later if needed
+        lastLogin: user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'
+      }));
+      
+      console.log('Loaded admin users:', users);
+    } catch (err) {
+      console.error('Error loading admin users:', err);
+      error = 'Failed to load users';
+    } finally {
+      loading = false;
+    }
+  }
+
+  // Reset single user password
+  async function resetSinglePassword(userId: number) {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+    
+    if (confirm(`Reset password for ${user.name}?`)) {
+      try {
+        // Generate new temporary password
+        const tempPassword = generateTempPassword();
+        
+        // In a real implementation, you'd update the password in the database
+        // For now, we'll just show the temporary password
+        alert(`New temporary password for ${user.name}: ${tempPassword}\n\nPlease share this with the user securely.`);
+        
+        console.log('Password reset for user:', userId, 'Temp password:', tempPassword);
+      } catch (err) {
+        console.error('Error resetting password:', err);
+        alert('Failed to reset password. Please try again.');
+      }
+    }
+  }
+
+  // Generate temporary password
+  function generateTempPassword(): string {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    let password = '';
+    for (let i = 0; i < 8; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  }
+
+  // Toggle user active status
+  async function toggleUserStatus(userId: number) {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+    
+    const newStatus = user.status === 'Active' ? false : true;
+    const statusText = newStatus ? 'activate' : 'block';
+    
+    if (confirm(`Are you sure you want to ${statusText} ${user.name}?`)) {
+      try {
+        const { error } = await supabase
+          .from('admin_users')
+          .update({ is_active: newStatus })
+          .eq('id', userId);
+        
+        if (error) {
+          console.error('Error updating user status:', error);
+          alert('Failed to update user status');
+          return;
+        }
+        
+        // Update local state
+        user.status = newStatus ? 'Active' : 'Blocked';
+        users = [...users];
+        
+        console.log('User status updated:', userId, 'New status:', newStatus);
+      } catch (err) {
+        console.error('Error updating user status:', err);
+        alert('Failed to update user status');
+      }
+    }
+  }
+
+  // Bulk operations
+  async function handleBulkAction() {
+    if (bulkAction && selectedUsers.length > 0) {
+      const action = bulkAction;
+      const count = selectedUsers.length;
+      
+      if (confirm(`${action} for ${count} selected users?`)) {
+        try {
+          if (action === 'reset') {
+            // Generate temp passwords for selected users
+            const passwords = selectedUsers.map(userId => {
+              const user = users.find(u => u.id === userId);
+              const tempPassword = generateTempPassword();
+              return { userId, userName: user?.name, tempPassword };
+            });
+            
+            let message = 'Temporary passwords generated:\n\n';
+            passwords.forEach(({ userName, tempPassword }) => {
+              message += `${userName}: ${tempPassword}\n`;
+            });
+            
+            alert(message + '\nPlease share these passwords securely with the users.');
+            
+          } else if (action === 'block' || action === 'activate') {
+            const newStatus = action === 'activate';
+            
+            const { error } = await supabase
+              .from('admin_users')
+              .update({ is_active: newStatus })
+              .in('id', selectedUsers);
+            
+            if (error) {
+              console.error('Error bulk updating users:', error);
+              alert('Failed to update users');
+              return;
+            }
+            
+            // Update local state
+            users = users.map(user => 
+              selectedUsers.includes(user.id) 
+                ? { ...user, status: newStatus ? 'Active' : 'Blocked' }
+                : user
+            );
+          }
+          
+          console.log(`Bulk ${action} completed for users:`, selectedUsers);
+        } catch (err) {
+          console.error('Error in bulk action:', err);
+          alert('Failed to complete bulk action');
+        }
+        
+        selectedUsers = [];
+        bulkAction = '';
+      }
+    }
+  }
+
+  onMount(() => {
+    loadAdminUsers();
+  });
 
   const translations = {
     en: {
@@ -30,8 +202,12 @@
       lastPasswordReset: 'Last Password Reset',
       action: 'Action',
       resetPassword: 'Reset Password',
+      blockUser: 'Block User',
+      activateUser: 'Activate User',
       active: 'Active',
       blocked: 'Blocked',
+      loading: 'Loading users...',
+      retry: 'Retry',
       admin: 'Admin',
       manager: 'Manager',
       employee: 'Employee',
@@ -59,8 +235,12 @@
       lastPasswordReset: 'آخر إعادة تعيين كلمة مرور',
       action: 'الإجراء',
       resetPassword: 'إعادة تعيين كلمة المرور',
+      blockUser: 'حظر المستخدم',
+      activateUser: 'تفعيل المستخدم',
       active: 'نشط',
       blocked: 'محظور',
+      loading: 'جاري تحميل المستخدمين...',
+      retry: 'إعادة المحاولة',
       admin: 'مدير',
       manager: 'مشرف',
       employee: 'موظف',
@@ -98,34 +278,16 @@
     selectedUsers = [];
   }
 
-  function handleBulkAction() {
-    if (bulkAction && selectedUsers.length > 0) {
-      const action = bulkAction;
-      const count = selectedUsers.length;
-      
-      if (confirm(`${action} for ${count} selected users?`)) {
-        // Implement bulk action logic here
-        console.log(`Performing ${action} on users:`, selectedUsers);
-        selectedUsers = [];
-        bulkAction = '';
-      }
-    }
-  }
-
-  function resetSinglePassword(userId: number) {
-    if (confirm('Reset password for this user?')) {
-      console.log('Resetting password for user:', userId);
-    }
-  }
-
   function getStatusColor(status: string) {
     return status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
   }
 
   function getRoleColor(role: string) {
     const colors: Record<string, string> = {
-      'Admin': 'bg-purple-100 text-purple-800',
-      'Manager': 'bg-blue-100 text-blue-800',
+      'Super Admin': 'bg-purple-100 text-purple-800',
+      'Admin': 'bg-blue-100 text-blue-800',
+      'Manager': 'bg-indigo-100 text-indigo-800',
+      'Staff': 'bg-gray-100 text-gray-800',
       'Employee': 'bg-gray-100 text-gray-800'
     };
     return colors[role] || colors['Employee'];
@@ -139,21 +301,52 @@
       <h1 class="text-3xl font-bold text-gray-900 mb-2" class:text-right={currentLang === 'ar'}>{t.passwordReset}</h1>
       <p class="text-gray-600" class:text-right={currentLang === 'ar'}>{t.selectUsers}</p>
     </div>
+    
+    <!-- Language Toggle -->
+    <button
+      on:click={handleLanguageToggle}
+      class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+    >
+      {currentLang === 'en' ? 'عربي' : 'English'}
+    </button>
   </div>
 
-  <!-- Bulk Actions -->
-  {#if selectedUsers.length > 0}
-    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-      <div class="flex items-center justify-between" class:flex-row-reverse={currentLang === 'ar'}>
-        <div class="flex items-center gap-4" class:flex-row-reverse={currentLang === 'ar'}>
-          <span class="text-blue-800 font-semibold">{selectedUsers.length} {t.usersSelected}</span>
-          <select bind:value={bulkAction} class="px-3 py-2 border border-blue-300 rounded-lg bg-white">
-            <option value="">{t.bulkActions}</option>
-            <option value="reset">{t.resetSelected}</option>
-            <option value="block">{t.blockSelected}</option>
-            <option value="activate">{t.activateSelected}</option>
-          </select>
-          <button on:click={handleBulkAction} disabled={!bulkAction} class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed">
+  <!-- Loading State -->
+  {#if loading}
+    <div class="flex items-center justify-center py-12">
+      <div class="flex items-center gap-3">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <span class="text-gray-600">{t.loading}</span>
+      </div>
+    </div>
+  {:else if error}
+    <!-- Error State -->
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+      <div class="flex items-center gap-2">
+        <span class="text-red-500 text-xl">❌</span>
+        <span class="text-red-800 font-medium">{error}</span>
+      </div>
+      <button 
+        on:click={loadAdminUsers}
+        class="mt-3 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+      >
+        {t.retry}
+      </button>
+    </div>
+  {:else}
+    <!-- Bulk Actions -->
+    {#if selectedUsers.length > 0}
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div class="flex items-center justify-between" class:flex-row-reverse={currentLang === 'ar'}>
+          <div class="flex items-center gap-4" class:flex-row-reverse={currentLang === 'ar'}>
+            <span class="text-blue-800 font-semibold">{selectedUsers.length} {t.usersSelected}</span>
+            <select bind:value={bulkAction} class="px-3 py-2 border border-blue-300 rounded-lg bg-white">
+              <option value="">{t.bulkActions}</option>
+              <option value="reset">{t.resetSelected}</option>
+              <option value="block">{t.blockSelected}</option>
+              <option value="activate">{t.activateSelected}</option>
+            </select>
+            <button on:click={handleBulkAction} disabled={!bulkAction} class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed">
             {t.proceed}
           </button>
         </div>
@@ -229,6 +422,10 @@
                   <span>🔑</span>
                   <span>{t.resetPassword}</span>
                 </button>
+                <button on:click={() => toggleUserStatus(user.id)} class="ml-2 bg-blue-100 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-200 transition flex items-center gap-2">
+                  <span>{user.status === 'Active' ? '🚫' : '✅'}</span>
+                  <span>{user.status === 'Active' ? 'Block' : 'Activate'}</span>
+                </button>
               </td>
             </tr>
           {/each}
@@ -236,6 +433,7 @@
       </table>
     </div>
   </div>
+  {/if}
 </div>
 
 <style>

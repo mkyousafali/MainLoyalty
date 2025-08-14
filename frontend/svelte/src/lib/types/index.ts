@@ -36,11 +36,14 @@ export interface Permission {
 export type PermissionCategory = 
   | 'user_management'
   | 'customer_management'
-  | 'analytics'
   | 'content_management'
   | 'system_settings'
   | 'financial'
-  | 'notifications';
+  | 'notifications'
+  | 'data_management'
+  | 'card_management'
+  | 'rewards_coupons'
+  | 'admin_tools';
 
 export interface AdminFunction {
   id: string;

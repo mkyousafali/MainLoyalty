@@ -115,26 +115,6 @@ export const defaultPermissions: Permission[] = [
     isRequired: false
   },
   
-  // Analytics
-  {
-    id: 'analytics_view',
-    name: 'View Analytics',
-    description: 'Access analytics and reports',
-    category: 'analytics',
-    resource: 'analytics',
-    action: 'read',
-    isRequired: false
-  },
-  {
-    id: 'reports_export',
-    name: 'Export Reports',
-    description: 'Export reports and data',
-    category: 'analytics',
-    resource: 'reports',
-    action: 'export',
-    isRequired: false
-  },
-  
   // Content Management
   {
     id: 'offers_manage',
@@ -222,7 +202,7 @@ export const defaultAdminFunctions: AdminFunction[] = [
     description: 'Main dashboard overview',
     path: '/admin',
     icon: '🏠',
-    category: 'analytics',
+    category: 'system_settings',
     requiredPermissions: [],
     isCore: true
   },
@@ -254,16 +234,6 @@ export const defaultAdminFunctions: AdminFunction[] = [
     icon: '👤',
     category: 'customer_management',
     requiredPermissions: ['customer_view'],
-    isCore: false
-  },
-  {
-    id: 'analytics_reports',
-    name: 'Analytics & Reports',
-    description: 'View analytics and reports',
-    path: '/admin/analytics-reports',
-    icon: '📊',
-    category: 'analytics',
-    requiredPermissions: ['analytics_view'],
     isCore: false
   },
   {
@@ -336,7 +306,7 @@ export const defaultRoles: UserRole[] = [
     description: 'Limited admin access for daily operations',
     isMasterAdmin: false,
     permissions: defaultPermissions.filter(p => 
-      ['customer_view', 'customer_edit', 'analytics_view', 'notifications_send'].includes(p.id)
+      ['customer_view', 'customer_edit', 'notifications_send', 'offers_manage'].includes(p.id)
     ),
     isActive: true,
     createdAt: new Date().toISOString()

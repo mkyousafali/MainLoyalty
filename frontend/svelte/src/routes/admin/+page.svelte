@@ -280,7 +280,6 @@
     { title: t.uploadCustomers, desc: t.importCustomerData, icon: '👥', color: 'blue', href: '/admin/upload-customers' },
     { title: t.manageBranches, desc: t.createBranches, icon: '🏢', color: 'red', href: '/admin/manage-branches' },
     { title: t.uploadTransactions, desc: t.bulkUpload, icon: '📊', color: 'green', href: '/admin/upload-transactions' },
-    { title: t.viewAnalytics, desc: t.performanceReports, icon: '📈', color: 'purple', href: '/admin/analytics-reports' },
     { title: t.manageCustomers, desc: t.customerDatabase, icon: '👤', color: 'green', href: '/admin/customer-management' },
     { title: t.sendNotifications, desc: t.customerMessaging, icon: '🔔', color: 'purple', href: '/admin/notification-center' },
     { title: t.exportData, desc: t.downloadReports, icon: '📤', color: 'blue', href: '/admin/export-data' }
@@ -542,17 +541,6 @@
       {#if !sectionStates.reportsData}
         <div class="px-6 pb-6">
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <a href="/admin/analytics-reports" class="group bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-5 hover:from-purple-100 hover:to-purple-200 transition-all duration-200 cursor-pointer block border border-purple-200 hover:border-purple-300 hover:shadow-md">
-              <div class="flex items-start space-x-3" class:flex-row-reverse={currentLang === 'ar'} class:space-x-reverse={currentLang === 'ar'}>
-                <div class="p-2 bg-white rounded-lg shadow-sm group-hover:shadow-md transition-shadow duration-200">
-                  <span class="text-lg text-purple-600">📈</span>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <h4 class="font-medium text-gray-900 truncate" class:text-right={currentLang === 'ar'}>{t.viewAnalytics}</h4>
-                  <p class="text-sm text-gray-600 mt-1" class:text-right={currentLang === 'ar'}>{t.performanceReports}</p>
-                </div>
-              </div>
-            </a>
             <a href="/admin/export-data" class="group bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5 hover:from-blue-100 hover:to-blue-200 transition-all duration-200 cursor-pointer block border border-blue-200 hover:border-blue-300 hover:shadow-md">
               <div class="flex items-start space-x-3" class:flex-row-reverse={currentLang === 'ar'} class:space-x-reverse={currentLang === 'ar'}>
                 <div class="p-2 bg-white rounded-lg shadow-sm group-hover:shadow-md transition-shadow duration-200">

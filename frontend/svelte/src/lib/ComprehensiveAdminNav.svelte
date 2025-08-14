@@ -45,20 +45,20 @@
       ]
     },
     {
-      section: 'Analytics & Reports',
+      section: 'Reports',
       icon: '📈',
       items: [
-        { name: 'Notification Center', href: '/admin/notifications', icon: '🔔' },
-        { name: 'Analytics Reports', href: '/admin/analytics', icon: '📊' },
-        { name: 'User Reports', href: '/admin/user-reports', icon: '📋' }
+        { name: 'Transaction Report', href: '/admin/reports/transaction-report', icon: '💰' },
+        { name: 'Customer Usage Report', href: '/admin/reports/customer-usage', icon: '👥' },
+        { name: 'Registrations Report', href: '/admin/reports/registrations', icon: '📝' }
       ]
     },
     {
-      section: 'Advanced',
+      section: 'Admin Tools',
       icon: '🔧',
       items: [
-        { name: 'Password Reset', href: '/admin/password-reset', icon: '🔒' },
-        { name: 'Clear Transactions', href: '/admin/clear-transactions', icon: '🗑️', danger: true }
+        { name: 'User Reports', href: '/admin/user-reports', icon: '📋' },
+        { name: 'Password Reset', href: '/admin/password-reset', icon: '🔒' }
       ]
     }
   ];

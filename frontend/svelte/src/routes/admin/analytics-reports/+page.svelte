@@ -4,7 +4,7 @@
 
   let isLoading = false;
   let error = '';
-  let selectedDateRange = '30days';
+  let selectedDateRange = 'alltime';
   let selectedBranch = '';
   let branches: any[] = [];
 
@@ -81,6 +81,9 @@
     let startDate: Date;
 
     switch (selectedDateRange) {
+      case 'alltime':
+        // Return a date far in the past to get all records
+        return '1900-01-01T00:00:00.000Z';
       case '7days':
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         break;
@@ -97,28 +100,81 @@
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     }
 
-    return startDate.toISOString().split('T')[0];
+    return startDate.toISOString();
   }
 
   async function loadOverviewStats(dateFilter: string) {
     try {
-      // Total customers
-      let customerQuery = supabase
-        .from('customers')
-        .select('*', { count: 'exact', head: true });
+      // DIRECT TEST: Check if ANY redeem data exists in the entire table
+      console.log('🔍 DIRECT DATABASE TEST - Checking for ANY redeem data...');
       
-      if (selectedBranch) {
-        customerQuery = customerQuery.eq('branch_id', selectedBranch);
+      const { data: redeemTest, count: redeemCount } = await supabase
+        .from('customer_transactions')
+        .select('redeem, id, created_at', { count: 'exact' })
+        .gt('redeem', 0)
+        .limit(10);
+        
+      console.log('🔍 Records with redeem > 0:', {
+        count: redeemCount,
+        records: redeemTest
+      });
+      
+      // Also check for negative redeem values (in case they're stored as negative)
+      const { data: negativeRedeemTest, count: negativeRedeemCount } = await supabase
+        .from('customer_transactions')
+        .select('redeem, id, created_at', { count: 'exact' })
+        .lt('redeem', 0)
+        .limit(10);
+        
+      console.log('🔍 Records with redeem < 0:', {
+        count: negativeRedeemCount,
+        records: negativeRedeemTest
+      });
+
+      // SIMPLE BRUTE FORCE TEST - Get ALL redeem values and sum them
+      console.log('🔍 BRUTE FORCE TEST - Getting ALL redeem values...');
+      const { data: bruteForceRedeem } = await supabase
+        .from('customer_transactions')
+        .select('redeem')
+        .range(0, 100000);
+        
+      if (bruteForceRedeem) {
+        const bruteForceSum = bruteForceRedeem.reduce((sum, row) => {
+          const val = parseFloat(row.redeem) || 0;
+          return sum + Math.abs(val);
+        }, 0);
+        
+        console.log('🔍 BRUTE FORCE RESULT:', {
+          totalRecords: bruteForceRedeem.length,
+          bruteForceSum,
+          nonZeroCount: bruteForceRedeem.filter(r => r.redeem != 0).length,
+          sampleNonZero: bruteForceRedeem.filter(r => r.redeem != 0).slice(0, 10)
+        });
+        
+        // TEMPORARILY set this directly to test
+        if (bruteForceSum > 0) {
+          totalPointsRedeemed = bruteForceSum;
+          console.log('🔍 SETTING totalPointsRedeemed directly to:', bruteForceSum);
+        }
       }
 
-      const { count: totalCustomersCount } = await customerQuery;
+      // Total customers from customer_numbers table
+      const { count: totalCustomersCount } = await supabase
+        .from('customer_numbers')
+        .select('*', { count: 'exact', head: true });
+      
       totalCustomers = totalCustomersCount || 0;
 
-      // New customers in period
+      // New customers who registered today (updated card_status to 'registered')
       let newCustomerQuery = supabase
         .from('customers')
         .select('*', { count: 'exact', head: true })
-        .gte('created_at', dateFilter);
+        .eq('card_status', 'registered');
+
+      // For current date filter, check updated_at for when they became 'registered'
+      if (dateFilter !== '1900-01-01T00:00:00.000Z') {
+        newCustomerQuery = newCustomerQuery.gte('updated_at', dateFilter);
+      }
       
       if (selectedBranch) {
         newCustomerQuery = newCustomerQuery.eq('branch_id', selectedBranch);
@@ -127,41 +183,169 @@
       const { count: newCustomersCount } = await newCustomerQuery;
       newCustomersThisPeriod = newCustomersCount || 0;
 
-      // Transactions and revenue
-      let transactionQuery = supabase
-        .from('transactions')
-        .select('bill_amount, add_amt, redeem')
-        .gte('bill_date', dateFilter);
+      // Get total transaction count with date/branch filter
+      let totalTransactionQuery = supabase
+        .from('customer_transactions')
+        .select('*', { count: 'exact', head: true });
+
+      if (dateFilter !== '1900-01-01T00:00:00.000Z') {
+        totalTransactionQuery = totalTransactionQuery.gte('created_at', dateFilter);
+      }
       
       if (selectedBranch) {
-        transactionQuery = transactionQuery.eq('branch_id', selectedBranch);
+        totalTransactionQuery = totalTransactionQuery.eq('branch_id', selectedBranch);
       }
 
-      const { data: transactionData } = await transactionQuery;
+      const { count: transactionCount } = await totalTransactionQuery;
+      totalTransactions = transactionCount || 0;
+
+      // Use multiple queries to get ACTUAL sums from the database (not limited by row fetch)
+      console.log('🔍 Getting database totals with unlimited queries...');
+      console.log('🔍 Date filter being used:', dateFilter);
+      console.log('🔍 Branch filter being used:', selectedBranch);
       
-      if (transactionData) {
-        totalTransactions = transactionData.length;
-        totalRevenue = transactionData.reduce((sum, t) => sum + (t.bill_amount || 0), 0);
-        totalPointsIssued = transactionData.reduce((sum, t) => sum + (t.add_amt || 0), 0);
-        totalPointsRedeemed = transactionData.reduce((sum, t) => sum + (t.redeem || 0), 0);
+      // First, let's check the total count and some sample data WITHOUT any filters
+      const { data: unfiltered, count: unfilteredCount } = await supabase
+        .from('customer_transactions')
+        .select('redeem', { count: 'exact' })
+        .range(0, 10);
+      
+      console.log('🔍 UNFILTERED sample data (first 10 records):', {
+        totalCount: unfilteredCount,
+        sampleData: unfiltered,
+        nonZeroRedeems: unfiltered?.filter(r => r.redeem > 0).length || 0
+      });
+      
+      // Now let's get ALL redeem values without any date/branch filters first
+      const { data: allRedeemData } = await supabase
+        .from('customer_transactions')
+        .select('redeem')
+        .range(0, 100000);
+        
+      console.log('🔍 ALL redeem data (no filters):', {
+        totalRecords: allRedeemData?.length || 0,
+        nonZeroCount: allRedeemData?.filter(r => r.redeem > 0).length || 0,
+        totalSum: allRedeemData?.reduce((sum, r) => sum + (parseFloat(r.redeem) || 0), 0) || 0,
+        sampleNonZero: allRedeemData?.filter(r => r.redeem > 0).slice(0, 5) || []
+      });
+      
+      // Base query builder function
+      const buildQuery = () => {
+        let query = supabase
+          .from('customer_transactions')
+          .select('amount, add_amt, redeem')
+          .range(0, 100000); // Get up to 100k records to ensure we get all data
+          
+        // Only apply date filter if it's NOT "All Time"
+        if (dateFilter !== '1900-01-01T00:00:00.000Z') {
+          console.log('🔍 Applying date filter:', dateFilter);
+          query = query.gte('created_at', dateFilter);
+        } else {
+          console.log('🔍 Using ALL TIME - no date filter applied');
+        }
+        
+        if (selectedBranch) {
+          console.log('🔍 Applying branch filter:', selectedBranch);
+          query = query.eq('branch_id', selectedBranch);
+        } else {
+          console.log('🔍 No branch filter - showing all branches');
+        }
+        
+        return query;
+      };
+
+      // Get ALL records for calculation (this will bypass the default limit)
+      const { data: allTransactionData } = await buildQuery();
+
+      console.log('🔍 Database query results:', {
+        totalRecords: allTransactionData?.length || 0,
+        sampleRecord: allTransactionData?.[0],
+        dateFilter,
+        branchFilter: selectedBranch
+      });
+      
+      // Calculate totals from ALL records (not limited to default 100)
+      if (allTransactionData) {
+        totalRevenue = allTransactionData.reduce((sum, row) => sum + (parseFloat(row.amount) || 0), 0);
+        totalPointsIssued = allTransactionData.reduce((sum, row) => sum + (parseFloat(row.add_amt) || 0), 0);
+        
+        // Use ONLY the redeem column directly - check both positive and negative values
+        const positiveRedeems = allTransactionData.reduce((sum, row) => {
+          const val = parseFloat(row.redeem) || 0;
+          return val > 0 ? sum + val : sum;
+        }, 0);
+        
+        const negativeRedeems = allTransactionData.reduce((sum, row) => {
+          const val = parseFloat(row.redeem) || 0;
+          return val < 0 ? sum + Math.abs(val) : sum;
+        }, 0);
+        
+        // Use absolute values if redeem is stored as negative
+        totalPointsRedeemed = positiveRedeems > 0 ? positiveRedeems : negativeRedeems;
+        
+        // Average Order Value = Total Revenue / Total Transactions  
         averageOrderValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
+
+        // Find all non-zero redeem records for debugging
+        const nonZeroRedeems = allTransactionData.filter(r => (parseFloat(r.redeem) || 0) > 0);
+
+        console.log('📊 Final Calculated Totals (FILTERED results):', {
+          totalRecords: allTransactionData.length,
+          totalTransactions,
+          totalRevenue,
+          totalPointsIssued,
+          positiveRedeems,
+          negativeRedeems,
+          totalPointsRedeemed_FromRedeemColumn: totalPointsRedeemed,
+          averageOrderValue,
+          nonZeroRedeems: nonZeroRedeems.length,
+          nonZeroRedeemsSample: nonZeroRedeems.slice(0, 5),
+          allPositiveRedeems: allTransactionData.filter(r => r.redeem > 0).map(r => r.redeem),
+          allNegativeRedeems: allTransactionData.filter(r => r.redeem < 0).map(r => r.redeem)
+        });
       }
 
-      // Active customers (customers with transactions in period)
-      let activeCustomerQuery = supabase
-        .from('transactions')
-        .select('customer', { count: 'exact' })
-        .gte('bill_date', dateFilter);
+      // Get Active Customers (unique customers from ALL transactions, not filtered by date)
+      const { data: allCustomerData } = await supabase
+        .from('customer_transactions')
+        .select('customer_code, customer_id, customer_mobile')
+        .range(0, 100000); // Get all records
       
-      if (selectedBranch) {
-        activeCustomerQuery = activeCustomerQuery.eq('branch_id', selectedBranch);
+      if (allCustomerData) {
+        // Try different customer identifiers to find which one has data
+        const customerCodes = new Set(allCustomerData.map(t => t.customer_code).filter(Boolean));
+        const customerIds = new Set(allCustomerData.map(t => t.customer_id).filter(Boolean));
+        const customerMobiles = new Set(allCustomerData.map(t => t.customer_mobile).filter(Boolean));
+        
+        // Use the identifier that has the most unique values
+        const counts = [
+          { name: 'customer_code', count: customerCodes.size },
+          { name: 'customer_id', count: customerIds.size },
+          { name: 'customer_mobile', count: customerMobiles.size }
+        ];
+        
+        const bestIdentifier = counts.reduce((prev, current) => 
+          current.count > prev.count ? current : prev
+        );
+        
+        activeCustomers = bestIdentifier.count;
+        
+        console.log('📊 Debug - Active Customers Analysis:', {
+          totalTransactionRecords: allCustomerData.length,
+          customerIdentifiers: counts,
+          bestIdentifier: bestIdentifier.name,
+          finalActiveCustomers: activeCustomers,
+          sampleData: allCustomerData.slice(0, 3).map(t => ({
+            customer_code: t.customer_code,
+            customer_id: t.customer_id,
+            customer_mobile: t.customer_mobile
+          }))
+        });
       }
-
-      const { data: activeCustomerData } = await activeCustomerQuery;
-      activeCustomers = activeCustomerData ? new Set(activeCustomerData.map(t => t.customer)).size : 0;
 
     } catch (err: any) {
       console.error('Error loading overview stats:', err);
+      error = 'Failed to load analytics data';
     }
   }
 
@@ -169,10 +353,7 @@
     try {
       let query = supabase
         .from('customers')
-        .select(`
-          card_types(name_en, color),
-          points
-        `);
+        .select('card_status, total_points');
       
       if (selectedBranch) {
         query = query.eq('branch_id', selectedBranch);
@@ -182,8 +363,15 @@
 
       if (data) {
         const stats = data.reduce((acc: any, customer: any) => {
-          const cardType = customer.card_types?.name_en || 'No Card';
-          const color = customer.card_types?.color || '#gray';
+          const cardType = customer.card_status || 'No Card';
+          const colors: Record<string, string> = {
+            'Bronze': '#CD7F32',
+            'Silver': '#C0C0C0',
+            'Gold': '#FFD700',
+            'Platinum': '#E5E4E2',
+            'No Card': '#6B7280'
+          };
+          const color = colors[cardType] || '#6B7280';
           
           if (!acc[cardType]) {
             acc[cardType] = {
@@ -195,7 +383,7 @@
           }
           
           acc[cardType].count++;
-          acc[cardType].totalPoints += customer.points || 0;
+          acc[cardType].totalPoints += customer.total_points || 0;
           
           return acc;
         }, {});
@@ -214,27 +402,37 @@
         return;
       }
 
-      const { data } = await supabase
+      // Get branches
+      const { data: branchesData } = await supabase
         .from('branches')
-        .select(`
-          *,
-          customers(count),
-          transactions!inner(bill_amount, bill_date)
-        `);
+        .select('*');
 
-      if (data) {
-        branchStats = data.map(branch => {
-          const recentTransactions = branch.transactions.filter(
-            (t: any) => t.bill_date >= dateFilter
-          );
+      if (branchesData) {
+        // For each branch, get stats from customer_transactions
+        branchStats = await Promise.all(branchesData.map(async (branch) => {
+          // Get customers count for this branch
+          const { count: customersCount } = await supabase
+            .from('customers')
+            .select('*', { count: 'exact', head: true })
+            .eq('branch_id', branch.id);
+          
+          // Get transactions for this branch in the date range
+          const { data: transactionsData } = await supabase
+            .from('customer_transactions')
+            .select('amount, created_at')
+            .eq('branch_id', branch.id)
+            .gte('created_at', dateFilter);
+          
+          const transactionCount = transactionsData?.length || 0;
+          const revenue = transactionsData?.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0) || 0;
           
           return {
-            name: branch.name_en,
-            customers: branch.customers.length,
-            transactions: recentTransactions.length,
-            revenue: recentTransactions.reduce((sum: number, t: any) => sum + (t.bill_amount || 0), 0)
+            name: branch.name_en || branch.name,
+            customers: customersCount || 0,
+            transactions: transactionCount,
+            revenue: revenue
           };
-        });
+        }));
       }
     } catch (err: any) {
       console.error('Error loading branch stats:', err);
@@ -275,13 +473,10 @@
 
   async function loadRecentActivities() {
     try {
-      // Recent transactions
+      // Recent transactions from customer_transactions table
       let transactionQuery = supabase
-        .from('transactions')
-        .select(`
-          *,
-          customers(name)
-        `)
+        .from('customer_transactions')
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(5);
       
@@ -290,7 +485,12 @@
       }
 
       const { data: transactions } = await transactionQuery;
-      recentTransactions = transactions || [];
+      recentTransactions = (transactions || []).map(t => ({
+        ...t,
+        customers: { name: t.customer_code || 'Unknown' }, // Fallback customer name
+        bill_no: t.bill_no || t.id,
+        bill_amount: Math.abs(parseFloat(t.amount) || 0)
+      }));
 
       // Recent registrations
       let registrationQuery = supabase
@@ -314,10 +514,10 @@
   async function loadChartData(dateFilter: string) {
     try {
       let query = supabase
-        .from('transactions')
-        .select('bill_date, bill_amount, add_amt, redeem')
-        .gte('bill_date', dateFilter)
-        .order('bill_date');
+        .from('customer_transactions')
+        .select('created_at, amount, add_amt, redeem')
+        .gte('created_at', dateFilter)
+        .order('created_at');
       
       if (selectedBranch) {
         query = query.eq('branch_id', selectedBranch);
@@ -328,7 +528,7 @@
       if (data) {
         // Group by date for charts
         const chartData = data.reduce((acc: any, transaction: any) => {
-          const date = transaction.bill_date;
+          const date = new Date(transaction.created_at).toISOString().split('T')[0];
           
           if (!acc[date]) {
             acc[date] = {
@@ -339,9 +539,9 @@
             };
           }
           
-          acc[date].revenue += transaction.bill_amount || 0;
-          acc[date].pointsIssued += transaction.add_amt || 0;
-          acc[date].pointsRedeemed += transaction.redeem || 0;
+          acc[date].revenue += Math.abs(parseFloat(transaction.amount) || 0);
+          acc[date].pointsIssued += parseFloat(transaction.add_amt) || 0;
+          acc[date].pointsRedeemed += parseFloat(transaction.redeem) || 0;
           
           return acc;
         }, {});
@@ -427,11 +627,13 @@
     <div class="bg-white rounded-lg shadow p-6 mb-6">
       <div class="flex flex-wrap gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+          <label for="date-range-select" class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
           <select
+            id="date-range-select"
             bind:value={selectedDateRange}
             class="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
+            <option value="alltime">All Time</option>
             <option value="7days">Last 7 Days</option>
             <option value="30days">Last 30 Days</option>
             <option value="90days">Last 90 Days</option>
@@ -440,8 +642,9 @@
         </div>
         
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Branch</label>
+          <label for="branch-select" class="block text-sm font-medium text-gray-700 mb-2">Branch</label>
           <select
+            id="branch-select"
             bind:value={selectedBranch}
             class="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
@@ -617,11 +820,11 @@
             {#each recentRegistrations.slice(0, 5) as customer}
               <div class="flex justify-between items-center text-sm">
                 <div>
-                  <div class="font-medium">{customer.name}</div>
-                  <div class="text-gray-500 font-mono">{customer.customer}</div>
+                  <div class="font-medium">{customer.full_name || customer.name || 'Unknown'}</div>
+                  <div class="text-gray-500 font-mono">{customer.customer_code || customer.mobile || 'No ID'}</div>
                 </div>
                 <div class="text-right">
-                  <div class="font-medium">{customer.points} pts</div>
+                  <div class="font-medium">{customer.total_points || customer.points || 0} pts</div>
                   <div class="text-gray-500">{new Date(customer.created_at).toLocaleDateString()}</div>
                 </div>
               </div>

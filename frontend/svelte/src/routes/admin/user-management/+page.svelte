@@ -10,15 +10,18 @@
   let success = '';
 
   // Create/Edit modal
-  let showModal = false;
+  let showModal =                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                                 {user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                      {user.is_active ? 'Active' : 'Inactive'}
+                    </span>;
   let editingUser: any = null;
   let formData = {
-    name: '',
+    full_name: '',
+    username: '',
     email: '',
     password: '',
-    branch_id: '',
     role_id: '',
-    status: 'active'
+    is_active: true
   };
 
   onMount(() => {
@@ -44,37 +47,27 @@
     try {
       isLoading = true;
       
-      // Load users without relationships first
+      // Load admin users with role relationships
       const { data: usersData, error: loadError } = await supabase
-        .from('users')
-        .select('*')
+        .from('admin_users')
+        .select(`
+          *,
+          roles (
+            id,
+            name,
+            description
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (loadError) throw loadError;
 
-      // Get branch and role data separately and map them manually
-      const [branchesData, rolesData] = await Promise.all([
-        supabase.from('branches').select('id, name_en'),
-        supabase.from('roles').select('id, name')
-      ]);
-
-      // Create lookup maps
-      const branchesMap = {};
-      const rolesMap = {};
-      
-      branchesData.data?.forEach(branch => {
-        branchesMap[branch.id] = branch;
-      });
-      
-      rolesData.data?.forEach(role => {
-        rolesMap[role.id] = role;
-      });
-
-      // Map users with branch and role data
+      // Map users with role relationships (branches aren't needed for admin users)
       users = (usersData || []).map(user => ({
         ...user,
-        branches: user.branch_id ? branchesMap[user.branch_id] : null,
-        roles: user.role_id ? rolesMap[user.role_id] : null
+        name: user.full_name, // Map full_name to name for display
+        role: user.roles ? user.roles.name : 'No Role',
+        role_name: user.roles?.name
       }));
 
     } catch (err: any) {
@@ -87,12 +80,12 @@
   function openCreateModal() {
     editingUser = null;
     formData = {
-      name: '',
+      full_name: '',
+      username: '',
       email: '',
       password: '',
-      branch_id: '',
       role_id: '',
-      status: 'active'
+      is_active: true
     };
     showModal = true;
   }
@@ -100,12 +93,12 @@
   function openEditModal(user: any) {
     editingUser = user;
     formData = {
-      name: user.name,
-      email: user.email,
+      full_name: user.full_name || '',
+      username: user.username || '',
+      email: user.email || '',
       password: '',
-      branch_id: user.branch_id || '',
       role_id: user.role_id || '',
-      status: user.status
+      is_active: user.is_active
     };
     showModal = true;
   }
@@ -122,40 +115,40 @@
       isLoading = true;
 
       const payload: any = {
-        name: formData.name.trim(),
+        full_name: formData.full_name.trim(),
+        username: formData.username.trim(),
         email: formData.email.trim().toLowerCase(),
-        branch_id: formData.branch_id || null,
         role_id: formData.role_id || null,
-        status: formData.status
+        is_active: formData.is_active
       };
 
       // Only include password if provided
       if (formData.password) {
-        // In a real app, you'd hash the password here
+        // In a real app, you'd hash the password here  
         payload.password_hash = formData.password; // This should be hashed
       }
 
       if (editingUser) {
-        // Update existing user
+        // Update existing admin user
         const { error: updateError } = await supabase
-          .from('users')
+          .from('admin_users')
           .update(payload)
           .eq('id', editingUser.id);
 
         if (updateError) throw updateError;
-        success = 'User updated successfully!';
+        success = 'Admin user updated successfully!';
       } else {
-        // Create new user
+        // Create new admin user
         if (!formData.password) {
           throw new Error('Password is required for new users');
         }
 
         const { error: insertError } = await supabase
-          .from('users')
+          .from('admin_users')
           .insert(payload);
 
         if (insertError) throw insertError;
-        success = 'User created successfully!';
+        success = 'Admin user created successfully!';
       }
 
       closeModal();
@@ -169,16 +162,16 @@
 
   async function toggleUserStatus(user: any) {
     try {
-      const newStatus = user.status === 'active' ? 'blocked' : 'active';
+      const newStatus = !user.is_active;
       
       const { error: updateError } = await supabase
-        .from('users')
-        .update({ status: newStatus })
+        .from('admin_users')
+        .update({ is_active: newStatus })
         .eq('id', user.id);
 
       if (updateError) throw updateError;
 
-      success = `User ${newStatus === 'active' ? 'activated' : 'blocked'} successfully!`;
+      success = `Admin user ${newStatus ? 'activated' : 'deactivated'} successfully!`;
       loadUsers();
     } catch (err: any) {
       error = `Failed to update user status: ${err.message}`;
@@ -186,7 +179,7 @@
   }
 
   async function deleteUser(user: any) {
-    if (!confirm(`Are you sure you want to delete user "${user.name}"? This action cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to delete admin user "${user.full_name || user.username}"? This action cannot be undone.`)) {
       return;
     }
 
@@ -194,16 +187,16 @@
       isLoading = true;
 
       const { error: deleteError } = await supabase
-        .from('users')
+        .from('admin_users')
         .delete()
         .eq('id', user.id);
 
       if (deleteError) throw deleteError;
 
-      success = 'User deleted successfully!';
+      success = 'Admin user deleted successfully!';
       loadUsers();
     } catch (err: any) {
-      error = `Failed to delete user: ${err.message}`;
+      error = `Failed to delete admin user: ${err.message}`;
     } finally {
       isLoading = false;
     }
@@ -270,7 +263,7 @@
               <tr>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
@@ -284,22 +277,22 @@
                     <div class="flex items-center">
                       <div class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
                         <span class="text-sm font-medium text-gray-700">
-                          {user.name.charAt(0).toUpperCase()}
+                          {user.full_name ? user.full_name.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase()}
                         </span>
                       </div>
                       <div class="ml-4">
-                        <div class="text-sm font-medium text-gray-900">{user.name}</div>
+                        <div class="text-sm font-medium text-gray-900">{user.full_name || user.username}</div>
                         <div class="text-sm text-gray-500">{user.email}</div>
                       </div>
                     </div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {getRoleBadgeColor(user.roles?.name)}">
-                      {user.roles?.name || 'No Role'}
+                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {getRoleBadgeColor(user.role_name)}">
+                      {user.role_name || 'No Role'}
                     </span>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.branches?.name_en || 'No Branch'}
+                    {user.username || 'N/A'}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
@@ -324,9 +317,9 @@
                     </button>
                     <button
                       on:click={() => toggleUserStatus(user)}
-                      class="{user.status === 'active' ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}"
+                      class="{user.is_active ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}"
                     >
-                      {user.status === 'active' ? 'Block' : 'Activate'}
+                      {user.is_active ? 'Deactivate' : 'Activate'}
                     </button>
                     <button
                       on:click={() => deleteUser(user)}
@@ -357,10 +350,21 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
                 <input
                   type="text"
-                  bind:value={formData.name}
+                  bind:value={formData.full_name}
                   required
                   class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="John Doe"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Username *</label>
+                <input
+                  type="text"
+                  bind:value={formData.username}
+                  required
+                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="john_doe"
                 />
               </div>
               
@@ -402,27 +406,13 @@
               </div>
               
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
-                <select
-                  bind:value={formData.branch_id}
-                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Select a branch...</option>
-                  {#each branches as branch}
-                    <option value={branch.id}>{branch.name_en}</option>
-                  {/each}
-                </select>
-              </div>
-              
-              <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
-                  bind:value={formData.status}
+                  bind:value={formData.is_active}
                   class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="blocked">Blocked</option>
+                  <option value={true}>Active</option>
+                  <option value={false}>Inactive</option>
                 </select>
               </div>
               

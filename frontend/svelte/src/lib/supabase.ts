@@ -109,29 +109,6 @@ export const db = {
     return await supabase.from(table).delete().eq('id', id);
   },
   
-  // Specific operations for Clear Transactions
-  clearTransactionsByDate: async (untilDate: string) => {
-    return await supabase
-      .from(TABLES.CUSTOMER_TRANSACTIONS)
-      .delete()
-      .lte('processed_at', untilDate);
-  },
-  
-  clearTransactionsByCustomers: async (customerIds: number[]) => {
-    return await supabase
-      .from(TABLES.CUSTOMER_TRANSACTIONS)
-      .delete()
-      .in('customer_id', customerIds);
-  },
-  
-  clearTransactionsByDateAndCustomers: async (untilDate: string, customerIds: number[]) => {
-    return await supabase
-      .from(TABLES.CUSTOMER_TRANSACTIONS)
-      .delete()
-      .lte('processed_at', untilDate)
-      .in('customer_id', customerIds);
-  },
-  
   // Customer operations
   getCustomers: async (searchTerm?: string) => {
     let query = supabase

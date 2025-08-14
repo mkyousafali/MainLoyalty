@@ -52,22 +52,22 @@
         { path: '/admin/export-data', label: 'Export Data', icon: '📤', description: 'Export system data' }
       ]
     },
-    reportsAnalytics: {
-      title: 'Reports & Analytics',
-      icon: '📈',
-      buttons: [
-        { path: '/admin/analytics-reports', label: 'Analytics Reports', icon: '📈', description: 'View system analytics' },
-        { path: '/admin/user-reports', label: 'User Reports', icon: '📋', description: 'User activity reports' },
-        { path: '/admin/analytics', label: 'Analytics', icon: '📊', description: 'Analytics dashboard' }
-      ]
-    },
     systemTools: {
       title: 'System Tools',
       icon: '🔧',
       buttons: [
+        { path: '/admin/user-reports', label: 'User Reports', icon: '📋', description: 'User activity reports' },
         { path: '/admin/password-reset', label: 'Password Reset', icon: '🔑', description: 'Password reset management' },
-        { path: '/admin/clear-transactions', label: 'Clear Transactions', icon: '🗑️', description: 'Clear transaction data' },
         { path: '/admin/database-test', label: 'Database Test', icon: '🔧', description: 'Test database connections' }
+      ]
+    },
+    reports: {
+      title: 'Reports',
+      icon: '📈',
+      buttons: [
+        { path: '/admin/reports/transaction-report', label: 'Transaction Report', icon: '💰', description: 'View transaction analytics and reports' },
+        { path: '/admin/reports/customer-usage', label: 'Customer Usage Report', icon: '👥', description: 'Analyze customer usage patterns' },
+        { path: '/admin/reports/registrations', label: 'Registrations Report', icon: '📝', description: 'Track customer registrations' }
       ]
     },
     adminTools: {

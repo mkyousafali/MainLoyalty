@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { supabase } from '$lib/supabase';
   import { 
     availableRoles,
     availablePermissions,
@@ -21,76 +22,61 @@
   let selectedUser: any = null;
   let searchTerm = '';
   let showCreateRole = false;
+  let showEditRole = false;
   let showUserRoleAssignment = false;
+  let isLoading = false;
+  let error = '';
+  let success = '';
   
   // Form states
   let newRoleName = '';
   let newRoleDescription = '';
+  let editRoleName = '';
+  let editRoleDescription = '';
   let selectedPermissions: string[] = [];
+  let editSelectedPermissions: string[] = [];
   let userRolePermissions: string[] = [];
   
-  // Mock users data (replace with actual user store)
-  let users = [
-    { id: '1', name: 'John Doe', email: 'john@example.com', currentRole: 'Admin' },
-    { id: '2', name: 'Jane Smith', email: 'jane@example.com', currentRole: 'Manager' },
-    { id: '3', name: 'Bob Johnson', email: 'bob@example.com', currentRole: 'Staff' },
-    { id: '4', name: 'Alice Brown', email: 'alice@example.com', currentRole: 'Viewer' },
-    { id: '5', name: 'Mike Wilson', email: 'mike@example.com', currentRole: 'Operator' },
-    { id: '6', name: 'Sarah Davis', email: 'sarah@example.com', currentRole: 'Support' },
-  ];
+  // Real data from Supabase
+  let users: any[] = [];
+  let roles: any[] = [];
+  let permissions: any[] = [];
 
-  // Complete user functions based on your admin panel
-  let availableFunctions = [
-    { id: 'upload-customers', name: 'Upload Customers', category: 'customer_management', description: 'Upload and import customer data' },
-    { id: 'upload-transactions', name: 'Upload Transactions', category: 'financial', description: 'Upload and import transaction data' },
-    { id: 'customer-management', name: 'Customer Management', category: 'customer_management', description: 'Manage customer profiles and information' },
-    { id: 'assign-card-type', name: 'Assign Card Type', category: 'customer_management', description: 'Assign card types to customers' },
-    { id: 'extend-validity', name: 'Extend Validity', category: 'customer_management', description: 'Extend card validity periods' },
-    { id: 'assign-coupons', name: 'Assign Coupons', category: 'content_management', description: 'Assign coupons to customers' },
-    { id: 'manage-card-types', name: 'Manage Card Types', category: 'system_settings', description: 'Create and manage card types' },
-    { id: 'manage-branches', name: 'Manage Branches', category: 'system_settings', description: 'Manage branch locations and settings' },
-    { id: 'user-management', name: 'User Management', category: 'user_management', description: 'Manage system users and access' },
-    { id: 'manage-user-roles', name: 'Manage User Roles', category: 'user_management', description: 'Configure user roles and permissions' },
-    { id: 'support-settings', name: 'Support Settings', category: 'system_settings', description: 'Configure customer support settings' },
-    { id: 'terms-conditions', name: 'Terms & Conditions', category: 'content_management', description: 'Manage terms and conditions content' },
-    { id: 'notification-center', name: 'Notification Center', category: 'notifications', description: 'Manage system notifications' },
-    { id: 'export-data', name: 'Export Data', category: 'analytics', description: 'Export system data and reports' },
-    { id: 'analytics-reports', name: 'Analytics Reports', category: 'analytics', description: 'View analytics and business reports' },
-    { id: 'user-reports', name: 'User Reports', category: 'analytics', description: 'Generate user activity reports' },
-    { id: 'password-reset', name: 'Password Reset', category: 'user_management', description: 'Manage password reset functionality' }
-  ];
+  // Available functions built from real permissions
+  $: availableFunctions = permissions.map(perm => ({
+    id: perm.id,
+    name: perm.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    category: perm.module,
+    description: perm.description
+  }));
 
-  // Categories for organizing functions
-  let categories = [
-    'customer_management',
-    'user_management', 
-    'content_management',
-    'system_settings',
-    'analytics',
-    'financial',
-    'notifications'
-  ];
+  // Categories for organizing functions (from database modules)
+  $: categories = [...new Set(permissions.map(p => p.module))].sort();
 
-  // Category display names
+  // Category display names (handle both old static and new dynamic categories)
   const categoryDisplayNames: Record<string, string> = {
     'customer_management': 'Customer Management',
-    'user_management': 'User Management',
+    'user_management': 'User Management', 
     'content_management': 'Content Management',
     'system_settings': 'System Settings',
-    'analytics': 'Analytics & Reports',
     'financial': 'Financial',
-    'notifications': 'Notifications'
+    'notifications': 'Notifications',
+    'transaction_management': 'Transaction Management',
+    'card_management': 'Card Management',
+    'rewards_coupons': 'Rewards & Coupons',
+    'data_management': 'Data Management',
+    'admin_tools': 'Admin Tools'
   };
 
   function getCategoryDisplayName(category: string): string {
-    return categoryDisplayNames[category] || category;
+    return categoryDisplayNames[category] || category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   }
 
-  // Filtered roles by search (excluding master admin)
-  $: filteredRoles = allRoles.filter(role =>
-    !role.isMasterAdmin && (
+  // Filtered roles by search (from real database data)
+  $: filteredRoles = roles.filter(role =>
+    role.is_active && (
       role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      role.description.toLowerCase().includes(searchTerm.toLowerCase())
+      (role.description && role.description.toLowerCase().includes(searchTerm.toLowerCase()))
     )
   );
 
@@ -104,6 +90,7 @@
   onMount(() => {
     // Load permissions data first
     loadPermissionsData();
+    loadRealData();
     
     // For now, allow all admin users to access this page
     // Later you can uncomment this to restrict to master admin only
@@ -111,6 +98,153 @@
     //   goto('/admin');
     // }
   });
+
+  async function loadRealData() {
+    try {
+      isLoading = true;
+      
+      // Load admin users (replace mock users)
+      const { data: adminUsers, error: usersError } = await supabase
+        .from('admin_users')
+        .select(`
+          id,
+          full_name,
+          email,
+          username,
+          is_active,
+          role_id,
+          roles!inner(
+            id,
+            name,
+            description
+          )
+        `)
+        .eq('is_active', true);
+
+      if (usersError) throw usersError;
+
+      // Load all roles with their permissions
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('roles')
+        .select(`
+          *,
+          role_permissions(
+            permission_id,
+            permissions(
+              id,
+              name,
+              description,
+              module
+            )
+          )
+        `)
+        .eq('is_active', true)
+        .order('name');
+
+      if (rolesError) throw rolesError;
+
+      // Load all permissions
+      const { data: permissionsData, error: permissionsError } = await supabase
+        .from('permissions')
+        .select('*');
+
+      if (permissionsError) throw permissionsError;
+
+      // Update the data
+      users = adminUsers?.map(user => ({
+        id: user.id,
+        name: user.full_name,
+        email: user.email,
+        username: user.username,
+        currentRole: user.roles?.name || 'No Role',
+        role_id: user.role_id,
+        is_active: user.is_active
+      })) || [];
+
+      // Transform roles to include permissions
+      roles = rolesData?.map(role => ({
+        ...role,
+        permissions: role.role_permissions?.map(rp => rp.permissions) || []
+      })) || [];
+
+      permissions = permissionsData || [];
+
+      success = 'Data loaded successfully from database!';
+      
+    } catch (err: any) {
+      error = `Failed to load data: ${err.message}`;
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  async function createRoleInDatabase() {
+    if (!newRoleName.trim() || !newRoleDescription.trim()) {
+      error = 'Please fill in all required fields';
+      return;
+    }
+
+    try {
+      isLoading = true;
+
+      // Create role in database
+      const { data: roleData, error: roleError } = await supabase
+        .from('roles')
+        .insert({
+          name: newRoleName,
+          description: newRoleDescription,
+          is_active: true
+        })
+        .select()
+        .single();
+
+      if (roleError) throw roleError;
+
+      // Create role permissions
+      if (selectedPermissions.length > 0) {
+        const permissionEntries = selectedPermissions.map(permId => ({
+          role_id: roleData.id,
+          permission_id: permId
+        }));
+
+        const { error: permError } = await supabase
+          .from('role_permissions')
+          .insert(permissionEntries);
+
+        if (permError) throw permError;
+      }
+
+      success = 'Role created successfully!';
+      closeCreateRole();
+      loadRealData(); // Refresh data
+      
+    } catch (err: any) {
+      error = `Failed to create role: ${err.message}`;
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  async function updateUserRole(userId: string, newRoleId: string) {
+    try {
+      isLoading = true;
+
+      const { error: updateError } = await supabase
+        .from('admin_users')
+        .update({ role_id: newRoleId })
+        .eq('id', userId);
+
+      if (updateError) throw updateError;
+
+      success = 'User role updated successfully!';
+      loadRealData(); // Refresh data
+      
+    } catch (err: any) {
+      error = `Failed to update user role: ${err.message}`;
+    } finally {
+      isLoading = false;
+    }
+  }
 
   function selectRole(role: UserRole) {
     selectedRole = role;
@@ -125,6 +259,114 @@
 
   function closeCreateRole() {
     showCreateRole = false;
+  }
+
+  function openEditRole() {
+    if (!selectedRole) return;
+    
+    showEditRole = true;
+    editRoleName = selectedRole.name;
+    editRoleDescription = selectedRole.description || '';
+    
+    // Get current permissions for this role
+    editSelectedPermissions = selectedRole.permissions?.map(p => p.id) || [];
+  }
+
+  function closeEditRole() {
+    showEditRole = false;
+    editRoleName = '';
+    editRoleDescription = '';
+    editSelectedPermissions = [];
+  }
+
+  async function updateRoleInDatabase() {
+    if (!selectedRole || !editRoleName.trim() || !editRoleDescription.trim()) {
+      error = 'Please fill in all required fields';
+      return;
+    }
+
+    try {
+      isLoading = true;
+
+      // Update role in database
+      const { error: roleError } = await supabase
+        .from('roles')
+        .update({
+          name: editRoleName,
+          description: editRoleDescription
+        })
+        .eq('id', selectedRole.id);
+
+      if (roleError) throw roleError;
+
+      // Delete existing permissions
+      const { error: deleteError } = await supabase
+        .from('role_permissions')
+        .delete()
+        .eq('role_id', selectedRole.id);
+
+      if (deleteError) throw deleteError;
+
+      // Add new permissions
+      if (editSelectedPermissions.length > 0) {
+        const permissionEntries = editSelectedPermissions.map(permId => ({
+          role_id: selectedRole.id,
+          permission_id: permId
+        }));
+
+        const { error: permError } = await supabase
+          .from('role_permissions')
+          .insert(permissionEntries);
+
+        if (permError) throw permError;
+      }
+
+      success = 'Role updated successfully!';
+      closeEditRole();
+      loadRealData(); // Refresh data
+      
+    } catch (err: any) {
+      error = `Failed to update role: ${err.message}`;
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  async function deleteRoleFromDatabase() {
+    if (!selectedRole) return;
+
+    if (!confirm(`Are you sure you want to delete the role "${selectedRole.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      isLoading = true;
+
+      // Delete role permissions first
+      const { error: permError } = await supabase
+        .from('role_permissions')
+        .delete()
+        .eq('role_id', selectedRole.id);
+
+      if (permError) throw permError;
+
+      // Delete role
+      const { error: roleError } = await supabase
+        .from('roles')
+        .delete()
+        .eq('id', selectedRole.id);
+
+      if (roleError) throw roleError;
+
+      success = 'Role deleted successfully!';
+      selectedRole = null; // Clear selection
+      loadRealData(); // Refresh data
+      
+    } catch (err: any) {
+      error = `Failed to delete role: ${err.message}`;
+    } finally {
+      isLoading = false;
+    }
   }
 
   function openUserRoleAssignment() {
@@ -149,8 +391,14 @@
     }
   }
 
-  function togglePermission(permissionId: string, isUserAssignment = false) {
-    if (isUserAssignment) {
+  function togglePermission(permissionId: string, isUserAssignment = false, isEdit = false) {
+    if (isEdit) {
+      if (editSelectedPermissions.includes(permissionId)) {
+        editSelectedPermissions = editSelectedPermissions.filter(id => id !== permissionId);
+      } else {
+        editSelectedPermissions = [...editSelectedPermissions, permissionId];
+      }
+    } else if (isUserAssignment) {
       if (userRolePermissions.includes(permissionId)) {
         userRolePermissions = userRolePermissions.filter(id => id !== permissionId);
       } else {
@@ -165,23 +413,35 @@
     }
   }
 
-  function toggleCategoryPermissions(category: string, isUserAssignment = false) {
+  function toggleCategoryPermissions(category: string, isUserAssignment = false, isEdit = false) {
     const categoryFunctions = functionsByCategory[category];
     const categoryIds = categoryFunctions.map(func => func.id);
     
-    const currentPermissions = isUserAssignment ? userRolePermissions : selectedPermissions;
+    let currentPermissions;
+    if (isEdit) {
+      currentPermissions = editSelectedPermissions;
+    } else if (isUserAssignment) {
+      currentPermissions = userRolePermissions;
+    } else {
+      currentPermissions = selectedPermissions;
+    }
+    
     const allCategorySelected = categoryIds.every(id => currentPermissions.includes(id));
     
     if (allCategorySelected) {
       // Remove all category permissions
-      if (isUserAssignment) {
+      if (isEdit) {
+        editSelectedPermissions = editSelectedPermissions.filter(id => !categoryIds.includes(id));
+      } else if (isUserAssignment) {
         userRolePermissions = userRolePermissions.filter(id => !categoryIds.includes(id));
       } else {
         selectedPermissions = selectedPermissions.filter(id => !categoryIds.includes(id));
       }
     } else {
       // Add all category permissions
-      if (isUserAssignment) {
+      if (isEdit) {
+        editSelectedPermissions = [...new Set([...editSelectedPermissions, ...categoryIds])];
+      } else if (isUserAssignment) {
         userRolePermissions = [...new Set([...userRolePermissions, ...categoryIds])];
       } else {
         selectedPermissions = [...new Set([...selectedPermissions, ...categoryIds])];
@@ -190,87 +450,48 @@
   }
 
   async function handleCreateRole() {
-    if (!newRoleName.trim() || !newRoleDescription.trim()) {
-      alert('Please fill in all required fields');
-      return;
-    }
-
-    const permissions = availableFunctions.filter(func => 
-      selectedPermissions.includes(func.id)
-    ).map(func => ({
-      id: func.id,
-      name: func.name,
-      description: func.description,
-      category: func.category as any, // Type assertion for category
-      resource: func.name,
-      action: 'access',
-      isRequired: false
-    }));
-
-    const newRole = {
-      id: Date.now().toString(),
-      name: newRoleName,
-      description: newRoleDescription,
-      permissions,
-      isActive: true,
-      isMasterAdmin: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    try {
-      await createRole(newRole);
-      closeCreateRole();
-      alert('Role created successfully!');
-    } catch (error) {
-      alert('Error creating role: ' + (error instanceof Error ? error.message : 'Unknown error'));
-    }
+    await createRoleInDatabase();
   }
 
   async function handleSaveUserRole() {
-    if (!selectedUser) {
-      alert('Please select a user');
+    if (!selectedUser || !selectedUser.id) {
+      error = 'Please select a user';
       return;
     }
 
-    const permissions = availableFunctions.filter(func => 
-      userRolePermissions.includes(func.id)
-    ).map(func => ({
-      id: func.id,
-      name: func.name,
-      description: func.description,
-      category: func.category,
-      resource: func.name,
-      action: 'access',
-      isRequired: false
-    }));
-
+    // Find the role ID for the permissions selected
+    // For now, we'll create a custom role or update to existing role
     try {
-      // Update local user data (replace with actual API call)
-      users = users.map(user => 
-        user.id === selectedUser.id 
-          ? { ...user, currentRole: 'Custom Role' }
-          : user
-      );
+      // You might want to create a custom role or assign to existing role
+      // For this example, let's just update the user's current role
+      const selectedRoleId = roles.find(r => r.name === 'Manager')?.id; // Default to Manager
       
-      closeUserRoleAssignment();
-      alert('User role updated successfully!');
-    } catch (error) {
-      alert('Error updating user role: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      if (selectedRoleId) {
+        await updateUserRole(selectedUser.id, selectedRoleId);
+        closeUserRoleAssignment();
+      } else {
+        error = 'Unable to find appropriate role to assign';
+      }
+    } catch (err: any) {
+      error = `Error updating user role: ${err.message}`;
     }
   }
 
-  function selectAllPermissions(isUserAssignment = false) {
+  function selectAllPermissions(isUserAssignment = false, isEdit = false) {
     const allIds = availableFunctions.map(func => func.id);
-    if (isUserAssignment) {
+    if (isEdit) {
+      editSelectedPermissions = allIds;
+    } else if (isUserAssignment) {
       userRolePermissions = allIds;
     } else {
       selectedPermissions = allIds;
     }
   }
 
-  function deselectAllPermissions(isUserAssignment = false) {
-    if (isUserAssignment) {
+  function deselectAllPermissions(isUserAssignment = false, isEdit = false) {
+    if (isEdit) {
+      editSelectedPermissions = [];
+    } else if (isUserAssignment) {
       userRolePermissions = [];
     } else {
       selectedPermissions = [];
@@ -283,11 +504,38 @@
 </svelte:head>
 
 <div class="user-roles-container">
+  <!-- Loading State -->
+  {#if isLoading}
+    <div class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <p>Loading data...</p>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Error/Success Messages -->
+  {#if error}
+    <div class="alert alert-error">
+      <span class="alert-icon">❌</span>
+      <span>{error}</span>
+      <button class="close-btn" on:click={() => error = ''}>✕</button>
+    </div>
+  {/if}
+  
+  {#if success}
+    <div class="alert alert-success">
+      <span class="alert-icon">✅</span>
+      <span>{success}</span>
+      <button class="close-btn" on:click={() => success = ''}>✕</button>
+    </div>
+  {/if}
+
   <!-- Header -->
   <div class="page-header">
     <div class="header-content">
       <h1>Manage User Roles</h1>
-      <p>Configure user roles and permissions for complete admin panel access</p>
+      <p>Configure user roles and permissions for customer management, transactions, rewards, and system administration</p>
       <div class="stats-row">
         <span class="stat-item">
           <strong>{availableFunctions.length}</strong> Total Functions
@@ -357,13 +605,13 @@
             <div class="role-header">
               <h3>{role.name}</h3>
             </div>
-            <p class="role-description">{role.description}</p>
+            <p class="role-description">{role.description || 'No description available'}</p>
             <div class="role-stats">
               <span class="permission-count">
-                {role.permissions.length} functions
+                {role.permissions?.length || 0} functions
               </span>
-              <span class="status-badge {role.isActive ? 'active' : 'inactive'}">
-                {role.isActive ? 'Active' : 'Inactive'}
+              <span class="status-badge {role.is_active ? 'active' : 'inactive'}">
+                {role.is_active ? 'Active' : 'Inactive'}
               </span>
             </div>
             <div class="role-actions">
@@ -398,14 +646,14 @@
             <div>
               <h2>{selectedRole.name}</h2>
               <span class="permission-summary">
-                {selectedRole.permissions.length} of {availableFunctions.length} functions enabled
+                {selectedRole.permissions?.length || 0} of {availableFunctions.length} functions enabled
               </span>
             </div>
             <div class="header-actions">
-              <button class="btn btn-secondary">
+              <button class="btn btn-secondary" on:click={openEditRole}>
                 ✏️ Edit Role
               </button>
-              <button class="btn btn-danger">
+              <button class="btn btn-danger" on:click={deleteRoleFromDatabase}>
                 🗑️ Delete Role
               </button>
             </div>
@@ -414,14 +662,14 @@
           <div class="details-content">
             <div class="detail-section">
               <h3>Description</h3>
-              <p>{selectedRole.description}</p>
+              <p>{selectedRole.description || 'No description available'}</p>
             </div>
 
             <div class="detail-section">
               <h3>Functions by Category</h3>
               {#each categories as category}
                 {@const categoryFunctions = functionsByCategory[category]}
-                {@const rolePermissionIds = selectedRole.permissions.map(p => p.id)}
+                {@const rolePermissionIds = selectedRole.permissions?.map(p => p.id) || []}
                 {@const categoryPermissions = categoryFunctions.filter(func => rolePermissionIds.includes(func.id))}
                 
                 {#if categoryPermissions.length > 0}
@@ -440,6 +688,16 @@
                   </div>
                 {/if}
               {/each}
+              
+              {#if !selectedRole.permissions || selectedRole.permissions.length === 0}
+                <div class="no-permissions">
+                  <span class="no-permissions-icon">🚫</span>
+                  <p>This role has no permissions assigned.</p>
+                  <button class="btn btn-secondary btn-small" on:click={openEditRole}>
+                    Add Permissions
+                  </button>
+                </div>
+              {/if}
             </div>
 
             <div class="detail-section">
@@ -473,6 +731,8 @@
             <p>Choose a role from the list to view its functions and settings.</p>
             <p class="help-text">
               Master Administrator role has access to all {availableFunctions.length} functions automatically.
+              <br>
+              Available functions: Customer Management, Card Management, Rewards & Coupons, User Management, System Settings, and more.
             </p>
           </div>
         </div>
@@ -584,6 +844,114 @@
           <button class="btn btn-secondary" on:click={closeCreateRole}>Cancel</button>
           <button class="btn btn-primary" on:click={handleCreateRole}>
             Create Role ({selectedPermissions.length} functions)
+          </button>
+        </div>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Edit Role Modal -->
+  {#if showEditRole}
+    <div 
+      class="modal-overlay" 
+      on:click={closeEditRole} 
+      on:keydown={(e) => e.key === 'Escape' && closeEditRole()}
+      role="dialog" 
+      aria-modal="true"
+      tabindex="-1"
+    >
+      <div 
+        class="modal-content modal-large" 
+        on:click={(e) => e.stopPropagation()}
+        role="document"
+      >
+        <div class="modal-header">
+          <h2>Edit Role: {selectedRole?.name}</h2>
+          <button class="close-btn" on:click={closeEditRole} aria-label="Close modal">✕</button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="editRoleName">Role Name *</label>
+            <input 
+              id="editRoleName"
+              type="text" 
+              bind:value={editRoleName} 
+              placeholder="Enter role name"
+              class="form-input"
+            />
+          </div>
+          
+          <div class="form-group">
+            <label for="editRoleDescription">Description *</label>
+            <textarea 
+              id="editRoleDescription"
+              bind:value={editRoleDescription} 
+              placeholder="Enter role description"
+              class="form-textarea"
+              rows="3"
+            ></textarea>
+          </div>
+          
+          <div class="form-group">
+            <div class="permissions-header">
+              <span class="permissions-label">Functions & Permissions</span>
+              <div class="bulk-actions">
+                <button type="button" class="btn-link" on:click={() => selectAllPermissions(false, true)}>
+                  Select All
+                </button>
+                <button type="button" class="btn-link" on:click={() => deselectAllPermissions(false, true)}>
+                  Deselect All
+                </button>
+              </div>
+            </div>
+            
+            <div class="permissions-container">
+              {#each categories as category}
+                {@const categoryFunctions = functionsByCategory[category]}
+                {@const selectedInCategory = categoryFunctions.filter(func => editSelectedPermissions.includes(func.id)).length}
+                
+                <div class="category-group">
+                  <div class="category-header">
+                    <label class="category-toggle">
+                      <input 
+                        type="checkbox"
+                        checked={selectedInCategory === categoryFunctions.length && categoryFunctions.length > 0}
+                        indeterminate={selectedInCategory > 0 && selectedInCategory < categoryFunctions.length}
+                        on:change={() => toggleCategoryPermissions(category, false, true)}
+                      />
+                      <span class="category-title">
+                        {getCategoryDisplayName(category)} 
+                        <span class="category-count">({selectedInCategory}/{categoryFunctions.length})</span>
+                      </span>
+                    </label>
+                  </div>
+                  
+                  <div class="permissions-grid">
+                    {#each categoryFunctions as func}
+                      <label class="permission-item">
+                        <input 
+                          type="checkbox" 
+                          checked={editSelectedPermissions.includes(func.id)}
+                          on:change={() => togglePermission(func.id, false, true)}
+                        />
+                        <div class="permission-content">
+                          <span class="permission-name">{func.name}</span>
+                          <span class="permission-desc">{func.description}</span>
+                        </div>
+                      </label>
+                    {/each}
+                  </div>
+                </div>
+              {/each}
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn btn-secondary" on:click={closeEditRole}>Cancel</button>
+          <button class="btn btn-primary" on:click={updateRoleInDatabase}>
+            Update Role ({editSelectedPermissions.length} functions)
           </button>
         </div>
       </div>
@@ -710,6 +1078,81 @@
     padding: 2rem;
     max-width: 1400px;
     margin: 0 auto;
+    position: relative;
+  }
+
+  /* Loading Overlay */
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
+
+  .loading-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    text-align: center;
+  }
+
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f4f6;
+    border-top: 4px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Alert Messages */
+  .alert {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+  }
+
+  .alert-success {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+  }
+
+  .alert-error {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+  }
+
+  .alert .close-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    margin-left: auto;
+    padding: 0;
+    color: inherit;
+    opacity: 0.7;
+  }
+
+  .alert .close-btn:hover {
+    opacity: 1;
   }
 
   .page-header {
@@ -1290,6 +1733,21 @@
     overflow-y: auto;
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
+  }
+
+  .no-permissions {
+    padding: 3rem 2rem;
+    text-align: center;
+    color: #6b7280;
+    background: #f9fafb;
+    border: 2px dashed #d1d5db;
+    border-radius: 0.5rem;
+  }
+
+  .no-permissions-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.7;
   }
 
   .category-group {

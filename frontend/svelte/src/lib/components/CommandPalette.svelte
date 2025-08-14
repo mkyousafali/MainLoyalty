@@ -19,7 +19,6 @@
     { path: '/admin/support-settings', label: 'Support Settings', icon: '⚙️', description: 'Configure support options', category: 'Support & Communication' },
     { path: '/admin/notification-center', label: 'Notification Center', icon: '🔔', description: 'Manage notifications', category: 'Support & Communication' },
     { path: '/admin/manage-branches', label: 'Manage Branches', icon: '🏢', description: 'Branch management', category: 'Support & Communication' },
-    { path: '/admin/analytics-reports', label: 'Analytics Reports', icon: '📊', description: 'View system analytics', category: 'Analytics & Reports' },
     { path: '/admin/export-data', label: 'Export Data', icon: '📤', description: 'Export system data', category: 'Analytics & Reports' }
   ];
 

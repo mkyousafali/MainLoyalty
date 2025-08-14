@@ -11,7 +11,6 @@
     { href: '/admin/manage-card-types', key: 'manageCardTypes', icon: '💳', label: 'Card Types' },
     { href: '/admin/assign-card-type', key: 'assignCardType', icon: '🎯', label: 'Assign Cards' },
     { href: '/admin/customer-management', key: 'customerManagement', icon: '👥', label: 'Customers' },
-    { href: '/admin/analytics-reports', key: 'analyticsReports', icon: '📈', label: 'Analytics' },
     { href: '/admin/notification-center', key: 'notificationCenter', icon: '📧', label: 'Notifications' },
     { href: '/admin/support-settings', key: 'supportSettings', icon: '⚙️', label: 'Settings' },
     { href: '/admin/export-data', key: 'exportData', icon: '📋', label: 'Export' }
