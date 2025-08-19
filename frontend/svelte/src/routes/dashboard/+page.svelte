@@ -546,19 +546,19 @@
 
 
 
-<!-- Logo Header Section -->
-<div class="text-center py-6 sm:py-8">
-  <div class="max-w-6xl mx-auto px-3 sm:px-4 md:px-6">
+<!-- Logo Header Section - Compact on Mobile -->
+<div class="text-center py-2 sm:py-6 md:py-8">
+  <div class="max-w-6xl mx-auto px-2 sm:px-4 md:px-6">
     <div class="relative inline-block transform hover:scale-105 transition-all duration-300">
-      <div class="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-3xl blur-lg opacity-20 animate-pulse"></div>
-      <div class="relative bg-white p-4 sm:p-6 rounded-3xl shadow-2xl border border-gray-100">
-        <img src="/logo.png" alt="Urban Market Logo" class="h-12 sm:h-16 w-auto mx-auto" />
+      <div class="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl sm:rounded-3xl blur-lg opacity-20 animate-pulse"></div>
+      <div class="relative bg-white p-2 sm:p-4 md:p-6 rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border border-gray-100">
+        <img src="/logo.png" alt="Urban Market Logo" class="h-8 sm:h-12 md:h-16 w-auto mx-auto" />
       </div>
     </div>
-    <div class="mt-4">
-      <div class="inline-flex items-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 px-3 sm:px-4 py-2 rounded-full border border-green-200">
-        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-        <span class="text-sm font-medium text-green-700" class:text-right={$language === 'ar'}>
+    <div class="mt-2 sm:mt-4">
+      <div class="inline-flex items-center gap-1 sm:gap-2 bg-gradient-to-r from-green-50 to-emerald-50 px-2 sm:px-3 md:px-4 py-1 sm:py-2 rounded-full border border-green-200">
+        <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse"></div>
+        <span class="text-xs sm:text-sm font-medium text-green-700" class:text-right={$language === 'ar'}>
           {$language === 'ar' ? 'لوحة تحكم العميل' : 'Customer Dashboard'}
         </span>
       </div>
@@ -567,7 +567,7 @@
 </div>
 
 <!-- Dashboard Widgets -->
-<main class="p-3 sm:p-4 md:p-6 max-w-6xl mx-auto mt-4 sm:mt-6 md:mt-8" dir="{$language === 'ar' ? 'rtl' : 'ltr'}" lang="{$language}">
+<main class="p-3 sm:p-4 md:p-6 max-w-6xl mx-auto mt-2 sm:mt-4 md:mt-8" dir="{$language === 'ar' ? 'rtl' : 'ltr'}" lang="{$language}">
   
   {#if isLoading}
     <!-- Loading State -->
