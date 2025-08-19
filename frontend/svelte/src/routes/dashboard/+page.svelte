@@ -565,16 +565,6 @@
 <!-- Dashboard Widgets -->
 <main class="p-3 sm:p-4 md:p-6 max-w-6xl mx-auto mt-4 sm:mt-6 md:mt-8" dir="{$language === 'ar' ? 'rtl' : 'ltr'}" lang="{$language}">
   
-  <!-- Language Toggle Button for Testing -->
-  <div class="fixed top-4 right-4 z-50">
-    <button 
-      on:click={toggleLanguage}
-      class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium shadow-lg"
-    >
-      {$language === 'ar' ? 'EN' : 'العربية'}
-    </button>
-  </div>
-
   {#if isLoading}
     <!-- Loading State -->
     <div class="flex justify-center items-center h-32 sm:h-48 md:h-64">

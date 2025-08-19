@@ -82,6 +82,22 @@
       <!-- Right Section - Actions -->
       <div class="flex items-center space-x-2 min-w-0 flex-1 justify-end" class:space-x-reverse={$language === 'ar'}>
         
+        <!-- Language Toggle Button -->
+        {#if !isLoginPage}
+          <button 
+            on:click={toggleLanguage}
+            class="flex items-center space-x-1.5 bg-gradient-to-r from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 text-purple-700 hover:text-purple-800 px-3 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm border border-purple-200/60 hover:border-purple-300 shadow-sm hover:shadow-md transform hover:scale-105 group"
+            class:space-x-reverse={$language === 'ar'}
+            title={$language === 'ar' ? 'Switch to English' : 'تبديل إلى العربية'}
+            aria-label={$language === 'ar' ? 'Switch to English' : 'تبديل إلى العربية'}
+          >
+            <span class="text-sm group-hover:scale-110 transition-transform duration-200">🌐</span>
+            <span class="font-semibold">{$language === 'ar' ? 'EN' : 'العربية'}</span>
+            <!-- Glow effect -->
+            <div class="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-purple-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+          </button>
+        {/if}
+
         <!-- PWA Install Button -->
         <button 
           id="pwa-install-button"
