@@ -65,16 +65,16 @@
 </script>
 
 <header class="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50" class:rtl={$language === 'ar'}>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between items-center h-16">
+  <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16 gap-1 sm:gap-2">
       
       <!-- Left Section - Navigation -->
-      <div class="flex items-center space-x-3 min-w-0 flex-1" class:space-x-reverse={$language === 'ar'}>
+      <div class="flex items-center min-w-0 flex-shrink-0" class:space-x-reverse={$language === 'ar'}>
         <!-- Back Button -->
         {#if showBackButton && !isLoginPage}
           <button 
             on:click={goBack}
-            class="flex items-center justify-center text-gray-600 hover:text-gray-800 transition-all duration-200 p-2.5 rounded-xl hover:bg-gray-100 hover:shadow-sm"
+            class="flex items-center justify-center text-gray-600 hover:text-gray-800 transition-all duration-200 p-2 sm:p-2.5 rounded-lg sm:rounded-xl hover:bg-gray-100 hover:shadow-sm"
             title={$t?.back || 'Back'}
             aria-label={$t?.back || 'Back'}
           >
@@ -92,22 +92,22 @@
       </div>
 
       <!-- Center Section - Page Title -->
-      <div class="flex items-center justify-center mx-2 sm:mx-4 flex-shrink-0">
-        <h1 class="relative bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 text-white px-3 py-2 sm:px-6 sm:py-2.5 rounded-xl font-bold text-sm sm:text-base tracking-wide shadow-lg transition-all duration-300 max-w-[120px] sm:max-w-xs truncate text-center">
+      <div class="flex items-center justify-center flex-1 mx-1 sm:mx-4">
+        <h1 class="relative bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 text-white px-2 py-1.5 sm:px-6 sm:py-2.5 rounded-lg sm:rounded-xl font-bold text-xs sm:text-base tracking-wide shadow-lg transition-all duration-300 max-w-[100px] sm:max-w-xs truncate text-center">
           <span class="relative z-10 drop-shadow-sm">{currentTitle}</span>
           <!-- Subtle shine effect -->
-          <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-xl"></div>
+          <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-lg sm:rounded-xl"></div>
         </h1>
       </div>
 
       <!-- Right Section - Actions -->
-      <div class="flex items-center space-x-1 sm:space-x-2 min-w-0 flex-1 justify-end" class:space-x-reverse={$language === 'ar'}>
+      <div class="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1 justify-end" class:space-x-reverse={$language === 'ar'}>
         
         <!-- Language Toggle Button -->
         {#if !isLoginPage}
           <button 
             on:click={toggleLanguage}
-            class="flex items-center space-x-1 sm:space-x-1.5 bg-gradient-to-r from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 text-purple-700 hover:text-purple-800 px-2 py-2 sm:px-3 sm:py-2.5 rounded-xl font-medium transition-all duration-200 text-xs sm:text-sm border border-purple-200/60 hover:border-purple-300 shadow-sm hover:shadow-md transform hover:scale-105 group"
+            class="flex items-center space-x-1 bg-gradient-to-r from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 text-purple-700 hover:text-purple-800 px-2 py-2 sm:px-3 sm:py-2.5 rounded-lg sm:rounded-xl font-medium transition-all duration-200 text-xs sm:text-sm border border-purple-200/60 hover:border-purple-300 shadow-sm hover:shadow-md transform hover:scale-105 group"
             class:space-x-reverse={$language === 'ar'}
             title={$language === 'ar' ? 'Switch to English' : 'تبديل إلى العربية'}
             aria-label={$language === 'ar' ? 'Switch to English' : 'تبديل إلى العربية'}
@@ -116,7 +116,7 @@
             <span class="font-semibold hidden sm:inline">{$language === 'ar' ? 'EN' : 'العربية'}</span>
             <span class="font-semibold sm:hidden text-xs">{$language === 'ar' ? 'EN' : 'ع'}</span>
             <!-- Glow effect -->
-            <div class="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-purple-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-purple-500/20 rounded-lg sm:rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
           </button>
         {/if}
 
@@ -125,7 +125,7 @@
           <div class="relative">
             <button 
               on:click={toggleNotificationPanel}
-              class="flex items-center justify-center bg-gradient-to-r from-yellow-50 to-yellow-100 hover:from-yellow-100 hover:to-yellow-200 text-yellow-700 hover:text-yellow-800 p-2 sm:p-3 rounded-xl font-medium transition-all duration-200 border border-yellow-200/60 hover:border-yellow-300 shadow-sm hover:shadow-md transform hover:scale-105 group relative"
+              class="flex items-center justify-center bg-gradient-to-r from-yellow-50 to-yellow-100 hover:from-yellow-100 hover:to-yellow-200 text-yellow-700 hover:text-yellow-800 p-2 sm:p-3 rounded-lg sm:rounded-xl font-medium transition-all duration-200 border border-yellow-200/60 hover:border-yellow-300 shadow-sm hover:shadow-md transform hover:scale-105 group relative"
               title={$t?.notifications || 'Notifications'}
               aria-label={$t?.notifications || 'Notifications'}
             >
@@ -141,7 +141,7 @@
               {/if}
               
               <!-- Glow effect -->
-              <div class="absolute inset-0 bg-gradient-to-r from-yellow-400/20 to-yellow-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+              <div class="absolute inset-0 bg-gradient-to-r from-yellow-400/20 to-yellow-500/20 rounded-lg sm:rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
             </button>
 
             <!-- Notification Panel -->
@@ -232,21 +232,21 @@
         <!-- PWA Install Button -->
         <button 
           id="pwa-install-button"
-          class="hidden group relative bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 hover:text-blue-800 px-3 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm border border-blue-200/60 hover:border-blue-300 shadow-sm hover:shadow-md transform hover:scale-105"
+          class="hidden group relative bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 hover:text-blue-800 px-2 py-2 sm:px-3 sm:py-2.5 rounded-lg sm:rounded-xl font-medium transition-all duration-200 text-xs sm:text-sm border border-blue-200/60 hover:border-blue-300 shadow-sm hover:shadow-md transform hover:scale-105"
           title="Install App"
           aria-label="Install App"
         >
-          <span class="text-sm">📱</span>
+          <span class="text-xs sm:text-sm">📱</span>
           <span class="hidden sm:inline ml-1.5 font-semibold">Install</span>
           <!-- Glow effect -->
-          <div class="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-blue-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+          <div class="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-blue-500/20 rounded-lg sm:rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
         </button>
 
         <!-- Logout Button -->
         {#if showLogout && !isLoginPage && $user}
           <button 
             on:click={logout} 
-            class="flex items-center space-x-1 sm:space-x-2 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-600 hover:text-red-700 px-2 py-2 sm:px-3 sm:py-2.5 rounded-xl font-medium transition-all duration-200 text-xs sm:text-sm border border-red-200/60 hover:border-red-300 shadow-sm hover:shadow-md transform hover:scale-105 group"
+            class="flex items-center space-x-1 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-600 hover:text-red-700 px-2 py-2 sm:px-3 sm:py-2.5 rounded-lg sm:rounded-xl font-medium transition-all duration-200 text-xs sm:text-sm border border-red-200/60 hover:border-red-300 shadow-sm hover:shadow-md transform hover:scale-105 group"
             class:space-x-reverse={$language === 'ar'}
             title={$t?.logout || 'Logout'}
             aria-label={$t?.logout || 'Logout'}
@@ -255,14 +255,14 @@
             <span class="font-semibold hidden sm:inline">{$t?.logout || 'Logout'}</span>
             <span class="font-semibold sm:hidden text-xs">Exit</span>
             <!-- Glow effect -->
-            <div class="absolute inset-0 bg-gradient-to-r from-red-400/20 to-red-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-red-400/20 to-red-500/20 rounded-lg sm:rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
           </button>
         {/if}
 
         <!-- Mobile Menu Button -->
-        <div class="sm:hidden">
+        <div class="sm:hidden ml-1">
           <button
-            class="flex items-center justify-center p-2.5 rounded-xl text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-all duration-200 hover:shadow-sm"
+            class="flex items-center justify-center p-2 rounded-lg text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-all duration-200 hover:shadow-sm"
             title="Menu"
             aria-label="Menu"
           >
@@ -312,8 +312,23 @@
     }
     
     .max-w-7xl {
-      padding-left: 0.75rem;
-      padding-right: 0.75rem;
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+    
+    /* Ensure proper button spacing on mobile */
+    .flex.items-center.space-x-2 {
+      gap: 0.5rem;
+    }
+    
+    .flex.items-center.space-x-2.space-x-reverse {
+      gap: 0.5rem;
+    }
+    
+    /* Make buttons smaller on mobile but ensure visibility */
+    button {
+      min-height: 2.5rem;
+      min-width: 2.5rem;
     }
     
     /* Ensure notification panel doesn't overflow on mobile */
@@ -327,6 +342,22 @@
     /* Prevent text overflow in buttons */
     button span {
       white-space: nowrap;
+    }
+    
+    /* Improve title spacing */
+    .flex.items-center.justify-center.flex-1 {
+      margin-left: 0.25rem;
+      margin-right: 0.25rem;
+    }
+    
+    /* Better flex distribution */
+    .min-w-0.flex-1 {
+      flex: 0 1 auto;
+      max-width: 30%;
+    }
+    
+    .flex-shrink-0 {
+      flex-shrink: 0;
     }
   }
 
