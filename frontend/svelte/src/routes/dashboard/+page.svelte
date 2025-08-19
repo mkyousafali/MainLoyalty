@@ -589,47 +589,118 @@
     <!-- QR/Barcode Toggle Card - New Feature -->
     <div class="mb-6 sm:mb-8">
       <div class="relative group">
-        <!-- Animated background glow -->
-        <div class="absolute -inset-1 bg-gradient-to-r from-blue-400 via-purple-500 to-blue-600 rounded-2xl blur opacity-25 group-hover:opacity-40 animate-pulse"></div>
+        <!-- Ocean Wave Background -->
+        <div class="absolute inset-0 rounded-2xl overflow-hidden">
+          <!-- Gradient Ocean Background -->
+          <div class="absolute inset-0 bg-gradient-to-br from-sky-400 via-cyan-500 to-blue-600"></div>
+          
+          <!-- Animated Ocean Waves -->
+          <svg class="absolute bottom-0 left-0 w-full h-16" viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path d="M0,0V120H1200V0C1200,0 1050,100 900,100C750,100 600,0 450,0C300,0 150,100 0,100Z" 
+                  fill="rgba(255,255,255,0.1)" class="animate-pulse">
+              <animate attributeName="d" 
+                       values="M0,0V120H1200V0C1200,0 1050,100 900,100C750,100 600,0 450,0C300,0 150,100 0,100Z;
+                               M0,0V120H1200V0C1200,0 1050,80 900,80C750,80 600,20 450,20C300,20 150,80 0,80Z;
+                               M0,0V120H1200V0C1200,0 1050,100 900,100C750,100 600,0 450,0C300,0 150,100 0,100Z"
+                       dur="4s" repeatCount="indefinite"/>
+            </path>
+            <path d="M0,20V120H1200V20C1200,20 1050,80 900,80C750,80 600,40 450,40C300,40 150,80 0,80Z" 
+                  fill="rgba(255,255,255,0.05)">
+              <animate attributeName="d" 
+                       values="M0,20V120H1200V20C1200,20 1050,80 900,80C750,80 600,40 450,40C300,40 150,80 0,80Z;
+                               M0,20V120H1200V20C1200,20 1050,60 900,60C750,60 600,60 450,60C300,60 150,60 0,60Z;
+                               M0,20V120H1200V20C1200,20 1050,80 900,80C750,80 600,40 450,40C300,40 150,80 0,80Z"
+                       dur="3s" repeatCount="indefinite"/>
+            </path>
+          </svg>
+          
+          <!-- Floating Bubbles -->
+          <div class="absolute inset-0">
+            <div class="absolute top-4 left-8 w-2 h-2 bg-white/20 rounded-full animate-bounce"></div>
+            <div class="absolute top-12 right-12 w-1.5 h-1.5 bg-white/15 rounded-full animate-pulse"></div>
+            <div class="absolute top-8 left-1/3 w-1 h-1 bg-white/25 rounded-full animate-bounce" style="animation-delay: 0.5s"></div>
+            <div class="absolute top-16 right-1/4 w-1.5 h-1.5 bg-white/10 rounded-full animate-pulse" style="animation-delay: 1s"></div>
+            <div class="absolute bottom-20 left-16 w-2.5 h-2.5 bg-white/20 rounded-full animate-bounce" style="animation-delay: 1.5s"></div>
+            <div class="absolute bottom-24 right-20 w-1 h-1 bg-white/30 rounded-full animate-pulse" style="animation-delay: 2s"></div>
+          </div>
+          
+          <!-- Shimmer Effect -->
+          <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 animate-shimmer"></div>
+        </div>
         
-        <!-- Main card -->
-        <div class="relative bg-white p-4 sm:p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+        <!-- Main card with glass effect -->
+        <div class="relative bg-white/90 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-2xl border border-white/20 hover:shadow-3xl transition-all duration-300">
           <div class="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
             
             <!-- Left Section: Title and Toggle -->
             <div class="flex-1 text-center sm:text-left">
-              <div class="flex items-center justify-center sm:justify-start gap-2 mb-3">
-                <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse" style="box-shadow: 0 0 10px #3b82f6;"></div>
-                <h3 class="text-lg sm:text-xl font-bold" style="color: #13A538;">
-                  {$language === 'ar' ? 'رمز العضوية' : 'MEMBERSHIP CODE'}
-                </h3>
+              <div class="flex items-center justify-center sm:justify-start gap-3 mb-4">
+                <!-- Ocean Icon -->
+                <div class="relative">
+                  <div class="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                  </div>
+                  <div class="absolute -top-1 -right-1 w-3 h-3 bg-cyan-300/60 rounded-full animate-ping"></div>
+                </div>
+                
+                <div>
+                  <h3 class="text-lg sm:text-xl font-bold bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent">
+                    {$language === 'ar' ? 'رمز العضوية' : 'MEMBERSHIP CODE'}
+                  </h3>
+                  <div class="w-16 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full"></div>
+                </div>
               </div>
               
-              <!-- Toggle Button -->
-              <div class="flex items-center justify-center sm:justify-start gap-3">
-                <span class="text-sm font-medium text-gray-600" class:opacity-50={!showQRCode}>
+              <!-- Toggle Button with Ocean Theme -->
+              <div class="flex items-center justify-center sm:justify-start gap-3 bg-white/50 backdrop-blur-sm p-3 rounded-xl border border-white/30">
+                <span class="text-sm font-medium text-cyan-700 flex items-center gap-1" class:opacity-50={!showQRCode}>
+                  <div class="w-2 h-2 bg-cyan-500 rounded-full" class:animate-pulse={showQRCode}></div>
                   {$language === 'ar' ? 'كيو آر' : 'QR'}
                 </span>
                 
                 <button
                   on:click={() => showQRCode = !showQRCode}
-                  class="relative w-12 h-6 bg-gray-300 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  class:bg-blue-500={showQRCode}
-                  class:bg-orange-500={!showQRCode}
+                  class="relative w-14 h-7 bg-gradient-to-r from-gray-300 to-gray-400 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 shadow-inner"
+                  class:from-cyan-400={showQRCode}
+                  class:to-blue-500={showQRCode}
+                  class:from-orange-400={!showQRCode}
+                  class:to-amber-500={!showQRCode}
+                  aria-label="Toggle between QR and Barcode"
                 >
                   <div
-                    class="absolute w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 top-0.5"
+                    class="absolute w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 top-0.5 flex items-center justify-center"
                     class:translate-x-0.5={!showQRCode}
-                    class:translate-x-6={showQRCode}
-                  ></div>
+                    class:translate-x-7={showQRCode}
+                  >
+                    {#if showQRCode}
+                      <div class="w-3 h-3 border border-cyan-500 grid grid-cols-2 gap-0.5">
+                        <div class="bg-cyan-500 rounded-sm"></div>
+                        <div class="bg-cyan-500 rounded-sm"></div>
+                        <div class="bg-cyan-500 rounded-sm"></div>
+                        <div class="bg-cyan-500 rounded-sm"></div>
+                      </div>
+                    {:else}
+                      <div class="flex gap-0.5">
+                        <div class="w-0.5 h-3 bg-orange-500 rounded-full"></div>
+                        <div class="w-0.5 h-3 bg-orange-500 rounded-full"></div>
+                        <div class="w-0.5 h-3 bg-orange-500 rounded-full"></div>
+                      </div>
+                    {/if}
+                  </div>
                 </button>
                 
-                <span class="text-sm font-medium text-gray-600" class:opacity-50={showQRCode}>
+                <span class="text-sm font-medium text-orange-600 flex items-center gap-1" class:opacity-50={showQRCode}>
+                  <div class="w-2 h-2 bg-orange-500 rounded-full" class:animate-pulse={!showQRCode}></div>
                   {$language === 'ar' ? 'باركود' : 'BARCODE'}
                 </span>
               </div>
               
-              <p class="text-xs text-gray-500 mt-2">
+              <p class="text-sm text-cyan-800/80 mt-3 flex items-center justify-center sm:justify-start gap-2">
+                <svg class="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
                 {$language === 'ar' ? 
                   'اعرض هذا الرمز عند الدفع لكسب النقاط' : 
                   'Show this code at checkout to earn points'}
@@ -638,39 +709,84 @@
             
             <!-- Right Section: QR/Barcode Display -->
             <div class="relative">
-              <!-- Code display container -->
-              <div class="relative p-3 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-dashed border-gray-300">
+              <!-- Code display container with ocean theme -->
+              <div class="relative p-4 bg-gradient-to-br from-white via-cyan-50/50 to-blue-50/30 backdrop-blur-sm rounded-2xl border-2 border-white/40 shadow-xl">
+                <!-- Floating elements around the code -->
+                <div class="absolute -top-2 -left-2 w-4 h-4 bg-cyan-300/40 rounded-full animate-bounce"></div>
+                <div class="absolute -top-1 -right-3 w-2 h-2 bg-blue-400/50 rounded-full animate-pulse"></div>
+                <div class="absolute -bottom-2 -left-1 w-3 h-3 bg-cyan-400/30 rounded-full animate-bounce" style="animation-delay: 0.5s"></div>
+                
                 <!-- QR Code -->
                 {#if showQRCode}
                   <div class="flex flex-col items-center">
-                    <canvas 
-                      bind:this={qrCanvas}
-                      class="bg-white rounded-lg shadow-sm"
-                      width="180" 
-                      height="180"
-                    ></canvas>
-                    <div class="mt-3 text-sm font-mono text-gray-600 text-center font-bold">
+                    <div class="relative">
+                      <canvas 
+                        bind:this={qrCanvas}
+                        class="bg-white rounded-lg shadow-lg border-2 border-cyan-100"
+                        width="180" 
+                        height="180"
+                      ></canvas>
+                      <!-- QR Corner decorations -->
+                      <div class="absolute -top-1 -left-1 w-3 h-3 border-l-2 border-t-2 border-cyan-400 rounded-tl-lg"></div>
+                      <div class="absolute -top-1 -right-1 w-3 h-3 border-r-2 border-t-2 border-cyan-400 rounded-tr-lg"></div>
+                      <div class="absolute -bottom-1 -left-1 w-3 h-3 border-l-2 border-b-2 border-cyan-400 rounded-bl-lg"></div>
+                      <div class="absolute -bottom-1 -right-1 w-3 h-3 border-r-2 border-b-2 border-cyan-400 rounded-br-lg"></div>
+                    </div>
+                    <div class="mt-3 px-3 py-1 bg-cyan-100/50 rounded-lg text-sm font-mono text-cyan-800 text-center font-bold border border-cyan-200/50">
                       {customerData?.customer_code || customerData?.mobile}
                     </div>
                   </div>
                 {:else}
                   <!-- Barcode -->
                   <div class="flex flex-col items-center">
-                    <canvas 
-                      bind:this={barcodeCanvas}
-                      class="bg-white rounded-lg shadow-sm max-w-full"
-                    ></canvas>
+                    <div class="relative">
+                      <canvas 
+                        bind:this={barcodeCanvas}
+                        class="bg-white rounded-lg shadow-lg border-2 border-orange-100 max-w-full"
+                      ></canvas>
+                      <!-- Barcode corner decorations -->
+                      <div class="absolute -top-1 -left-1 w-3 h-3 border-l-2 border-t-2 border-orange-400 rounded-tl-lg"></div>
+                      <div class="absolute -top-1 -right-1 w-3 h-3 border-r-2 border-t-2 border-orange-400 rounded-tr-lg"></div>
+                      <div class="absolute -bottom-1 -left-1 w-3 h-3 border-l-2 border-b-2 border-orange-400 rounded-bl-lg"></div>
+                      <div class="absolute -bottom-1 -right-1 w-3 h-3 border-r-2 border-b-2 border-orange-400 rounded-br-lg"></div>
+                    </div>
                   </div>
                 {/if}
                 
-                <!-- Scanning line animation -->
-                <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-transparent animate-pulse" class:via-orange-400={!showQRCode}></div>
+                <!-- Scanning line animation with ocean theme -->
+                <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent to-transparent animate-pulse {showQRCode ? 'via-cyan-400' : 'via-orange-400'}"></div>
+                
+                <!-- Bottom glow -->
+                <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3/4 h-1 bg-gradient-to-r from-transparent to-transparent blur-sm {showQRCode ? 'via-cyan-300/50' : 'via-orange-300/50'}"></div>
+              </div>
+              
+              <!-- Status indicator -->
+              <div class="absolute -bottom-2 -right-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full border border-white/50 shadow-sm">
+                <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span class="text-xs text-green-700 font-medium">{$language === 'ar' ? 'جاهز' : 'Ready'}</span>
               </div>
             </div>
           </div>
           
-          <!-- Bottom accent line -->
-          <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent" class:via-orange-400={!showQRCode}></div>
+          <!-- Bottom ocean wave accent -->
+          <div class="absolute bottom-0 left-0 w-full overflow-hidden">
+            <svg class="w-full h-3" viewBox="0 0 1200 20" preserveAspectRatio="none">
+              <path d="M0,10 Q300,0 600,10 T1200,10 L1200,20 L0,20 Z" fill="url(#oceanGradient)">
+                <animate attributeName="d" 
+                         values="M0,10 Q300,0 600,10 T1200,10 L1200,20 L0,20 Z;
+                                 M0,10 Q300,20 600,10 T1200,10 L1200,20 L0,20 Z;
+                                 M0,10 Q300,0 600,10 T1200,10 L1200,20 L0,20 Z"
+                         dur="3s" repeatCount="indefinite"/>
+              </path>
+              <defs>
+                <linearGradient id="oceanGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style="stop-color:#22d3ee;stop-opacity:0.3"/>
+                  <stop offset="50%" style="stop-color:#3b82f6;stop-opacity:0.5"/>
+                  <stop offset="100%" style="stop-color:#22d3ee;stop-opacity:0.3"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
         </div>
       </div>
     </div>
@@ -1252,5 +1368,45 @@
   
   :global([dir="rtl"] h3, [dir="rtl"] h4) {
     text-align: right;
+  }
+  
+  /* Ocean Wave Theme Animations */
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%) skewX(-12deg);
+    }
+    100% {
+      transform: translateX(200%) skewX(-12deg);
+    }
+  }
+  
+  .animate-shimmer {
+    animation: shimmer 3s infinite;
+  }
+  
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+  
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  @keyframes wave {
+    0%, 100% {
+      transform: translateX(0%);
+    }
+    50% {
+      transform: translateX(-25%);
+    }
+  }
+  
+  .animate-wave {
+    animation: wave 4s ease-in-out infinite;
   }
 </style>
