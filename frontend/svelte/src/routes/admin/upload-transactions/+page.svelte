@@ -421,8 +421,8 @@
       lastUploadStatus.progress.processed = 0.5;
       lastUploadStatus = { ...lastUploadStatus };
 
-      const addAmt = parseFloat(manualTransaction.add_amt) || 0;
-      const redeemAmt = parseFloat(manualTransaction.redeem) || 0;
+      const addAmt = isNaN(parseFloat(manualTransaction.add_amt)) ? 0 : parseFloat(manualTransaction.add_amt);
+      const redeemAmt = isNaN(parseFloat(manualTransaction.redeem)) ? 0 : parseFloat(manualTransaction.redeem);
       const currentPoints = Number(customer.points || 0);
       const balanceAfter = currentPoints + addAmt - redeemAmt;
 

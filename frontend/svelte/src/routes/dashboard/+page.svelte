@@ -89,6 +89,27 @@
     }
   })();
   
+  // Last transaction date - changes based on branch selection
+  $: lastTransactionDate = (() => {
+    if (isLoading || !allTransactions || allTransactions.length === 0) return null;
+    
+    const relevantTransactions = selectedBranch === 'all' 
+      ? allTransactions 
+      : allTransactions.filter(tx => tx.branch_id?.toString() === selectedBranch.toString());
+    
+    if (relevantTransactions.length === 0) return null;
+    
+    // Sort by date and get the most recent one
+    const sortedTransactions = relevantTransactions.sort((a, b) => {
+      const dateA = new Date(a.bill_date || a.transaction_date || a.created_at);
+      const dateB = new Date(b.bill_date || b.transaction_date || b.created_at);
+      return dateB.getTime() - dateA.getTime();
+    });
+    
+    const lastDate = sortedTransactions[0].bill_date || sortedTransactions[0].transaction_date || sortedTransactions[0].created_at;
+    return lastDate ? new Date(lastDate) : null;
+  })();
+  
   // Debug reactive variables - Enhanced logging
   $: if (customerData) {
     console.log('🔄 Enhanced Reactive Update:', {
@@ -118,6 +139,29 @@
     const branchRedeem = branchTransactions.reduce((total, tx) => total + (parseFloat(tx.redeem) || 0), 0);
     
     return parseFloat((branchAddAmt - branchRedeem).toFixed(2));
+  }
+
+  // Format date for display
+  function formatLastTransactionDate(date: Date | null): string {
+    if (!date) return $language === 'ar' ? 'لا توجد معاملات' : 'No transactions';
+    
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    if (days === 0) {
+      return $language === 'ar' ? 'اليوم' : 'Today';
+    } else if (days === 1) {
+      return $language === 'ar' ? 'أمس' : 'Yesterday';
+    } else if (days < 7) {
+      return $language === 'ar' ? `منذ ${days} أيام` : `${days} days ago`;
+    } else {
+      return date.toLocaleDateString($language === 'ar' ? 'ar-SA' : 'en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
   }
 
   // Calculate lifetime earned for specific branch
@@ -962,6 +1006,21 @@
         <p class="text-xs text-gray-500 mt-1 sm:mt-2" class:text-right={$language === 'ar'}>
           {$t.filterNote}
         </p>
+        
+        <!-- Last Updated Date -->
+        <div class="mt-2 sm:mt-3 p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-100" class:text-right={$language === 'ar'}>
+          <div class="flex items-center gap-2" class:flex-row-reverse={$language === 'ar'}>
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span class="text-xs font-medium text-gray-600">
+              {$language === 'ar' ? 'آخر تحديث:' : 'Last Updated:'}
+            </span>
+            <span class="text-xs text-gray-800 font-semibold">
+              {formatLastTransactionDate(lastTransactionDate)}
+            </span>
+          </div>
+        </div>
       </div>
 
       <!-- Enhanced Quick Actions Widget -->

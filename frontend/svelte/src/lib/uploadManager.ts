@@ -113,8 +113,8 @@ class UploadManager {
         
         const billAmount = parseFloat(row['Bill Amount'] || row['bill_amount'] || '0');
         const customerMobile = row['Customer Mobile'] || row['customer_mobile'] || row['Mobile Number'] || row['mobile_number'] || '';
-        const pointsToAdd = parseFloat(row['Points to Add'] || row['points_to_add'] || '0');
-        const pointsToRedeem = parseFloat(row['Points to Redeem'] || row['points_to_redeem'] || '0');
+        const pointsToAdd = isNaN(parseFloat(row['Points to Add'] || row['points_to_add'] || '0')) ? 0 : parseFloat(row['Points to Add'] || row['points_to_add'] || '0');
+        const pointsToRedeem = isNaN(parseFloat(row['Points to Redeem'] || row['points_to_redeem'] || '0')) ? 0 : parseFloat(row['Points to Redeem'] || row['points_to_redeem'] || '0');
 
         console.log(`Row ${index + 1}:`, {
           billNo,
@@ -506,10 +506,12 @@ class UploadManager {
 
           // Calculate points based on your Excel format
           // Preserve decimal values (database now supports DECIMAL)
-          const rawPointsEarned = transaction.points_to_add || transaction.amount || 0;
+          const rawPointsEarned = transaction.points_to_add || 0;
           const rawPointsRedeemed = transaction.points_to_redeem || 0;
-          const pointsEarned = parseFloat(rawPointsEarned.toString()) || 0;
-          const pointsRedeemed = parseFloat(rawPointsRedeemed.toString()) || 0;
+          
+          // Fix: Properly handle zero values without using || fallback
+          const pointsEarned = isNaN(parseFloat(rawPointsEarned.toString())) ? 0 : parseFloat(rawPointsEarned.toString());
+          const pointsRedeemed = isNaN(parseFloat(rawPointsRedeemed.toString())) ? 0 : parseFloat(rawPointsRedeemed.toString());
           
           console.log(`🔢 Points conversion: ${rawPointsEarned} → ${pointsEarned} earned, ${rawPointsRedeemed} → ${pointsRedeemed} redeemed`);
 
