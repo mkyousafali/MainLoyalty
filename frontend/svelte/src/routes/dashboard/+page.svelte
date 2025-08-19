@@ -7,6 +7,7 @@
   import { browser } from '$app/environment';
   import { language, t, toggleLanguage } from '$lib/stores/language';
   import { formatCurrency, formatCurrencyText } from '$lib/formatCurrency';
+  import { customerNotifications, unreadNotificationCount, loadCustomerNotifications } from '$lib/stores/notifications';
   import QRCode from 'qrcode';
   import JsBarcode from 'jsbarcode';
 
@@ -428,6 +429,9 @@
 
   onMount(() => {
     loadCustomerData();
+    
+    // Load notifications from Supabase
+    loadCustomerNotifications($language);
   });
 
   // Generate QR Code
@@ -670,6 +674,59 @@
         </div>
       </div>
     </div>
+
+    <!-- Notifications Widget - Recent Notifications Preview -->
+    {#if $customerNotifications.length > 0}
+      <div class="mb-6 sm:mb-8">
+        <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="relative">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                </svg>
+                {#if $unreadNotificationCount > 0}
+                  <div class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {$unreadNotificationCount}
+                  </div>
+                {/if}
+              </div>
+              <h3 class="text-lg font-semibold text-gray-800">
+                {$language === 'ar' ? 'الإشعارات الأخيرة' : 'Recent Notifications'}
+              </h3>
+            </div>
+            <a 
+              href="/notifications" 
+              class="text-blue-500 hover:text-blue-600 text-sm font-medium flex items-center gap-1"
+            >
+              {$language === 'ar' ? 'عرض الكل' : 'View All'}
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+            </a>
+          </div>
+          
+          <div class="space-y-3">
+            {#each $customerNotifications.slice(0, 3) as notification}
+              <div class="flex items-start gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
+                <div class="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-2" class:bg-gray-400={notification.is_read}></div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 truncate" class:text-gray-600={notification.is_read}>
+                    {notification.title}
+                  </p>
+                  <p class="text-xs text-gray-500 mt-1 line-clamp-2">
+                    {notification.message}
+                  </p>
+                  <p class="text-xs text-gray-400 mt-1">
+                    {new Date(notification.created_at).toLocaleDateString($language === 'ar' ? 'ar-SA' : 'en-US')}
+                  </p>
+                </div>
+              </div>
+            {/each}
+          </div>
+        </div>
+      </div>
+    {/if}
 
     <!-- Main Widgets - Mobile-First Responsive Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">

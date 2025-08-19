@@ -3,11 +3,29 @@
   import { page } from '$app/stores';
   import { language, t, toggleLanguage } from '$lib/stores/language.js';
   import { user, logout as authLogout } from '$lib/stores/auth';
+  import { customerNotifications, unreadNotificationCount, loadCustomerNotifications } from '$lib/stores/notifications';
+  import { onMount } from 'svelte';
 
   // Props
   export let showBackButton = true;
   export let title = '';
   export let showLogout = true;
+
+  // Notification panel state
+  let showNotificationPanel = false;
+
+  onMount(() => {
+    // Load notifications when component mounts
+    loadCustomerNotifications($language);
+  });
+
+  function toggleNotificationPanel() {
+    showNotificationPanel = !showNotificationPanel;
+  }
+
+  function closeNotificationPanel() {
+    showNotificationPanel = false;
+  }
 
   function goBack() {
     if (window.history.length > 1) {
@@ -96,6 +114,114 @@
             <!-- Glow effect -->
             <div class="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-purple-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
           </button>
+        {/if}
+
+        <!-- Notification Bell (always visible when user is logged in) -->
+        {#if !isLoginPage && $user}
+          <div class="relative">
+            <button 
+              on:click={toggleNotificationPanel}
+              class="flex items-center justify-center bg-gradient-to-r from-yellow-50 to-yellow-100 hover:from-yellow-100 hover:to-yellow-200 text-yellow-700 hover:text-yellow-800 p-3 rounded-xl font-medium transition-all duration-200 border border-yellow-200/60 hover:border-yellow-300 shadow-sm hover:shadow-md transform hover:scale-105 group relative"
+              title={$t.notifications || 'Notifications'}
+              aria-label={$t.notifications || 'Notifications'}
+            >
+              <svg class="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+              </svg>
+              
+              <!-- Notification badge -->
+              {#if $unreadNotificationCount > 0}
+                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
+                  {$unreadNotificationCount > 99 ? '99+' : $unreadNotificationCount}
+                </span>
+              {/if}
+              
+              <!-- Glow effect -->
+              <div class="absolute inset-0 bg-gradient-to-r from-yellow-400/20 to-yellow-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+            </button>
+
+            <!-- Notification Panel -->
+            {#if showNotificationPanel}
+              <div class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-hidden">
+                <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                  <h3 class="text-lg font-semibold text-gray-900">🔔 {$t.notifications || 'Notifications'}</h3>
+                  <button 
+                    on:click={closeNotificationPanel}
+                    class="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                </div>
+                
+                <div class="max-h-80 overflow-y-auto">
+                  {#if $customerNotifications.length === 0}
+                    <div class="p-6 text-center text-gray-500">
+                      <div class="text-4xl mb-2">📭</div>
+                      <p>{$t.noNotifications || 'No notifications yet'}</p>
+                      <p class="text-sm">{$t.notificationHint || "We'll notify you about important updates"}</p>
+                    </div>
+                  {:else}
+                    <div class="divide-y divide-gray-100">
+                      {#each $customerNotifications.slice(0, 10) as notification}
+                        <div class="p-4 hover:bg-gray-50 {!notification.isRead ? 'bg-blue-50' : ''} transition-colors">
+                          <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0">
+                              {#if notification.type === 'system'}
+                                🔔
+                              {:else if notification.type === 'promotion'}
+                                🎉
+                              {:else if notification.type === 'birthday'}
+                                🎂
+                              {:else if notification.type === 'welcome'}
+                                👋
+                              {:else if notification.type === 'upgrade'}
+                                ⬆️
+                              {:else if notification.type === 'expiry'}
+                                ⏰
+                              {:else if notification.type === 'transaction'}
+                                💳
+                              {:else if notification.type === 'reward'}
+                                🏆
+                              {:else}
+                                📢
+                              {/if}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                              <p class="text-sm font-medium text-gray-900 truncate">
+                                {$language === 'ar' && notification.title_ar ? notification.title_ar : notification.title}
+                              </p>
+                              <p class="text-sm text-gray-500 line-clamp-2">
+                                {$language === 'ar' && notification.message_ar ? notification.message_ar : notification.message}
+                              </p>
+                              <p class="text-xs text-gray-400 mt-1">
+                                {new Date(notification.timestamp).toLocaleDateString()}
+                              </p>
+                            </div>
+                            {#if !notification.isRead}
+                              <div class="flex-shrink-0">
+                                <div class="w-2 h-2 bg-blue-600 rounded-full"></div>
+                              </div>
+                            {/if}
+                          </div>
+                        </div>
+                      {/each}
+                    </div>
+                    
+                    <div class="p-4 border-t border-gray-200 bg-gray-50">
+                      <button 
+                        on:click={() => { closeNotificationPanel(); goto('/notifications'); }}
+                        class="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        {$t.viewAllNotifications || 'View All Notifications'} →
+                      </button>
+                    </div>
+                  {/if}
+                </div>
+              </div>
+            {/if}
+          </div>
         {/if}
 
         <!-- PWA Install Button -->

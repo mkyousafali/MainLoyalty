@@ -158,12 +158,17 @@ export interface CardType {
 // Notification types (already defined in stores/notifications.ts, but centralizing here)
 export interface Notification {
   id: number;
-  type: 'terms_update' | 'system' | 'promotion' | 'warning' | 'info';
+  databaseId?: string; // Original UUID from database
+  recipientId?: string; // Recipient record ID for database operations
+  type: 'terms_update' | 'system' | 'promotion' | 'warning' | 'info' | 'birthday' | 'welcome' | 'upgrade' | 'expiry' | 'reward' | 'transaction';
   title: string;
   message: string;
   timestamp: string;
   isRead: boolean;
   priority: 'low' | 'medium' | 'high';
+  imageUrl?: string;
+  actionUrl?: string;
+  expiresAt?: string;
 }
 
 // API Response types

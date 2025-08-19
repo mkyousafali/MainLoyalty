@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { supabase } from '$lib/supabase';
+  import { sendNotificationToCustomers } from '$lib/stores/notifications';
 
   let notifications: any[] = [];
   let isLoading = false;
@@ -16,9 +17,23 @@
   let showCreateModal = false;
   let formData = {
     type: 'system',
+    title: '',
     message: '',
-    visible_to: ''
+    message_ar: '',
+    recipient_type: 'all',
+    target_customers: '',
+    target_branches: '',
+    target_card_types: '',
+    channels: ['app'],
+    priority: 'normal',
+    scheduled_at: '',
+    expires_at: ''
   };
+
+  // Customer data for targeting
+  let customers: any[] = [];
+  let branches: any[] = [];
+  let cardTypes: any[] = [];
 
   // Statistics
   let totalNotifications = 0;
@@ -26,17 +41,80 @@
   let notificationsByType: any = {};
 
   const notificationTypes = [
+    { value: 'system', label: 'System Alert', icon: '🔔', color: 'gray' },
+    { value: 'promotion', label: 'Promotion/Offer', icon: '🎉', color: 'green' },
+    { value: 'welcome', label: 'Welcome Message', icon: '👋', color: 'blue' },
+    { value: 'birthday', label: 'Birthday Reward', icon: '🎂', color: 'pink' },
     { value: 'upgrade', label: 'Card Upgrades', icon: '⬆️', color: 'blue' },
     { value: 'expiry', label: 'Expiry Warnings', icon: '⏰', color: 'yellow' },
-    { value: 'gift_claim', label: 'Gift Claims', icon: '🎁', color: 'green' },
-    { value: 'reward_assigned', label: 'Reward Assignments', icon: '🏆', color: 'purple' },
-    { value: 'system', label: 'System Messages', icon: '🔔', color: 'gray' }
+    { value: 'transaction', label: 'Transaction Alert', icon: '💳', color: 'indigo' },
+    { value: 'reward', label: 'Reward Assigned', icon: '🏆', color: 'purple' }
+  ];
+
+  const recipientTypes = [
+    { value: 'all', label: 'All Customers', icon: '👥' },
+    { value: 'customer', label: 'Specific Customers', icon: '👤' },
+    { value: 'branch', label: 'Branch Customers', icon: '�' },
+    { value: 'card_type', label: 'Card Type Holders', icon: '💳' }
+  ];
+
+  const channelOptions = [
+    { value: 'app', label: 'In-App', icon: '📱', description: 'Show in customer dashboard' },
+    { value: 'push', label: 'Push Notification', icon: '🔔', description: 'Browser/mobile push' },
+    { value: 'sms', label: 'SMS', icon: '💬', description: 'Text message (requires SMS service)' },
+    { value: 'email', label: 'Email', icon: '✉️', description: 'Email notification (requires email service)' },
+    { value: 'whatsapp', label: 'WhatsApp', icon: '📞', description: 'WhatsApp message (requires WhatsApp API)' }
   ];
 
   onMount(() => {
     loadNotifications();
     loadStatistics();
+    loadCustomers();
+    loadBranches();
+    loadCardTypes();
   });
+
+  async function loadCustomers() {
+    try {
+      const { data, error: loadError } = await supabase
+        .from('customers')
+        .select('id, name, mobile')
+        .order('name');
+
+      if (loadError) throw loadError;
+      customers = data || [];
+    } catch (err: any) {
+      console.error('Failed to load customers:', err);
+    }
+  }
+
+  async function loadBranches() {
+    try {
+      const { data, error: loadError } = await supabase
+        .from('branches')
+        .select('id, name, location')
+        .order('name');
+
+      if (loadError) throw loadError;
+      branches = data || [];
+    } catch (err: any) {
+      console.error('Failed to load branches:', err);
+    }
+  }
+
+  async function loadCardTypes() {
+    try {
+      const { data, error: loadError } = await supabase
+        .from('card_types')
+        .select('id, name, tier_level')
+        .order('tier_level');
+
+      if (loadError) throw loadError;
+      cardTypes = data || [];
+    } catch (err: any) {
+      console.error('Failed to load card types:', err);
+    }
+  }
 
   async function loadNotifications() {
     try {
@@ -139,8 +217,17 @@
   function openCreateModal() {
     formData = {
       type: 'system',
+      title: '',
       message: '',
-      visible_to: ''
+      message_ar: '',
+      recipient_type: 'all',
+      target_customers: '',
+      target_branches: '',
+      target_card_types: '',
+      channels: ['app'],
+      priority: 'normal',
+      scheduled_at: '',
+      expires_at: ''
     };
     showCreateModal = true;
   }
@@ -155,19 +242,85 @@
     try {
       isLoading = true;
 
-      const payload = {
+      // Validate required fields
+      if (!formData.title.trim()) {
+        error = 'Title is required';
+        return;
+      }
+      if (!formData.message.trim()) {
+        error = 'Message is required';
+        return;
+      }
+      if (formData.channels.length === 0) {
+        error = 'At least one delivery channel must be selected';
+        return;
+      }
+
+      // Prepare target audience data
+      let targetAudience = {};
+      switch (formData.recipient_type) {
+        case 'customer':
+          if (!formData.target_customers.trim()) {
+            error = 'Please specify target customers';
+            return;
+          }
+          targetAudience = {
+            type: 'customer',
+            customer_ids: formData.target_customers.split(',').map(id => id.trim()).filter(id => id)
+          };
+          break;
+        case 'branch':
+          if (!formData.target_branches.trim()) {
+            error = 'Please select target branches';
+            return;
+          }
+          targetAudience = {
+            type: 'branch',
+            branch_ids: formData.target_branches.split(',').map(id => id.trim()).filter(id => id)
+          };
+          break;
+        case 'card_type':
+          if (!formData.target_card_types.trim()) {
+            error = 'Please select target card types';
+            return;
+          }
+          targetAudience = {
+            type: 'card_type',
+            card_type_ids: formData.target_card_types.split(',').map(id => id.trim()).filter(id => id)
+          };
+          break;
+        default:
+          targetAudience = { type: 'all' };
+      }
+
+      // Use the new store function for better integration
+      const notificationPayload = {
         type: formData.type,
+        title: formData.title.trim(),
+        title_ar: formData.message_ar.trim() ? formData.title : undefined,
         message: formData.message.trim(),
-        visible_to: formData.visible_to || null
+        message_ar: formData.message_ar.trim() || undefined,
+        priority: formData.priority,
+        channels: formData.channels,
+        target_audience: targetAudience
       };
 
-      const { error: insertError } = await supabase
-        .from('notifications')
-        .insert(payload);
+      console.log('Creating notification with payload:', notificationPayload);
 
-      if (insertError) throw insertError;
+      // Determine target customers if specific targeting
+      let targetCustomers: string[] = [];
+      if (formData.recipient_type === 'customer' && formData.target_customers.trim()) {
+        targetCustomers = formData.target_customers.split(',').map(id => id.trim()).filter(id => id);
+      }
 
-      success = 'Notification created successfully!';
+      const notificationData = await sendNotificationToCustomers(notificationPayload, targetCustomers);
+
+      // Create notification recipients based on target audience
+      if (notificationData) {
+        await createNotificationRecipients(notificationData.id, targetAudience);
+      }
+
+      success = 'Customer notification created successfully! It will be delivered through the selected channels.';
       closeCreateModal();
       loadNotifications();
       loadStatistics();
@@ -175,6 +328,65 @@
       error = `Failed to create notification: ${err.message}`;
     } finally {
       isLoading = false;
+    }
+  }
+
+  async function createNotificationRecipients(notificationId: string, targetAudience: any) {
+    try {
+      let customerIds: string[] = [];
+
+      switch (targetAudience.type) {
+        case 'all':
+          // Get all customer IDs
+          const { data: allCustomers } = await supabase
+            .from('customers')
+            .select('id');
+          customerIds = allCustomers?.map(c => c.id) || [];
+          break;
+        
+        case 'customer':
+          customerIds = targetAudience.customer_ids || [];
+          break;
+        
+        case 'branch':
+          // Get customers from specific branches
+          const { data: branchCustomers } = await supabase
+            .from('customers')
+            .select('id')
+            .in('branch_id', targetAudience.branch_ids || []);
+          customerIds = branchCustomers?.map(c => c.id) || [];
+          break;
+        
+        case 'card_type':
+          // Get customers with specific card types
+          const { data: cardTypeCustomers } = await supabase
+            .from('customers')
+            .select('id')
+            .in('card_type_id', targetAudience.card_type_ids || []);
+          customerIds = cardTypeCustomers?.map(c => c.id) || [];
+          break;
+      }
+
+      // Create recipient records
+      if (customerIds.length > 0) {
+        const recipients = customerIds.map(customerId => ({
+          notification_id: notificationId,
+          customer_id: customerId,
+          status: 'pending'
+        }));
+
+        const { error: recipientError } = await supabase
+          .from('notification_recipients')
+          .insert(recipients);
+
+        if (recipientError) {
+          console.error('Failed to create notification recipients:', recipientError);
+        } else {
+          console.log(`Created ${recipients.length} notification recipients`);
+        }
+      }
+    } catch (err: any) {
+      console.error('Failed to create notification recipients:', err);
     }
   }
 
@@ -304,8 +516,8 @@
     <div class="mb-8">
       <div class="flex justify-between items-center">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900 mb-2">Notification Center</h1>
-          <p class="text-gray-600">Manage system notifications and alerts.</p>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">📱 Customer Notification Center</h1>
+          <p class="text-gray-600">Send notifications and alerts directly to your customers through multiple channels.</p>
         </div>
         <div class="flex space-x-3">
           <button
@@ -324,7 +536,7 @@
             on:click={openCreateModal}
             class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
           >
-            + Create Notification
+            📱 Send to Customers
           </button>
         </div>
       </div>
@@ -460,21 +672,73 @@
                 <div class="flex items-start space-x-4">
                   <div class="text-2xl">{typeConfig.icon}</div>
                   <div class="flex-1">
-                    <div class="flex items-center space-x-2 mb-1">
-                      <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-{typeConfig.color}-100 text-{typeConfig.color}-800">
+                    <div class="flex items-center space-x-2 mb-2">
+                      <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-{typeConfig.color}-100 text-{typeConfig.color}-800">
                         {typeConfig.label}
+                      </span>
+                      <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                        📱 Customer Notification
                       </span>
                       {#if !notification.read_at}
                         <span class="w-2 h-2 bg-blue-600 rounded-full"></span>
                       {/if}
+                      {#if notification.priority !== 'normal'}
+                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {
+                          notification.priority === 'urgent' ? 'bg-red-100 text-red-800' :
+                          notification.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                          'bg-gray-100 text-gray-800'
+                        }">
+                          {notification.priority === 'urgent' ? '🔴' : 
+                           notification.priority === 'high' ? '🟠' : '🟢'} {notification.priority}
+                        </span>
+                      {/if}
                     </div>
+                    
+                    {#if notification.title}
+                      <h4 class="font-semibold text-gray-900 mb-1">{notification.title}</h4>
+                    {/if}
                     <p class="text-gray-900 mb-2">{notification.message}</p>
+                    
+                    {#if notification.message_ar}
+                      <p class="text-gray-700 text-sm mb-2 text-right border-t pt-2" dir="rtl">{notification.message_ar}</p>
+                    {/if}
+
+                    <!-- Delivery Info -->
+                    <div class="flex flex-wrap items-center gap-2 text-sm text-gray-500 mb-2">
+                      <span>📡 Channels:</span>
+                      {#if notification.channels}
+                        {#each notification.channels as channel}
+                          <span class="inline-flex px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                            {channelOptions.find(c => c.value === channel)?.icon || '📱'}
+                            {channelOptions.find(c => c.value === channel)?.label || channel}
+                          </span>
+                        {/each}
+                      {:else}
+                        <span class="text-gray-400">No channels specified</span>
+                      {/if}
+                    </div>
+
+                    <!-- Target Audience -->
+                    <div class="flex items-center space-x-2 text-sm text-gray-500 mb-2">
+                      <span>🎯 Target:</span>
+                      {#if notification.recipient_type === 'all'}
+                        <span class="font-medium text-green-600">All Customers</span>
+                      {:else if notification.recipient_type === 'customer'}
+                        <span class="font-medium text-blue-600">Specific Customers</span>
+                      {:else if notification.recipient_type === 'branch'}
+                        <span class="font-medium text-purple-600">Branch Customers</span>
+                      {:else if notification.recipient_type === 'card_type'}
+                        <span class="font-medium text-orange-600">Card Type Holders</span>
+                      {:else}
+                        <span class="font-medium text-gray-600">{notification.recipient_type || 'Unknown'}</span>
+                      {/if}
+                    </div>
+
                     <div class="flex items-center space-x-4 text-sm text-gray-500">
                       <span>{formatTimeAgo(notification.created_at)}</span>
-                      {#if notification.visible_to_user}
-                        <span>• To: {notification.visible_to_user.name}</span>
-                      {:else}
-                        <span>• To: All Admins</span>
+                      <span>• Status: {notification.status || 'sent'}</span>
+                      {#if notification.scheduled_at}
+                        <span>• Scheduled: {formatTimeAgo(notification.scheduled_at)}</span>
                       {/if}
                       {#if notification.read_at}
                         <span>• Read {formatTimeAgo(notification.read_at)}</span>
@@ -516,63 +780,251 @@
     <!-- Create Notification Modal -->
     {#if showCreateModal}
       <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+        <div class="relative top-4 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white max-h-screen overflow-y-auto">
           <div class="mt-3">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Create Notification</h3>
+            <h3 class="text-xl font-bold text-gray-900 mb-6">📱 Send Notification to Customers</h3>
             
-            <form on:submit|preventDefault={createNotification} class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                <select
-                  bind:value={formData.type}
-                  required
-                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {#each notificationTypes as type}
-                    <option value={type.value}>{type.icon} {type.label}</option>
-                  {/each}
-                </select>
+            <form on:submit|preventDefault={createNotification} class="space-y-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Left Column -->
+                <div class="space-y-4">
+                  <!-- Notification Type -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      📋 Notification Type *
+                    </label>
+                    <select
+                      bind:value={formData.type}
+                      required
+                      class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      {#each notificationTypes as type}
+                        <option value={type.value}>{type.icon} {type.label}</option>
+                      {/each}
+                    </select>
+                  </div>
+                  
+                  <!-- Title -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      📝 Title (English) *
+                    </label>
+                    <input
+                      type="text"
+                      bind:value={formData.title}
+                      required
+                      class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter notification title..."
+                    />
+                  </div>
+
+                  <!-- Message -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      💬 Message (English) *
+                    </label>
+                    <textarea
+                      bind:value={formData.message}
+                      required
+                      rows="4"
+                      class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter notification message..."
+                    ></textarea>
+                  </div>
+
+                  <!-- Arabic Message -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      🌍 Message (Arabic) - Optional
+                    </label>
+                    <textarea
+                      bind:value={formData.message_ar}
+                      rows="3"
+                      class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-right"
+                      placeholder="أدخل رسالة الإشعار بالعربية..."
+                      dir="rtl"
+                    ></textarea>
+                  </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="space-y-4">
+                  <!-- Target Audience -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      🎯 Target Audience *
+                    </label>
+                    <select
+                      bind:value={formData.recipient_type}
+                      class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      {#each recipientTypes as recipient}
+                        <option value={recipient.value}>{recipient.icon} {recipient.label}</option>
+                      {/each}
+                    </select>
+                  </div>
+
+                  <!-- Conditional targeting fields -->
+                  {#if formData.recipient_type === 'customer'}
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-2">
+                        👤 Specific Customers (Customer IDs, comma separated)
+                      </label>
+                      <input
+                        type="text"
+                        bind:value={formData.target_customers}
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="e.g., cust123, cust456, cust789"
+                      />
+                      <p class="text-xs text-gray-500 mt-1">Enter customer IDs separated by commas</p>
+                    </div>
+                  {/if}
+
+                  {#if formData.recipient_type === 'branch'}
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-2">
+                        🏪 Target Branches
+                      </label>
+                      <select
+                        bind:value={formData.target_branches}
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="">Select branches...</option>
+                        {#each branches as branch}
+                          <option value={branch.id}>{branch.name} - {branch.location}</option>
+                        {/each}
+                      </select>
+                    </div>
+                  {/if}
+
+                  {#if formData.recipient_type === 'card_type'}
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-2">
+                        💳 Target Card Types
+                      </label>
+                      <select
+                        bind:value={formData.target_card_types}
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="">Select card type...</option>
+                        {#each cardTypes as cardType}
+                          <option value={cardType.id}>{cardType.name} (Tier {cardType.tier_level})</option>
+                        {/each}
+                      </select>
+                    </div>
+                  {/if}
+
+                  <!-- Delivery Channels -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      📡 Delivery Channels * (Select multiple)
+                    </label>
+                    <div class="space-y-2">
+                      {#each channelOptions as channel}
+                        <label class="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                          <input
+                            type="checkbox"
+                            bind:group={formData.channels}
+                            value={channel.value}
+                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <div class="flex-1">
+                            <div class="flex items-center space-x-2">
+                              <span class="text-lg">{channel.icon}</span>
+                              <span class="font-medium">{channel.label}</span>
+                            </div>
+                            <p class="text-xs text-gray-500">{channel.description}</p>
+                          </div>
+                        </label>
+                      {/each}
+                    </div>
+                  </div>
+
+                  <!-- Priority -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      ⚡ Priority
+                    </label>
+                    <select
+                      bind:value={formData.priority}
+                      class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="low">🟢 Low</option>
+                      <option value="normal">🟡 Normal</option>
+                      <option value="high">🟠 High</option>
+                      <option value="urgent">🔴 Urgent</option>
+                    </select>
+                  </div>
+
+                  <!-- Schedule -->
+                  <div class="grid grid-cols-1 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-2">
+                        ⏰ Schedule (Optional)
+                      </label>
+                      <input
+                        type="datetime-local"
+                        bind:value={formData.scheduled_at}
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <p class="text-xs text-gray-500 mt-1">Leave empty to send immediately</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                <textarea
-                  bind:value={formData.message}
-                  required
-                  rows="3"
-                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter notification message..."
-                ></textarea>
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Visible To (Optional)</label>
-                <input
-                  type="text"
-                  bind:value={formData.visible_to}
-                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Leave empty for all admins"
-                />
-                <p class="text-xs text-gray-500 mt-1">User ID to show this notification to specifically</p>
-              </div>
-              
-              <div class="flex justify-end space-x-2 mt-6">
+
+              <!-- Action Buttons -->
+              <div class="flex justify-end space-x-4 pt-6 border-t">
                 <button
                   type="button"
                   on:click={closeCreateModal}
-                  class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                  class="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
                 >
-                  Cancel
+                  ❌ Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+                  class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors font-medium"
                 >
-                  {isLoading ? 'Creating...' : 'Create'}
+                  {#if isLoading}
+                    ⏳ Sending...
+                  {:else if formData.scheduled_at}
+                    📅 Schedule Notification
+                  {:else}
+                    🚀 Send Now
+                  {/if}
                 </button>
               </div>
             </form>
+
+            <!-- Preview Section -->
+            {#if formData.title || formData.message}
+              <div class="mt-6 p-4 bg-gray-50 rounded-lg border-l-4 border-blue-500">
+                <h4 class="font-medium text-gray-700 mb-2">📱 Preview (How it will look to customers):</h4>
+                <div class="bg-white p-4 rounded-lg shadow-sm border">
+                  <div class="flex items-center space-x-2 mb-2">
+                    <span class="text-lg">{notificationTypes.find(t => t.value === formData.type)?.icon || '🔔'}</span>
+                    <span class="font-semibold">{formData.title || 'Notification Title'}</span>
+                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                      {notificationTypes.find(t => t.value === formData.type)?.label || 'System'}
+                    </span>
+                  </div>
+                  <p class="text-gray-700">{formData.message || 'Notification message will appear here...'}</p>
+                  {#if formData.message_ar}
+                    <p class="text-gray-700 text-right mt-2 border-t pt-2" dir="rtl">{formData.message_ar}</p>
+                  {/if}
+                  <div class="mt-3 flex items-center space-x-2 text-xs text-gray-500">
+                    <span>Channels:</span>
+                    {#each formData.channels as channel}
+                      <span class="bg-green-100 text-green-800 px-2 py-1 rounded">
+                        {channelOptions.find(c => c.value === channel)?.icon} {channelOptions.find(c => c.value === channel)?.label}
+                      </span>
+                    {/each}
+                  </div>
+                </div>
+              </div>
+            {/if}
           </div>
         </div>
       </div>

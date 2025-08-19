@@ -8,7 +8,12 @@
 	let { children } = $props();
 
 	// Pages that shouldn't show the top bar
-	const hideTopBar = $derived($page.url.pathname === '/' || $page.url.pathname === '/test' || $page.url.pathname === '/login');
+	const hideTopBar = $derived(
+		$page.url.pathname === '/' || 
+		$page.url.pathname === '/test' || 
+		$page.url.pathname === '/login' ||
+		$page.url.pathname.startsWith('/admin') // Hide TopBar for all admin routes
+	);
 
 	// Initialize authentication on app start
 	onMount(() => {
