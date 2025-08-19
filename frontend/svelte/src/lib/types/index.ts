@@ -162,7 +162,9 @@ export interface Notification {
   recipientId?: string; // Recipient record ID for database operations
   type: 'terms_update' | 'system' | 'promotion' | 'warning' | 'info' | 'birthday' | 'welcome' | 'upgrade' | 'expiry' | 'reward' | 'transaction';
   title: string;
+  title_ar?: string; // Arabic title
   message: string;
+  message_ar?: string; // Arabic message
   timestamp: string;
   isRead: boolean;
   priority: 'low' | 'medium' | 'high';
