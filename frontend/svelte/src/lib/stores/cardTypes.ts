@@ -35,9 +35,9 @@ export function getCardTypeGradient(cardTypeName: string): { from: string; to: s
   
   // Convert hex to lighter and darker versions for gradient
   const hex = color.replace('#', '');
-  const r = parseInt(hex.substr(0, 2), 16);
-  const g = parseInt(hex.substr(2, 2), 16);
-  const b = parseInt(hex.substr(4, 2), 16);
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
   
   // Create lighter version (increase by 20)
   const lighterR = Math.min(255, r + 20);

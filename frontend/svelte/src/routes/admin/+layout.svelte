@@ -48,6 +48,7 @@
         { path: '/admin/user-roles', label: 'User Roles', icon: '🔐', description: 'Manage user roles and permissions' },
         { path: '/admin/support-settings', label: 'Support Settings', icon: '⚙️', description: 'Configure support options' },
         { path: '/admin/terms-management', label: 'Terms & Conditions', icon: '📋', description: 'Edit Terms & Conditions' },
+        { path: '/admin/privacy-policy', label: 'Privacy Policy', icon: '🔒', description: 'Manage Privacy Policy content' },
         { path: '/admin/notification-center', label: 'Notification Center', icon: '🔔', description: 'Manage notifications' },
         { path: '/admin/export-data', label: 'Export Data', icon: '📤', description: 'Export system data' }
       ]

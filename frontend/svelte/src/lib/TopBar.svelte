@@ -7,7 +7,6 @@
   // Props
   export let showBackButton = true;
   export let title = '';
-  export let showLanguageToggle = true;
   export let showLogout = true;
 
   function goBack() {
@@ -20,12 +19,6 @@
 
   function logout() {
     authLogout();
-  }
-
-  function handleLanguageToggle() {
-    console.log('Language toggle clicked, current language:', $language);
-    toggleLanguage();
-    console.log('Language after toggle:', $language);
   }
 
   // Dynamic title based on current route
@@ -54,13 +47,13 @@
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center h-16">
       
-      <!-- Left Section -->
-      <div class="flex items-center space-x-4 min-w-0 flex-1" class:space-x-reverse={$language === 'ar'}>
+      <!-- Left Section - Navigation -->
+      <div class="flex items-center space-x-3 min-w-0 flex-1" class:space-x-reverse={$language === 'ar'}>
         <!-- Back Button -->
         {#if showBackButton && !isLoginPage}
           <button 
             on:click={goBack}
-            class="flex items-center text-gray-600 hover:text-gray-800 transition-colors p-2 rounded-lg hover:bg-gray-100"
+            class="flex items-center justify-center text-gray-600 hover:text-gray-800 transition-all duration-200 p-2.5 rounded-xl hover:bg-gray-100 hover:shadow-sm"
             title={$t.back || 'Back'}
             aria-label={$t.back || 'Back'}
           >
@@ -69,110 +62,69 @@
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
+              stroke-width="2"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
         {/if}
-
-        <!-- User Info (for desktop) -->
-        {#if !isLoginPage && $user}
-          <div class="hidden sm:flex items-center space-x-3" class:space-x-reverse={$language === 'ar'}>
-            <div class="w-8 h-8 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
-              {$user.name.charAt(0)}
-            </div>
-            <div class="hidden md:block">
-              <p class="text-xs text-gray-500">{$t.welcome || 'Welcome'}</p>
-              <p class="font-medium text-gray-900 text-sm">{$user.name}</p>
-            </div>
-          </div>
-        {/if}
       </div>
 
-      <!-- Center Section - Title -->
-      <div class="flex-2 flex items-center justify-center mx-4">
-        <h1 class="relative bg-gradient-to-br from-green-400 via-green-500 to-green-600 text-white px-4 py-2 rounded-lg font-bold text-base tracking-wide shadow-lg transition-all duration-300 max-w-xs truncate text-center">
-          <!-- Title Text -->
-          <span class="relative z-10 drop-shadow-lg">{currentTitle}</span>
+      <!-- Center Section - Page Title -->
+      <div class="flex items-center justify-center mx-4">
+        <h1 class="relative bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 text-white px-6 py-2.5 rounded-xl font-bold text-base tracking-wide shadow-lg transition-all duration-300 max-w-xs truncate text-center">
+          <span class="relative z-10 drop-shadow-sm">{currentTitle}</span>
+          <!-- Subtle shine effect -->
+          <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-xl"></div>
         </h1>
       </div>
 
-      <!-- Right Section -->
+      <!-- Right Section - Actions -->
       <div class="flex items-center space-x-2 min-w-0 flex-1 justify-end" class:space-x-reverse={$language === 'ar'}>
         
         <!-- PWA Install Button -->
         <button 
           id="pwa-install-button"
-          class="hidden group relative bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 text-gray-700 hover:text-gray-900 px-3 py-2 rounded-xl font-semibold transition-all duration-200 text-sm border border-green-200/50 hover:border-green-300/70 shadow-sm hover:shadow-md transform hover:scale-105"
+          class="hidden group relative bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 hover:text-blue-800 px-3 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm border border-blue-200/60 hover:border-blue-300 shadow-sm hover:shadow-md transform hover:scale-105"
           title="Install App"
+          aria-label="Install App"
         >
-          <span class="text-xs">📱</span>
-          <span class="hidden sm:inline ml-1 font-medium">Install</span>
-          <!-- Subtle glow effect -->
-          <div class="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-400/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 -z-10"></div>
+          <span class="text-sm">📱</span>
+          <span class="hidden sm:inline ml-1.5 font-semibold">Install</span>
+          <!-- Glow effect -->
+          <div class="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-blue-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
         </button>
-        
-        <!-- Language Toggle -->
-        {#if showLanguageToggle}
-          <button 
-            on:click={handleLanguageToggle} 
-            class="group relative bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-gray-700 hover:text-gray-900 px-4 py-2 rounded-xl font-semibold transition-all duration-200 text-sm border border-blue-200/50 hover:border-blue-300/70 shadow-sm hover:shadow-md transform hover:scale-105"
-            title="Toggle Language"
-          >
-            <span class="font-bold tracking-wide">
-              {$language === 'ar' ? 'EN' : 'AR'}
-            </span>
-            <!-- Subtle glow effect -->
-            <div class="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-indigo-400/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 -z-10"></div>
-          </button>
-        {/if}
 
-        <!-- Logout Button (for non-login pages) -->
+        <!-- Logout Button -->
         {#if showLogout && !isLoginPage && $user}
           <button 
             on:click={logout} 
-            class="hidden sm:flex items-center space-x-2 bg-red-50 text-red-600 px-3 py-2 rounded-lg font-medium hover:bg-red-100 transition-colors text-sm"
+            class="flex items-center space-x-2 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-600 hover:text-red-700 px-3 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm border border-red-200/60 hover:border-red-300 shadow-sm hover:shadow-md transform hover:scale-105 group"
             class:space-x-reverse={$language === 'ar'}
+            title={$t.logout || 'Logout'}
+            aria-label={$t.logout || 'Logout'}
           >
-            <span>🔓</span>
-            <span>{$t.logout || 'Logout'}</span>
+            <span class="text-sm group-hover:scale-110 transition-transform duration-200">🔓</span>
+            <span class="font-semibold">{$t.logout || 'Logout'}</span>
+            <!-- Glow effect -->
+            <div class="absolute inset-0 bg-gradient-to-r from-red-400/20 to-red-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
           </button>
         {/if}
 
-        <!-- Mobile Menu Button (for smaller screens) -->
+        <!-- Mobile Menu Button -->
         <div class="sm:hidden">
           <button
-            class="p-2 rounded-lg text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+            class="flex items-center justify-center p-2.5 rounded-xl text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-all duration-200 hover:shadow-sm"
             title="Menu"
             aria-label="Menu"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
         </div>
       </div>
     </div>
-
-    <!-- Mobile User Info - Now integrated into main header instead of separate section -->
-    {#if !isLoginPage && $user}
-      <div class="sm:hidden pb-2 pt-1 px-2 border-t border-gray-100/50 bg-gray-50/50">
-        <div class="flex items-center justify-between text-xs">
-          <div class="flex items-center space-x-2" class:space-x-reverse={$language === 'ar'}>
-            <span class="text-gray-500">{$t.welcome || 'Welcome'} <span class="font-medium text-gray-700">{$user.name}</span></span>
-          </div>
-          
-          {#if showLogout}
-            <button 
-              on:click={logout} 
-              class="text-red-600 text-xs px-2 py-1 bg-red-50 rounded hover:bg-red-100 transition-colors font-medium"
-            >
-              🔓 {$t.logout || 'Logout'}
-            </button>
-          {/if}
-        </div>
-      </div>
-    {/if}
   </div>
 </header>
 
@@ -182,36 +134,32 @@
   }
   
   header {
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
     background-color: rgba(255, 255, 255, 0.95);
+    border-bottom: 1px solid rgba(229, 231, 235, 0.8);
   }
 
-  .flex-2 {
-    flex: 2 1 0%;
+  /* Ensure proper button positioning and spacing */
+  .flex-1 {
+    flex: 1 1 0%;
+    min-width: 0;
   }
 
-  /* Ensure proper responsive behavior */
+  /* Enhanced button hover effects */
+  button {
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Smooth transitions for all interactive elements */
+  * {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Mobile responsiveness improvements */
   @media (max-width: 640px) {
-    .sm\\:hidden {
-      display: block !important;
-    }
-    .hidden.sm\\:flex {
+    .hidden {
       display: none !important;
-    }
-    .hidden.sm\\:block {
-      display: none !important;
-    }
-  }
-
-  @media (min-width: 641px) {
-    .sm\\:hidden {
-      display: none !important;
-    }
-    .hidden.sm\\:flex {
-      display: flex !important;
-    }
-    .hidden.sm\\:block {
-      display: block !important;
     }
   }
 </style>

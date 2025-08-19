@@ -136,7 +136,7 @@ export function requireAdminAuth(currentUser: User | AdminUser | null, currentPa
 
 // Check if route requires authentication
 export function isProtectedRoute(pathname: string): boolean {
-  const publicRoutes = ['/login', '/admin-login', '/register'];
+  const publicRoutes = ['/login', '/admin-login', '/register', '/privacy-policy', '/terms-conditions'];
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
   return !isPublicRoute;
 }

@@ -4,7 +4,7 @@
 		<meta charset="utf-8" />
 		
 		<!-- PWA Meta Tags -->
-		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
 		<meta name="theme-color" content="#f08300" />
 		<meta name="background-color" content="#ffffff" />
 		<meta name="mobile-web-app-capable" content="yes" />
@@ -14,12 +14,30 @@
 		<meta name="application-name" content="Urban Market Loyalty" />
 		<meta name="msapplication-TileColor" content="#f08300" />
 		<meta name="msapplication-tap-highlight" content="no" />
+		<meta name="format-detection" content="telephone=no" />
+		
+		<!-- iPhone 13+ Specific Meta Tags -->
+		<meta name="apple-touch-fullscreen" content="yes" />
+		<meta name="apple-mobile-web-app-orientation-override" content="portrait" />
+		<meta name="supported-color-schemes" content="light" />
 		
 		<!-- PWA Icons -->
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
 		<link rel="manifest" href="%sveltekit.assets%/manifest.json" />
-		<link rel="apple-touch-icon" href="%sveltekit.assets%/icons/icon-192x192.png" />
+		
+		<!-- Apple Touch Icons for iPhone 13+ -->
+		<link rel="apple-touch-icon" sizes="180x180" href="%sveltekit.assets%/logo.png" />
+		<link rel="apple-touch-icon" sizes="167x167" href="%sveltekit.assets%/logo.png" />
+		<link rel="apple-touch-icon" sizes="152x152" href="%sveltekit.assets%/logo.png" />
+		<link rel="apple-touch-icon" sizes="120x120" href="%sveltekit.assets%/logo.png" />
+		<link rel="apple-touch-icon" href="%sveltekit.assets%/logo.png" />
+		
+		<!-- Additional PWA Icons -->
 		<link rel="mask-icon" href="%sveltekit.assets%/favicon.svg" color="#f08300" />
+		<link rel="shortcut icon" href="%sveltekit.assets%/favicon.svg" />
+		
+		<!-- iPhone 13+ Splash Screens -->
+		<link rel="apple-touch-startup-image" href="%sveltekit.assets%/logo.png" />
 		
 		<!-- SEO and Social Media Meta Tags -->
 		<meta name="description" content="Urban Market Loyalty Program - Earn points, get rewards, and enjoy exclusive benefits" />
@@ -50,10 +68,11 @@
 		
 		<!-- PWA Install Prompt Script -->
 		<script>
-			// PWA Install prompt handling
+			// PWA Install prompt handling for iPhone 13+
 			let deferredPrompt;
 			
 			window.addEventListener('beforeinstallprompt', (e) => {
+				console.log('PWA: beforeinstallprompt event fired');
 				// Prevent the default browser install banner
 				e.preventDefault();
 				deferredPrompt = e;
@@ -64,9 +83,11 @@
 					installButton.style.display = 'block';
 					installButton.addEventListener('click', async () => {
 						if (deferredPrompt) {
+							console.log('PWA: Showing install prompt');
 							// Show the install prompt
 							deferredPrompt.prompt();
 							const { outcome } = await deferredPrompt.userChoice;
+							console.log('PWA: User choice:', outcome);
 							
 							// Clean up
 							deferredPrompt = null;
@@ -77,6 +98,7 @@
 			});
 			
 			window.addEventListener('appinstalled', (evt) => {
+				console.log('PWA: App was installed');
 				// Hide install button after successful installation
 				const installButton = document.getElementById('pwa-install-button');
 				if (installButton) {
@@ -84,20 +106,63 @@
 				}
 			});
 			
-			// Service Worker registration - Temporarily disabled
-			/*
+			// Service Worker registration for iPhone 13+ PWA support
 			if ('serviceWorker' in navigator) {
 				window.addEventListener('load', () => {
-					navigator.serviceWorker.register('/sw.js')
+					navigator.serviceWorker.register('/service-worker.js')
 						.then((registration) => {
-							console.log('SW registered: ', registration);
+							console.log('SW registered successfully:', registration.scope);
+							
+							// Check for updates
+							registration.addEventListener('updatefound', () => {
+								console.log('SW: Update found');
+								const newWorker = registration.installing;
+								newWorker.addEventListener('statechange', () => {
+									if (newWorker.state === 'installed') {
+										if (navigator.serviceWorker.controller) {
+											console.log('SW: New content available, please refresh');
+										} else {
+											console.log('SW: Content cached for offline use');
+										}
+									}
+								});
+							});
 						})
 						.catch((registrationError) => {
-							console.log('SW registration failed: ', registrationError);
+							console.log('SW registration failed:', registrationError);
 						});
+					
+					// Handle service worker updates
+					let refreshing;
+					navigator.serviceWorker.addEventListener('controllerchange', () => {
+						if (refreshing) return;
+						window.location.reload();
+						refreshing = true;
+					});
 				});
 			}
-			*/
+			
+			// iPhone 13+ specific PWA features
+			if (/iPhone/.test(navigator.userAgent)) {
+				// Prevent zoom on input focus (iPhone 13+ fix)
+				const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input[type="email"], input[type="password"], input[type="tel"], select, textarea');
+				inputs.forEach(input => {
+					input.addEventListener('focus', () => {
+						input.style.fontSize = '16px';
+					});
+					input.addEventListener('blur', () => {
+						input.style.fontSize = '';
+					});
+				});
+				
+				// Handle safe area for iPhone 13+ notch
+				if ('CSS' in window && 'supports' in window.CSS) {
+					if (window.CSS.supports('padding-top: env(safe-area-inset-top)')) {
+						document.documentElement.style.setProperty('--safe-area-inset-top', 'env(safe-area-inset-top)');
+						document.documentElement.style.setProperty('--safe-area-inset-bottom', 'env(safe-area-inset-bottom)');
+					}
+				}
+			}
 		</script>
 	</body>
 </html>

@@ -130,7 +130,13 @@ Execute SQL scripts in order:
 - **Data Validation**: Input sanitization and validation
 - **File Upload Security**: Secure file handling
 
-## 🔄 Updates & Maintenance
+## � Business Rules & Policies
+
+### Point Redemption Rules
+- **Branch-Specific Redemption**: Point redemption is only possible if the specific branch has enough points available. Customers cannot use combined points from all branches for redemption at a single location.
+- **Branch Point Validation**: Each branch maintains its own point balance for customers. Redemption requests must be validated against the individual branch's available points, not the customer's total points across all branches.
+
+## �🔄 Updates & Maintenance
 
 - **Automated Deployments**: Every push to main branch
 - **Database Migrations**: SQL scripts for schema updates

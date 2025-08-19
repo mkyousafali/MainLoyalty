@@ -41,7 +41,8 @@
         { name: 'Manage Branches', href: '/admin/manage-branches', icon: '🏢' },
         { name: 'User Management', href: '/admin/user-management', icon: '👤' },
         { name: 'User Roles', href: '/admin/user-roles', icon: '🔑' },
-        { name: 'Support Settings', href: '/admin/support-settings', icon: '📞' }
+        { name: 'Support Settings', href: '/admin/support-settings', icon: '📞' },
+        { name: 'Privacy Policy Management', href: '/admin/privacy-policy', icon: '🔒' }
       ]
     },
     {

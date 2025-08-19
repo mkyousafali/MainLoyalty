@@ -559,7 +559,7 @@ Standalone registration page for new customers
               </div>
             </div>
 
-            <!-- Terms and Conditions -->
+            <!-- Terms and Conditions & Privacy Policy -->
             <div class="flex items-start space-x-2">
               <input
                 bind:checked={termsAccepted}
@@ -567,9 +567,12 @@ Standalone registration page for new customers
                 class="mt-1 h-4 w-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
                 required
               />
-              <label class="text-sm text-gray-600">
-                {t.termsCheckbox}
-              </label>
+              <div class="text-sm text-gray-600">
+                <span>{t.termsCheckbox.split('Terms & Conditions')[0]}</span>
+                <a href="/terms-conditions" class="text-blue-600 hover:text-blue-800 underline" target="_blank">Terms & Conditions</a>
+                <span> and </span>
+                <a href="/privacy-policy" class="text-blue-600 hover:text-blue-800 underline" target="_blank">Privacy Policy</a>
+              </div>
             </div>
 
             <button

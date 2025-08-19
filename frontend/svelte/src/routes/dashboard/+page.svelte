@@ -5,7 +5,7 @@
   import { user } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
-  import { language, t } from '$lib/stores/language';
+  import { language, t, toggleLanguage } from '$lib/stores/language';
   import { formatCurrency, formatCurrencyText } from '$lib/formatCurrency';
   import QRCode from 'qrcode';
   import JsBarcode from 'jsbarcode';
@@ -18,6 +18,43 @@
   let allTransactions: any[] = []; // Store all transactions for filtering
   let isLoading = true;
   let error = '';
+
+  // Reactive translations based on current language
+  $: currentTranslations = $language === 'ar' ? {
+    redemptionConditions: 'شروط استرداد النقاط',
+    redemptionRules: 'قواعد مهمة لاستخدام نقاطك', 
+    allowedRedemptions: 'قيم الاسترداد المسموحة',
+    points: 'النقاط',
+    importantRules: 'قواعد مهمة',
+    noCustomValues: 'لا توجد قيم مخصصة مسموحة',
+    noCustomValuesDesc: 'يمكن استرداد النقاط فقط بالمبالغ المحددة: 50، 100، 150، أو 200 نقطة.',
+    noCashExchange: 'لا يمكن تحويلها لنقد',
+    noCashExchangeDesc: 'لا يمكن تحويل النقاط إلى نقد. يمكن استخدامها فقط للحصول على خصومات على المشتريات.',
+    storeUseOnly: 'للاستخدام في المتجر فقط',
+    storeUseOnlyDesc: 'يمكن استخدام النقاط للحصول على خصومات على المشتريات المستقبلية في متاجر أوربان ماركت.',
+    branchSpecificRedemption: 'استرداد خاص بالفرع',
+    branchSpecificRedemptionDesc: 'يمكن استرداد النقاط فقط إذا كان لدى الفرع المحدد نقاط كافية متاحة. لا يمكنك دمج النقاط من فروع مختلفة للاسترداد.',
+    readyToRedeem: 'مستعد لاسترداد نقاطك؟',
+    contactStoreStaff: 'تواصل مع موظفي المتجر خلال زيارتك القادمة أو تواصل مع دعم العملاء للمساعدة في استرداد النقاط.',
+    contactSupport: 'تواصل مع الدعم'
+  } : {
+    redemptionConditions: 'Point Redemption Conditions',
+    redemptionRules: 'Important rules for using your points',
+    allowedRedemptions: 'Allowed Redemption Values',
+    points: 'Points',
+    importantRules: 'Important Rules',
+    noCustomValues: 'No Custom Values Allowed',
+    noCustomValuesDesc: 'Points can only be redeemed in the specified amounts: 50, 100, 150, or 200 points.',
+    noCashExchange: 'No Cash Exchange',
+    noCashExchangeDesc: 'Points cannot be converted to cash. They can only be used for discounts on purchases.',
+    storeUseOnly: 'Store Use Only',
+    storeUseOnlyDesc: 'Points can be used for discounts on future purchases at Urban Market stores.',
+    branchSpecificRedemption: 'Branch-Specific Redemption',
+    branchSpecificRedemptionDesc: 'Points can only be redeemed if the specific branch has enough points available. You cannot combine points from different branches for redemption.',
+    readyToRedeem: 'Ready to redeem your points?',
+    contactStoreStaff: 'Contact store staff during your next visit or reach out to customer support for assistance with point redemption.',
+    contactSupport: 'Contact Support'
+  };
 
   // QR/Barcode Toggle Variables
   let showQRCode = true; // true for QR, false for barcode
@@ -526,7 +563,18 @@
 </div>
 
 <!-- Dashboard Widgets -->
-<main class="p-3 sm:p-4 md:p-6 max-w-6xl mx-auto mt-4 sm:mt-6 md:mt-8">
+<main class="p-3 sm:p-4 md:p-6 max-w-6xl mx-auto mt-4 sm:mt-6 md:mt-8" dir="{$language === 'ar' ? 'rtl' : 'ltr'}" lang="{$language}">
+  
+  <!-- Language Toggle Button for Testing -->
+  <div class="fixed top-4 right-4 z-50">
+    <button 
+      on:click={toggleLanguage}
+      class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium shadow-lg"
+    >
+      {$language === 'ar' ? 'EN' : 'العربية'}
+    </button>
+  </div>
+
   {#if isLoading}
     <!-- Loading State -->
     <div class="flex justify-center items-center h-32 sm:h-48 md:h-64">
@@ -730,61 +778,6 @@
                 
                 <!-- Enhanced shimmer effect -->
                 <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 animate-pulse transition-opacity duration-700"></div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Enhanced Mobile-Optimized Description Cards -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 text-center">
-            <div class="relative group">
-              <!-- Enhanced glow background -->
-              <div class="absolute -inset-2 bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-600 rounded-2xl blur-lg opacity-25 group-hover:opacity-40 transition-opacity duration-500"></div>
-              
-              <!-- Enhanced card content -->
-              <div class="relative p-5 sm:p-6 rounded-2xl border-2 border-emerald-400 border-opacity-40 transform hover:scale-105 transition-all duration-300" style="background: linear-gradient(135deg, rgba(19, 165, 56, 0.08) 0%, rgba(119, 171, 57, 0.12) 100%); backdrop-filter: blur(15px); box-shadow: 0 8px 32px rgba(19, 165, 56, 0.15);">
-                <!-- Enhanced LED indicator -->
-                <div class="w-3 h-3 rounded-full bg-emerald-400 mx-auto mb-3 sm:mb-4 animate-pulse" style="box-shadow: 0 0 20px #10b981, 0 0 40px rgba(16, 185, 129, 0.3);"></div>
-                
-                <h3 class="text-lg sm:text-xl font-black mb-2 sm:mb-3" style="color: #13A538; text-shadow: 0 0 15px rgba(19, 165, 56, 0.4); background: linear-gradient(45deg, #13A538, #10B981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                  {$t.yourBalance}
-                </h3>
-                <p class="text-gray-700 text-sm sm:text-base font-semibold opacity-90 leading-relaxed">
-                  {selectedBranch === 'all' ? 
-                    $t.totalAvailable : 
-                    ($language === 'ar' ? 
-                      (branches.find(b => b.id.toString() === selectedBranch)?.name_ar || branches.find(b => b.id.toString() === selectedBranch)?.name_en || 'Selected Branch') : 
-                      (branches.find(b => b.id.toString() === selectedBranch)?.name_en || branches.find(b => b.id.toString() === selectedBranch)?.name || 'Selected Branch'))}
-                </p>
-                
-                <!-- Decorative elements -->
-                <div class="absolute top-2 right-2 w-2 h-2 bg-emerald-300 rounded-full animate-ping opacity-60"></div>
-                <div class="absolute bottom-2 left-2 w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse opacity-70"></div>
-              </div>
-            </div>
-            
-            <div class="relative group">
-              <!-- Enhanced glow background -->
-              <div class="absolute -inset-2 bg-gradient-to-r from-orange-400 via-amber-500 to-orange-600 rounded-2xl blur-lg opacity-25 group-hover:opacity-40 transition-opacity duration-500"></div>
-              
-              <!-- Enhanced card content -->
-              <div class="relative p-5 sm:p-6 rounded-2xl border-2 border-orange-400 border-opacity-40 transform hover:scale-105 transition-all duration-300" style="background: linear-gradient(135deg, rgba(240, 131, 0, 0.08) 0%, rgba(255, 149, 0, 0.12) 100%); backdrop-filter: blur(15px); box-shadow: 0 8px 32px rgba(240, 131, 0, 0.15);">
-                <!-- Enhanced LED indicator -->
-                <div class="w-3 h-3 rounded-full bg-orange-400 mx-auto mb-3 sm:mb-4 animate-pulse" style="box-shadow: 0 0 20px #fb923c, 0 0 40px rgba(251, 146, 60, 0.3);"></div>
-                
-                <h3 class="text-lg sm:text-xl font-black mb-2 sm:mb-3" style="color: #f08300; text-shadow: 0 0 15px rgba(240, 131, 0, 0.4); background: linear-gradient(45deg, #f08300, #fb923c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                  {$t.lifetimeEarned}
-                </h3>
-                <p class="text-gray-700 text-sm sm:text-base font-semibold opacity-90 leading-relaxed">
-                  {selectedBranch === 'all' ? 
-                    $t.totalAmountEarned : 
-                    ($language === 'ar' ? 
-                      (branches.find(b => b.id.toString() === selectedBranch)?.name_ar || branches.find(b => b.id.toString() === selectedBranch)?.name_en || 'Selected Branch') : 
-                      (branches.find(b => b.id.toString() === selectedBranch)?.name_en || branches.find(b => b.id.toString() === selectedBranch)?.name || 'Selected Branch'))}
-                </p>
-                
-                <!-- Decorative elements -->
-                <div class="absolute top-2 right-2 w-2 h-2 bg-orange-300 rounded-full animate-ping opacity-60"></div>
-                <div class="absolute bottom-2 left-2 w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse opacity-70"></div>
               </div>
             </div>
           </div>
@@ -1059,44 +1052,70 @@
         </div>
         <div class="min-w-0 flex-1">
           <h3 class="text-lg sm:text-xl md:text-2xl font-bold" style="color: #C0A32A;">
-            {$t.redemptionConditions || 'Point Redemption Conditions'}
+            {currentTranslations.redemptionConditions}
           </h3>
           <p class="text-gray-600 text-xs sm:text-sm">
-            {$t.redemptionRules || 'Important rules for using your points'}
+            {currentTranslations.redemptionRules}
           </p>
         </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        <!-- Redemption Values -->
+        <!-- Left Side: Redemption Values + Store Rules -->
         <div class="space-y-3 sm:space-y-4">
           <h4 class="font-bold text-base sm:text-lg" style="color: #13A538;">
-            {$t.allowedRedemptions || 'Allowed Redemption Values'}
+            {currentTranslations.allowedRedemptions}
           </h4>
           <div class="grid grid-cols-2 gap-2 sm:gap-3">
             {#each [50, 100, 150, 200] as points}
               <div class="flex items-center justify-between p-2 sm:p-3 rounded-lg border-2" style="border-color: #77AB39; background: #F3FFF8;">
                 <span class="font-bold text-base sm:text-lg" style="color: #13A538;">{points}</span>
-                <span class="text-xs sm:text-sm text-gray-600">{$t.points || 'Points'}</span>
+                <span class="text-xs sm:text-sm text-gray-600">{currentTranslations.points}</span>
               </div>
             {/each}
           </div>
+          
+          <!-- Store Use Only Rule -->
+          <div class="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg" style="background: #F3FFF8; border: 1px solid #77AB39;">
+            <span class="text-base sm:text-lg flex-shrink-0">✅</span>
+            <div class="flex-1 text-xs sm:text-sm min-w-0">
+              <p class="font-medium text-gray-800">
+                {currentTranslations.storeUseOnly}
+              </p>
+              <p class="text-gray-600 mt-1">
+                {currentTranslations.storeUseOnlyDesc}
+              </p>
+            </div>
+          </div>
+
+          <!-- Branch-Specific Redemption Rule -->
+          <div class="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg" style="background: #F0F8FF; border: 1px solid #13A538;">
+            <span class="text-base sm:text-lg flex-shrink-0">🏪</span>
+            <div class="flex-1 text-xs sm:text-sm min-w-0">
+              <p class="font-medium text-gray-800">
+                {currentTranslations.branchSpecificRedemption}
+              </p>
+              <p class="text-gray-600 mt-1">
+                {currentTranslations.branchSpecificRedemptionDesc}
+              </p>
+            </div>
+          </div>
         </div>
 
-        <!-- Important Rules -->
+        <!-- Right Side: Important Rules -->
         <div class="space-y-3 sm:space-y-4">
           <h4 class="font-bold text-base sm:text-lg" style="color: #f08300;">
-            {$t.importantRules || 'Important Rules'}
+            {currentTranslations.importantRules}
           </h4>
           <div class="space-y-2 sm:space-y-3">
             <div class="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg" style="background: #FFF8F0; border: 1px solid #f08300;">
               <span class="text-base sm:text-lg flex-shrink-0">⚠️</span>
               <div class="flex-1 text-xs sm:text-sm min-w-0">
                 <p class="font-medium text-gray-800">
-                  {$t.noCustomValues || 'No Custom Values Allowed'}
+                  {currentTranslations.noCustomValues}
                 </p>
                 <p class="text-gray-600 mt-1">
-                  {$t.noCustomValuesDesc || 'Points can only be redeemed in the specified amounts: 50, 100, 150, or 200 points.'}
+                  {currentTranslations.noCustomValuesDesc}
                 </p>
               </div>
             </div>
@@ -1105,22 +1124,10 @@
               <span class="text-base sm:text-lg flex-shrink-0">💸</span>
               <div class="flex-1 text-xs sm:text-sm min-w-0">
                 <p class="font-medium text-gray-800">
-                  {$t.noCashExchange || 'No Cash Exchange'}
+                  {currentTranslations.noCashExchange}
                 </p>
                 <p class="text-gray-600 mt-1">
-                  {$t.noCashExchangeDesc || 'Points cannot be converted to cash. They can only be used for discounts on purchases.'}
-                </p>
-              </div>
-            </div>
-
-            <div class="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg" style="background: #F3FFF8; border: 1px solid #77AB39;">
-              <span class="text-base sm:text-lg flex-shrink-0">✅</span>
-              <div class="flex-1 text-xs sm:text-sm min-w-0">
-                <p class="font-medium text-gray-800">
-                  {$t.storeUseOnly || 'Store Use Only'}
-                </p>
-                <p class="text-gray-600 mt-1">
-                  {$t.storeUseOnlyDesc || 'Points can be used for discounts on future purchases at Urban Market stores.'}
+                  {currentTranslations.noCashExchangeDesc}
                 </p>
               </div>
             </div>
@@ -1131,18 +1138,72 @@
       <!-- Contact Support for Redemption - Mobile optimized -->
       <div class="mt-4 sm:mt-6 p-3 sm:p-4 rounded-xl text-center" style="background: linear-gradient(135deg, #EAFBEF 0%, #F3FFF8 100%); border: 2px solid #77AB39;">
         <p class="text-gray-700 mb-2 sm:mb-3 text-sm sm:text-base">
-          <span class="font-bold" style="color: #13A538;">{$t.readyToRedeem || 'Ready to redeem your points?'}</span>
+          <span class="font-bold" style="color: #13A538;">{currentTranslations.readyToRedeem}</span>
         </p>
         <p class="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
-          {$t.contactStoreStaff || 'Contact store staff during your next visit or reach out to customer support for assistance with point redemption.'}
+          {currentTranslations.contactStoreStaff}
         </p>
         <a href="/customer-support" class="inline-flex items-center gap-2 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl text-sm sm:text-base" style="background: #13A538;">
           <span class="text-base sm:text-xl">💬</span>
-          <span>{$t.contactSupport || 'Contact Support'}</span>
+          <span>{currentTranslations.contactSupport}</span>
         </a>
       </div>
     </section>
   {/if}
+  
+  <!-- Footer Links -->
+  <footer class="mt-8 py-6 border-t border-gray-200">
+    <div class="text-center">
+      <div class="flex justify-center items-center space-x-6 text-sm" class:space-x-reverse={$language === 'ar'}>
+        <a 
+          href="/terms-conditions" 
+          class="text-blue-600 hover:text-blue-800 font-medium transition-colors underline"
+        >
+          {$language === 'ar' ? 'الشروط والأحكام' : 'Terms & Conditions'}
+        </a>
+        <span class="text-gray-400">•</span>
+        <a 
+          href="/privacy-policy" 
+          class="text-blue-600 hover:text-blue-800 font-medium transition-colors underline"
+        >
+          {$language === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy'}
+        </a>
+        <span class="text-gray-400">•</span>
+        <a 
+          href="/customer-support" 
+          class="text-blue-600 hover:text-blue-800 font-medium transition-colors underline"
+        >
+          {$language === 'ar' ? 'الدعم' : 'Support'}
+        </a>
+      </div>
+      <p class="mt-2 text-xs text-gray-500">
+        © 2025 Urban Loyalty. All rights reserved.
+      </p>
+    </div>
+  </footer>
 </main>
 
-
+<style>
+  /* Arabic Typography Support */
+  :global([dir="rtl"]) {
+    font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  /* RTL specific adjustments for Point Redemption Conditions */
+  :global([dir="rtl"] .flex.items-start.gap-2) {
+    direction: rtl;
+  }
+  
+  :global([dir="rtl"] .grid.grid-cols-2.gap-2) {
+    direction: rtl;
+  }
+  
+  /* Ensure proper text alignment for Arabic */
+  :global([dir="rtl"] p) {
+    text-align: right;
+  }
+  
+  :global([dir="rtl"] h3, [dir="rtl"] h4) {
+    text-align: right;
+  }
+</style>
