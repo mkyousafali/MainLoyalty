@@ -1367,27 +1367,33 @@
     </section>
   {/if}
   
-  <!-- Footer Links -->
-  <footer class="mt-8 py-6 border-t border-gray-200">
-    <div class="text-center">
-      <div class="flex justify-center items-center space-x-6 text-sm" class:space-x-reverse={$language === 'ar'}>
-        <a 
-          href="/terms-conditions" 
-          class="text-blue-600 hover:text-blue-800 font-medium transition-colors underline"
-        >
-          {$language === 'ar' ? 'الشروط والأحكام' : 'Terms & Conditions'}
-        </a>
-        <span class="text-gray-400">•</span>
-        <a 
-          href="/privacy-policy" 
-          class="text-blue-600 hover:text-blue-800 font-medium transition-colors underline"
-        >
-          {$language === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy'}
-        </a>
+  <!-- Footer Card -->
+  <footer class="mt-8 py-6">
+    <div class="max-w-md mx-auto">
+      <div class="bg-gradient-to-br from-gray-50 to-slate-100 hover:from-gray-100 hover:to-slate-200 border-2 border-gray-200 hover:border-gray-300 rounded-2xl p-4 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg">
+        <div class="text-center space-y-3">
+          <!-- Buttons -->
+          <div class="flex justify-center items-center gap-3 mb-2" class:flex-row-reverse={$language === 'ar'}>
+            <button
+              on:click={() => window.open('/terms-conditions', '_blank')}
+              class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+            >
+              {$language === 'ar' ? 'الشروط والأحكام' : 'Terms & Conditions'}
+            </button>
+            <span class="text-gray-400">•</span>
+            <button
+              on:click={() => window.open('/privacy-policy', '_blank')}
+              class="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white text-sm font-medium rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+            >
+              {$language === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy'}
+            </button>
+          </div>
+          <!-- Copyright -->
+          <p class="text-xs text-gray-600">
+            © 2025 Urban Loyalty. All rights reserved.
+          </p>
+        </div>
       </div>
-      <p class="mt-2 text-xs text-gray-500">
-        © 2025 Urban Loyalty. All rights reserved.
-      </p>
     </div>
   </footer>
 </main>
