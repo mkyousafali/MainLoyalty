@@ -1,7 +1,6 @@
 <script lang="ts">
 	import '../app.css';
 	import TopBar from '$lib/TopBar.svelte';
-	import SessionIndicator from '$lib/components/SessionIndicator.svelte';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { initializeAuth, user, isAuthenticated, isProtectedRoute, requireAuth, requireCustomerAuth, requireAdminAuth } from '$lib/stores/auth';
@@ -52,6 +51,3 @@
 <main class="min-h-screen bg-gray-50">
 	{@render children()}
 </main>
-
-<!-- Session Indicator - shows persistent login status -->
-<SessionIndicator />
