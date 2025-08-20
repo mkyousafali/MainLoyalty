@@ -34,10 +34,7 @@
     storeUseOnly: 'للاستخدام في المتجر فقط',
     storeUseOnlyDesc: 'يمكن استخدام النقاط للحصول على خصومات على المشتريات المستقبلية في متاجر أوربان ماركت.',
     branchSpecificRedemption: 'استرداد خاص بالفرع',
-    branchSpecificRedemptionDesc: 'يمكن استرداد النقاط فقط إذا كان لدى الفرع المحدد نقاط كافية متاحة. لا يمكنك دمج النقاط من فروع مختلفة للاسترداد.',
-    readyToRedeem: 'مستعد لاسترداد نقاطك؟',
-    contactStoreStaff: 'تواصل مع موظفي المتجر خلال زيارتك القادمة أو تواصل مع دعم العملاء للمساعدة في استرداد النقاط.',
-    contactSupport: 'تواصل مع الدعم'
+    branchSpecificRedemptionDesc: 'يمكن استرداد النقاط فقط إذا كان لدى الفرع المحدد نقاط كافية متاحة. لا يمكنك دمج النقاط من فروع مختلفة للاسترداد.'
   } : {
     redemptionConditions: 'Point Redemption Conditions',
     redemptionRules: 'Important rules for using your points',
@@ -51,10 +48,7 @@
     storeUseOnly: 'Store Use Only',
     storeUseOnlyDesc: 'Points can be used for discounts on future purchases at Urban Market stores.',
     branchSpecificRedemption: 'Branch-Specific Redemption',
-    branchSpecificRedemptionDesc: 'Points can only be redeemed if the specific branch has enough points available. You cannot combine points from different branches for redemption.',
-    readyToRedeem: 'Ready to redeem your points?',
-    contactStoreStaff: 'Contact store staff during your next visit or reach out to customer support for assistance with point redemption.',
-    contactSupport: 'Contact Support'
+    branchSpecificRedemptionDesc: 'Points can only be redeemed if the specific branch has enough points available. You cannot combine points from different branches for redemption.'
   };
 
   // QR/Barcode Toggle Variables
@@ -1370,20 +1364,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Contact Support for Redemption - Mobile optimized -->
-      <div class="mt-4 sm:mt-6 p-3 sm:p-4 rounded-xl text-center" style="background: linear-gradient(135deg, #EAFBEF 0%, #F3FFF8 100%); border: 2px solid #77AB39;">
-        <p class="text-gray-700 mb-2 sm:mb-3 text-sm sm:text-base">
-          <span class="font-bold" style="color: #13A538;">{currentTranslations.readyToRedeem}</span>
-        </p>
-        <p class="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
-          {currentTranslations.contactStoreStaff}
-        </p>
-        <a href="/customer-support" class="inline-flex items-center gap-2 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl text-sm sm:text-base" style="background: #13A538;">
-          <span class="text-base sm:text-xl">💬</span>
-          <span>{currentTranslations.contactSupport}</span>
-        </a>
-      </div>
     </section>
   {/if}
   
@@ -1403,13 +1383,6 @@
           class="text-blue-600 hover:text-blue-800 font-medium transition-colors underline"
         >
           {$language === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy'}
-        </a>
-        <span class="text-gray-400">•</span>
-        <a 
-          href="/customer-support" 
-          class="text-blue-600 hover:text-blue-800 font-medium transition-colors underline"
-        >
-          {$language === 'ar' ? 'الدعم' : 'Support'}
         </a>
       </div>
       <p class="mt-2 text-xs text-gray-500">
