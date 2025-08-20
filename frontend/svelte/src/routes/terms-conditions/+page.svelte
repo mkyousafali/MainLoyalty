@@ -118,6 +118,13 @@
         for (const key of sectionKeys) {
           const section = parsed.sections[key];
           if (section.title && section.content) {
+            // Skip contact/support sections
+            const titleLower = section.title.toLowerCase();
+            if (titleLower.includes('contact') || titleLower.includes('support') || 
+                titleLower.includes('اتصال') || titleLower.includes('دعم')) {
+              continue;
+            }
+            
             sections.push({
               title: section.title,
               content: [{
@@ -136,13 +143,17 @@
       
       // Handle other JSON formats
       if (parsed.title) {
-        sections.push({
-          title: parsed.title,
-          content: [{
-            type: 'text',
-            content: parsed.subtitle || ''
-          }]
-        });
+        const titleLower = parsed.title.toLowerCase();
+        if (!(titleLower.includes('contact') || titleLower.includes('support') || 
+              titleLower.includes('اتصال') || titleLower.includes('دعم'))) {
+          sections.push({
+            title: parsed.title,
+            content: [{
+              type: 'text',
+              content: parsed.subtitle || ''
+            }]
+          });
+        }
       }
       
     } catch (e) {
@@ -157,26 +168,51 @@
       // Check for numbered section headers (1. INTRODUCTION, 2. ELIGIBILITY, etc.)
       const sectionMatch = line.match(/^(\d+)\.\s*([A-Z\u0600-\u06FF\s&-]+)$/i);
       if (sectionMatch) {
-        // Save previous section
+        // Save previous section (if it's not a contact/support section)
         if (currentSection) {
-          sections.push(currentSection);
+          const titleLower = currentSection.title.toLowerCase();
+          if (!(titleLower.includes('contact') || titleLower.includes('support') || 
+                titleLower.includes('information and support') || titleLower.includes('اتصال') || 
+                titleLower.includes('دعم') || titleLower.includes('معلومات الاتصال'))) {
+            sections.push(currentSection);
+          }
         }
         
         // Start new section
+        const sectionTitle = sectionMatch[2].trim();
+        const titleLower = sectionTitle.toLowerCase();
+        
+        // Skip contact/support sections entirely
+        if (titleLower.includes('contact') || titleLower.includes('support') || 
+            titleLower.includes('information and support') || titleLower.includes('اتصال') || 
+            titleLower.includes('دعم') || titleLower.includes('معلومات الاتصال')) {
+          currentSection = null;
+          continue;
+        }
+        
         currentSection = {
           number: sectionMatch[1],
-          title: sectionMatch[2].trim(),
+          title: sectionTitle,
           content: []
         };
         continue;
       }
       
+      // Skip processing if we're in a contact/support section
+      if (currentSection === null) {
+        continue;
+      }
+      
       // Check for main title (like "URBAN MARKET LOYALTY PROGRAM - TERMS & CONDITIONS")
       if (line.match(/^[A-Z\u0600-\u06FF\s&-]+$/i) && line.length > 10 && !currentSection && sections.length === 0) {
-        currentSection = {
-          title: line,
-          content: []
-        };
+        const titleLower = line.toLowerCase();
+        if (!(titleLower.includes('contact') || titleLower.includes('support') || 
+              titleLower.includes('اتصال') || titleLower.includes('دعم'))) {
+          currentSection = {
+            title: line,
+            content: []
+          };
+        }
         continue;
       }
       
@@ -194,55 +230,14 @@
             });
           }
         }
-        // Handle contact information
+        // Skip contact information parsing entirely
         else if (line.includes('Email:') || line.includes('WhatsApp:') || line.includes('Phone:') || 
-                 line.includes('البريد الإلكتروني:') || line.includes('واتساب:') || line.includes('الهاتف:')) {
-          const contacts = [];
-          
-          if (line.includes('Email:') || line.includes('البريد الإلكتروني:')) {
-            const email = line.split(':')[1]?.trim();
-            if (email) {
-              contacts.push({
-                icon: '📧',
-                label: currentLang === 'ar' ? 'البريد الإلكتروني' : 'Email',
-                value: email
-              });
-            }
-          }
-          
-          if (line.includes('WhatsApp:') || line.includes('واتساب:')) {
-            const whatsapp = line.split(':')[1]?.trim();
-            if (whatsapp) {
-              contacts.push({
-                icon: '📱',
-                label: currentLang === 'ar' ? 'واتساب' : 'WhatsApp',
-                value: whatsapp
-              });
-            }
-          }
-          
-          if (line.includes('Phone:') || line.includes('الهاتف:')) {
-            const phone = line.split(':')[1]?.trim();
-            if (phone) {
-              contacts.push({
-                icon: '📞',
-                label: currentLang === 'ar' ? 'الهاتف' : 'Phone',
-                value: phone
-              });
-            }
-          }
-          
-          if (contacts.length > 0) {
-            currentSection.content.push({
-              type: 'contact',
-              contacts
-            });
-          } else {
-            currentSection.content.push({
-              type: 'text',
-              content: line
-            });
-          }
+                 line.includes('البريد الإلكتروني:') || line.includes('واتساب:') || line.includes('الهاتف:') ||
+                 line.includes('support@') || line.includes('Customer service') || line.includes('خدمة العملاء') ||
+                 line.includes('legal@') || line.includes('legal department') || line.includes('legal inquiries') ||
+                 line.includes('For legal inquiries') || line.includes('contact our legal department')) {
+          // Skip contact information entirely
+          continue;
         }
         // Regular text
         else if (line.length > 0) {
@@ -252,20 +247,34 @@
           });
         }
       } else {
-        // No current section, create a general one
-        currentSection = {
-          title: currentLang === 'ar' ? 'معلومات عامة' : 'General Information',
-          content: [{
-            type: 'text',
-            content: line
-          }]
-        };
+        // No current section, create a general one (if not contact related)
+        const lineLower = line.toLowerCase();
+        if (!(lineLower.includes('contact') || lineLower.includes('support') || 
+              lineLower.includes('اتصال') || lineLower.includes('دعم') || 
+              lineLower.includes('email') || lineLower.includes('whatsapp') || 
+              lineLower.includes('phone') || lineLower.includes('customer service') ||
+              lineLower.includes('legal@') || lineLower.includes('legal department') || 
+              lineLower.includes('legal inquiries') || lineLower.includes('urbanmarket.sa') ||
+              lineLower.includes('© 2024') || lineLower.includes('all rights reserved'))) {
+          currentSection = {
+            title: currentLang === 'ar' ? 'معلومات عامة' : 'General Information',
+            content: [{
+              type: 'text',
+              content: line
+            }]
+          };
+        }
       }
     }
     
-    // Add the last section
+    // Add the last section (if it's not a contact/support section)
     if (currentSection) {
-      sections.push(currentSection);
+      const titleLower = currentSection.title.toLowerCase();
+      if (!(titleLower.includes('contact') || titleLower.includes('support') || 
+            titleLower.includes('information and support') || titleLower.includes('اتصال') || 
+            titleLower.includes('دعم') || titleLower.includes('معلومات الاتصال'))) {
+        sections.push(currentSection);
+      }
     }
     
     // If we still have no proper sections but have content, create a fallback
@@ -570,11 +579,8 @@
             </div>
             
             <div class="border-t border-gray-200 pt-4">
-              <p class="text-sm text-gray-600 mb-2">
+              <p class="text-sm text-gray-600">
                 {currentLang === 'ar' ? 'هذه الوثيقة محمية بحقوق الطبع والنشر' : 'This document is protected by copyright'}
-              </p>
-              <p class="text-xs text-gray-500">
-                © 2025 Urban Market Establishment. {currentLang === 'ar' ? 'جميع الحقوق محفوظة.' : 'All rights reserved.'}
               </p>
             </div>
 

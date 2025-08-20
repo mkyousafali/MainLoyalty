@@ -585,7 +585,6 @@
   }
 
   // Terms and conditions accordion
-  let showTerms = false;
   let showContactInfo = false;
 
   const translations = {
@@ -608,7 +607,6 @@
       email: 'Email',
       address: 'Address',
       chatWhatsApp: 'Chat on WhatsApp',
-      readTerms: 'Read Terms',
       needHelpLogin: 'Need help with login?',
       mobileNotFound: 'Mobile number not found in our system. Please contact support or visit a branch.',
       termsAndConditionsTitle: 'Terms and Conditions',
@@ -646,7 +644,6 @@
       email: 'البريد الإلكتروني',
       address: 'العنوان',
       chatWhatsApp: 'محادثة واتساب',
-      readTerms: 'اقرأ الشروط',
       needHelpLogin: 'تحتاج مساعدة في تسجيل الدخول؟',
       mobileNotFound: 'رقم الجوال غير موجود في نظامنا. يرجى التواصل مع الدعم أو زيارة أحد الفروع.',
       termsAndConditionsTitle: 'الشروط والأحكام',
@@ -824,33 +821,6 @@
               {localTranslations.chatWhatsApp}
             </a>
           </div>
-          
-          <div class="flex justify-center">
-            <button
-              type="button"
-              on:click={() => showTerms = !showTerms}
-              class="text-green-600 hover:text-green-700 text-xs underline font-medium transition-colors"
-            >
-              {localTranslations.readTerms}
-            </button>
-          </div>
-          
-          <!-- Terms Accordion -->
-          {#if showTerms}
-            <div class="mt-3 p-3 bg-white border border-green-200 rounded-lg text-xs text-gray-700 max-h-32 overflow-y-auto">
-              {#if currentTermsContent}
-                <h4 class="font-semibold text-green-700 mb-2 text-xs">{currentTermsContent[$language]?.title || localTranslations.termsAndConditionsTitle}</h4>
-                <div class="space-y-1">
-                  {#each formattedTerms.slice(0, 5) as term}
-                    <p class="leading-relaxed text-xs"><strong class="text-green-600">{term.title}:</strong> <span class="text-gray-600">{term.content}</span></p>
-                  {/each}
-                </div>
-              {:else}
-                <h4 class="font-semibold text-green-700 mb-2 text-xs">{localTranslations.termsAndConditionsTitle}</h4>
-                <p class="text-center text-gray-500 text-xs">{localTranslations.loadingTerms}</p>
-              {/if}
-            </div>
-          {/if}
         </div>
       {/if}
 
