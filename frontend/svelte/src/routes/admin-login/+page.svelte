@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { loginAdmin } from '$lib/stores/auth';
+  import { supabase } from '$lib/supabase';
   
   let currentLang: 'en' | 'ar' = 'en';
   let email = '';
@@ -9,6 +10,8 @@
   let isLoading = false;
   let showCreateAdmin = false;
   let isMasterAdminLoggedIn = false;
+  let branches: any[] = [];
+  let loadingBranches = false;
   
   // New admin creation form
   let newAdminData = {
@@ -18,8 +21,7 @@
     confirmPassword: '',
     nationalId: '',
     whatsappNumber: '',
-    role: 'branch_admin',
-    branch: ''
+    branchId: ''
   };
 
   const translations = {
@@ -52,8 +54,7 @@
       confirmPassword: 'Confirm Password',
       nationalId: 'National ID / Resident ID',
       whatsappNumber: 'WhatsApp Number',
-      adminRole: 'User Role',
-      adminBranch: 'User Branch (if applicable)',
+      adminBranch: 'User Branch',
       createAccount: 'Create Account',
       backToLogin: 'Back to Login',
       namePlaceholder: 'Enter user full name',
@@ -62,12 +63,8 @@
       confirmPasswordPlaceholder: 'Re-enter your password',
       nationalIdPlaceholder: 'Enter National ID or Resident ID',
       whatsappPlaceholder: 'Enter WhatsApp number (e.g., +966XXXXXXXXX)',
-      branchPlaceholder: 'Enter branch name (for branch users)',
-      registrationSuccess: 'User account created successfully!',
-      masterAdminRole: 'Master User',
-      branchAdminRole: 'Branch User',
-      supportAgentRole: 'Support Agent',
-      uploaderRole: 'Uploader'
+      branchPlaceholder: 'Select branch for this user',
+      registrationSuccess: 'User account created successfully!'
     },
     ar: {
       title: 'تسجيل دخول لوحة المستخدم',
@@ -98,8 +95,7 @@
       confirmPassword: 'تأكيد كلمة المرور',
       nationalId: 'الهوية الوطنية / هوية المقيم',
       whatsappNumber: 'رقم الواتساب',
-      adminRole: 'دور المستخدم',
-      adminBranch: 'فرع المستخدم (إن وجد)',
+      adminBranch: 'فرع المستخدم',
       createAccount: 'إنشاء الحساب',
       backToLogin: 'العودة لتسجيل الدخول',
       namePlaceholder: 'أدخل الاسم الكامل للمستخدم',
@@ -108,16 +104,37 @@
       confirmPasswordPlaceholder: 'أعد إدخال كلمة المرور',
       nationalIdPlaceholder: 'أدخل الهوية الوطنية أو هوية المقيم',
       whatsappPlaceholder: 'أدخل رقم الواتساب (مثال: +966XXXXXXXXX)',
-      branchPlaceholder: 'أدخل اسم الفرع (لمستخدمي الفروع)',
-      registrationSuccess: 'تم إنشاء حساب المستخدم بنجاح!',
-      masterAdminRole: 'مستخدم رئيسي',
-      branchAdminRole: 'مستخدم فرع',
-      supportAgentRole: 'وكيل دعم',
-      uploaderRole: 'محمل'
+      branchPlaceholder: 'اختر الفرع لهذا المستخدم',
+      registrationSuccess: 'تم إنشاء حساب المستخدم بنجاح!'
     }
   } as const;
 
   $: t = translations[currentLang];
+
+  // Fetch branches from database
+  async function fetchBranches() {
+    loadingBranches = true;
+    try {
+      const { data, error } = await supabase
+        .from('branches')
+        .select('id, name, name_ar, location, location_ar, is_active')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) {
+        console.error('Error fetching branches:', error);
+        branches = [];
+      } else {
+        branches = data || [];
+        console.log('Fetched branches:', branches);
+      }
+    } catch (err) {
+      console.error('Failed to fetch branches:', err);
+      branches = [];
+    } finally {
+      loadingBranches = false;
+    }
+  }
 
   // Master User credentials (hardcoded for emergency access)
   const MASTER_ADMIN = {
@@ -307,6 +324,8 @@
   function showRegistrationForm() {
     showCreateAdmin = true;
     error = '';
+    // Fetch branches when showing the form
+    fetchBranches();
   }
 
   function hideRegistrationForm() {
@@ -320,8 +339,7 @@
       confirmPassword: '',
       nationalId: '',
       whatsappNumber: '',
-      role: 'branch_admin',
-      branch: ''
+      branchId: ''
     };
   }
 
@@ -374,8 +392,8 @@
       return;
     }
 
-    if (newAdminData.role === 'branch_admin' && !newAdminData.branch.trim()) {
-      error = 'Branch name is required for branch users';
+    if (!newAdminData.branchId.trim()) {
+      error = 'Branch selection is required';
       isLoading = false;
       return;
     }
@@ -385,6 +403,7 @@
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Create new user
+      const selectedBranch = branches.find(b => b.id === newAdminData.branchId);
       const newAdmin = {
         id: adminUsers.length + 1,
         name: newAdminData.name.trim(),
@@ -392,8 +411,9 @@
         password: newAdminData.password,
         nationalId: newAdminData.nationalId.trim(),
         whatsappNumber: newAdminData.whatsappNumber.trim(),
-        role: newAdminData.role,
-        branch: newAdminData.branch.trim() || '',
+        role: 'branch_admin', // Default role assigned by admin
+        branch: selectedBranch ? selectedBranch.name : '',
+        branchId: newAdminData.branchId.trim(),
         isActive: true,
         createdAt: new Date().toISOString(),
         createdBy: 'Master User'
@@ -696,35 +716,33 @@
           </div>
 
           <div>
-            <label for="userRole" class="block text-sm font-medium text-gray-700 mb-2" class:text-right={currentLang === 'ar'}>
-              {t.adminRole}
-            </label>
-            <select
-              id="userRole"
-              bind:value={newAdminData.role}
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors bg-gray-50"
-              class:text-right={currentLang === 'ar'}
-              required
-            >
-              <option value="branch_admin">{t.branchAdminRole}</option>
-              <option value="support_agent">{t.supportAgentRole}</option>
-              <option value="uploader">{t.uploaderRole}</option>
-            </select>
-          </div>
-
-          <div>
             <label for="userBranch" class="block text-sm font-medium text-gray-700 mb-2" class:text-right={currentLang === 'ar'}>
               {t.adminBranch}
             </label>
-            <input
-              id="userBranch"
-              bind:value={newAdminData.branch}
-              type="text"
-              placeholder={t.branchPlaceholder}
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors bg-gray-50"
-              class:text-right={currentLang === 'ar'}
-              required={newAdminData.role === 'branch_admin'}
-            />
+            {#if loadingBranches}
+              <div class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center">
+                <span class="animate-spin">⟳</span>
+                <span class="ml-2">Loading branches...</span>
+              </div>
+            {:else}
+              <select
+                id="userBranch"
+                bind:value={newAdminData.branchId}
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors bg-gray-50"
+                class:text-right={currentLang === 'ar'}
+                required
+              >
+                <option value="" disabled>{t.branchPlaceholder}</option>
+                {#each branches as branch}
+                  <option value={branch.id}>
+                    {currentLang === 'ar' && branch.name_ar ? branch.name_ar : branch.name}
+                    {#if branch.location || branch.location_ar}
+                      - {currentLang === 'ar' && branch.location_ar ? branch.location_ar : branch.location}
+                    {/if}
+                  </option>
+                {/each}
+              </select>
+            {/if}
           </div>
 
           {#if error}
