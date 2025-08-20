@@ -674,11 +674,11 @@
         
         <!-- Main card with glass effect -->
         <div class="relative bg-white/90 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-2xl border border-white/20 hover:shadow-3xl transition-all duration-300">
-          <div class="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6" class:sm:flex-row-reverse={$language === 'ar'}>
             
             <!-- Left Section: Title and Toggle -->
-            <div class="flex-1 text-center sm:text-left">
-              <div class="flex items-center justify-center sm:justify-start gap-3 mb-4">
+            <div class="flex-1 text-center sm:text-left" class:sm:text-right={$language === 'ar'}>
+              <div class="flex items-center justify-center sm:justify-start gap-3 mb-4" class:sm:justify-end={$language === 'ar'}>
                 <!-- Ocean Icon -->
                 <div class="relative">
                   <div class="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
@@ -689,24 +689,24 @@
                   <div class="absolute -top-1 -right-1 w-3 h-3 bg-cyan-300/60 rounded-full animate-ping"></div>
                 </div>
                 
-                <div>
+                <div class="text-center sm:text-left" class:sm:text-right={$language === 'ar'}>
                   <h3 class="text-lg sm:text-xl font-bold bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent">
                     {$language === 'ar' ? 'رمز العضوية' : 'MEMBERSHIP CODE'}
                   </h3>
-                  <div class="w-16 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full"></div>
+                  <div class="w-16 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full mx-auto sm:mx-0" class:sm:mr-auto={$language === 'ar'} class:sm:ml-0={$language === 'ar'}></div>
                 </div>
               </div>
               
               <!-- Toggle Button with Ocean Theme -->
-              <div class="flex items-center justify-center sm:justify-start gap-3 bg-white/50 backdrop-blur-sm p-3 rounded-xl border border-white/30">
-                <span class="text-sm font-medium text-cyan-700 flex items-center gap-1" class:opacity-50={!showQRCode}>
+              <div class="inline-flex items-center justify-center gap-2 sm:gap-3 bg-white/50 backdrop-blur-sm p-2 sm:p-3 rounded-xl border border-white/30 overflow-hidden" class:flex-row-reverse={$language === 'ar'}>
+                <span class="text-xs sm:text-sm font-medium text-cyan-700 flex items-center gap-1 whitespace-nowrap flex-shrink-0" class:opacity-50={!showQRCode}>
                   <div class="w-2 h-2 bg-cyan-500 rounded-full" class:animate-pulse={showQRCode}></div>
                   {$language === 'ar' ? 'كيو آر' : 'QR'}
                 </span>
                 
                 <button
                   on:click={() => showQRCode = !showQRCode}
-                  class="relative w-14 h-7 bg-gradient-to-r from-gray-300 to-gray-400 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 shadow-inner"
+                  class="relative w-14 sm:w-16 h-7 sm:h-8 bg-gradient-to-r from-gray-300 to-gray-400 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 shadow-inner flex-shrink-0 overflow-hidden"
                   class:from-cyan-400={showQRCode}
                   class:to-blue-500={showQRCode}
                   class:from-orange-400={!showQRCode}
@@ -714,34 +714,38 @@
                   aria-label="Toggle between QR and Barcode"
                 >
                   <div
-                    class="absolute w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 top-0.5 flex items-center justify-center"
-                    class:translate-x-0.5={!showQRCode}
-                    class:translate-x-7={showQRCode}
+                    class="absolute w-6 sm:w-7 h-6 sm:h-7 bg-white rounded-full shadow-md transition-transform duration-300 top-0.5 flex items-center justify-center will-change-transform"
+                    class:translate-x-0.5={!showQRCode && $language !== 'ar'}
+                    class:translate-x-7={showQRCode && $language !== 'ar'}
+                    class:sm:translate-x-8={showQRCode && $language !== 'ar'}
+                    class:translate-x-6.5={showQRCode && $language === 'ar'}
+                    class:sm:translate-x-7.5={showQRCode && $language === 'ar'}
+                    class:translate-x-1={!showQRCode && $language === 'ar'}
                   >
                     {#if showQRCode}
-                      <div class="w-3 h-3 border border-cyan-500 grid grid-cols-2 gap-0.5">
-                        <div class="bg-cyan-500 rounded-sm"></div>
-                        <div class="bg-cyan-500 rounded-sm"></div>
-                        <div class="bg-cyan-500 rounded-sm"></div>
-                        <div class="bg-cyan-500 rounded-sm"></div>
+                      <div class="w-3 sm:w-3.5 h-3 sm:h-3.5 border border-cyan-600 grid grid-cols-2 gap-0.5 p-0.5">
+                        <div class="bg-cyan-600 rounded-sm"></div>
+                        <div class="bg-cyan-600 rounded-sm"></div>
+                        <div class="bg-cyan-600 rounded-sm"></div>
+                        <div class="bg-cyan-600 rounded-sm"></div>
                       </div>
                     {:else}
-                      <div class="flex gap-0.5">
-                        <div class="w-0.5 h-3 bg-orange-500 rounded-full"></div>
-                        <div class="w-0.5 h-3 bg-orange-500 rounded-full"></div>
-                        <div class="w-0.5 h-3 bg-orange-500 rounded-full"></div>
+                      <div class="flex gap-0.5 items-center">
+                        <div class="w-0.5 h-3 sm:h-3.5 bg-orange-600 rounded-full"></div>
+                        <div class="w-0.5 h-3 sm:h-3.5 bg-orange-600 rounded-full"></div>
+                        <div class="w-0.5 h-3 sm:h-3.5 bg-orange-600 rounded-full"></div>
                       </div>
                     {/if}
                   </div>
                 </button>
                 
-                <span class="text-sm font-medium text-orange-600 flex items-center gap-1" class:opacity-50={showQRCode}>
+                <span class="text-xs sm:text-sm font-medium text-orange-600 flex items-center gap-1 whitespace-nowrap flex-shrink-0" class:opacity-50={showQRCode}>
                   <div class="w-2 h-2 bg-orange-500 rounded-full" class:animate-pulse={!showQRCode}></div>
                   {$language === 'ar' ? 'باركود' : 'BARCODE'}
                 </span>
               </div>
               
-              <p class="text-sm text-cyan-800/80 mt-3 flex items-center justify-center sm:justify-start gap-2">
+              <p class="text-sm text-cyan-800/80 mt-3 flex items-center justify-center sm:justify-start gap-2" class:sm:justify-end={$language === 'ar'} class:sm:text-right={$language === 'ar'}>
                 <svg class="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
@@ -992,17 +996,27 @@
 
         <!-- Branch Filter -->
         <label for="branch-select" class="text-sm font-bold uppercase tracking-wide mb-2 sm:mb-3 block" style="color: #13A538;" class:text-right={$language === 'ar'}>{$t.filterTransactions}</label>
-        <select 
-          id="branch-select" 
-          bind:value={selectedBranch} 
-          class="px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 rounded-xl w-full bg-white mt-2 focus:ring-2 focus:border-transparent transition-all shadow-sm hover:border-gray-300 text-sm sm:text-base" 
-          style="focus:ring-color: #77AB39; focus:border-color: #77AB39;" 
-          class:text-right={$language === 'ar'}
-        >
-          {#each branchOptions as branch}
-            <option value={branch.id}>{branch.name}</option>
-          {/each}
-        </select>
+        <div class="relative">
+          <select 
+            id="branch-select" 
+            bind:value={selectedBranch} 
+            class="py-2 sm:py-3 border-2 border-gray-200 rounded-xl w-full bg-white mt-2 focus:ring-2 focus:border-transparent transition-all shadow-sm hover:border-gray-300 text-sm sm:text-base appearance-none" 
+            style="focus:ring-color: #77AB39; focus:border-color: #77AB39; background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K'); background-repeat: no-repeat;" 
+            class:text-right={$language === 'ar'}
+            class:px-3={$language !== 'ar'}
+            class:sm:px-4={$language !== 'ar'}
+            class:pr-10={$language !== 'ar'}
+            class:px-10={$language === 'ar'}
+            class:sm:px-12={$language === 'ar'}
+            class:pl-3={$language === 'ar'}
+            class:sm:pl-4={$language === 'ar'}
+            style:background-position={$language === 'ar' ? 'left 0.75rem center' : 'right 0.75rem center'}
+          >
+            {#each branchOptions as branch}
+              <option value={branch.id}>{branch.name}</option>
+            {/each}
+          </select>
+        </div>
         <p class="text-xs text-gray-500 mt-1 sm:mt-2" class:text-right={$language === 'ar'}>
           {$t.filterNote}
         </p>
