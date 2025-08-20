@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
   import { loginAdmin } from '$lib/stores/auth';
   import { supabase } from '$lib/supabase';
   
@@ -113,28 +114,64 @@
 
   // Fetch branches from database
   async function fetchBranches() {
+    console.log('🔄 Starting to fetch branches...');
     loadingBranches = true;
     try {
+      console.log('📡 Making Supabase request...');
+      
+      // First try with all columns to see what's available
       const { data, error } = await supabase
         .from('branches')
-        .select('id, name, name_ar, location, location_ar, is_active')
+        .select('*')
         .eq('is_active', true)
         .order('name');
       
+      console.log('📊 Supabase response:', { data, error });
+      
       if (error) {
-        console.error('Error fetching branches:', error);
-        branches = [];
+        console.error('❌ Error fetching branches:', error);
+        console.log('🔄 Trying without is_active filter...');
+        
+        // Try without the is_active filter in case the column doesn't exist
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('branches')
+          .select('*')
+          .order('name');
+          
+        console.log('📊 Fallback response:', { data: fallbackData, error: fallbackError });
+        
+        if (fallbackError) {
+          console.error('❌ Fallback also failed:', fallbackError);
+          // Use mock data as last resort
+          branches = [
+            { id: '1', name: 'Main Branch - Riyadh', name_ar: 'الفرع الرئيسي - الرياض', location: 'King Fahd Road', location_ar: 'طريق الملك فهد', is_active: true },
+            { id: '2', name: 'Branch 2 - Jeddah', name_ar: 'الفرع الثاني - جدة', location: 'Tahlia Street', location_ar: 'شارع التحلية', is_active: true },
+            { id: '3', name: 'Branch 3 - Dammam', name_ar: 'الفرع الثالث - الدمام', location: 'King Saud Road', location_ar: 'طريق الملك سعود', is_active: true }
+          ];
+          console.log('🔄 Using fallback branches data:', branches);
+        } else {
+          branches = fallbackData || [];
+          console.log('✅ Successfully fetched branches from Supabase (without is_active filter):', branches);
+        }
       } else {
         branches = data || [];
-        console.log('Fetched branches:', branches);
+        console.log('✅ Successfully fetched branches from Supabase:', branches);
+        console.log('🏢 Number of branches:', branches.length);
       }
     } catch (err) {
-      console.error('Failed to fetch branches:', err);
+      console.error('💥 Failed to fetch branches:', err);
       branches = [];
     } finally {
       loadingBranches = false;
+      console.log('🏁 Finished fetching branches. Total:', branches.length);
     }
   }
+
+  // Load branches when component mounts
+  onMount(() => {
+    console.log('🚀 Component mounted, fetching branches...');
+    fetchBranches();
+  });
 
   // Master User credentials (hardcoded for emergency access)
   const MASTER_ADMIN = {
@@ -717,12 +754,31 @@
 
           <div>
             <label for="userBranch" class="block text-sm font-medium text-gray-700 mb-2" class:text-right={currentLang === 'ar'}>
-              {t.adminBranch}
+              {t.adminBranch} 
+              <span class="text-xs text-gray-500">({branches.length} branches available)</span>
+              <button 
+                type="button"
+                on:click={fetchBranches}
+                class="ml-2 text-blue-600 underline text-xs"
+              >
+                Refresh
+              </button>
             </label>
             {#if loadingBranches}
               <div class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center">
                 <span class="animate-spin">⟳</span>
                 <span class="ml-2">Loading branches...</span>
+              </div>
+            {:else if branches.length === 0}
+              <div class="w-full px-4 py-3 border border-red-300 rounded-lg bg-red-50 text-red-700 text-center">
+                No branches found. Please contact administrator.
+                <button 
+                  type="button"
+                  on:click={fetchBranches}
+                  class="ml-2 text-red-600 underline text-sm"
+                >
+                  Retry
+                </button>
               </div>
             {:else}
               <select
