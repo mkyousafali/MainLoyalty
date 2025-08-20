@@ -42,16 +42,126 @@
   let roles: any[] = [];
   let permissions: any[] = [];
 
-  // Available functions built from real permissions
-  $: availableFunctions = permissions.map(perm => ({
-    id: perm.id,
-    name: perm.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    category: perm.module,
-    description: perm.description
-  }));
+  // Comprehensive list of all app functions/permissions
+  const allAppFunctions = [
+    // Customer Management
+    { id: 'customer_view', name: 'View Customers', category: 'customer_management', description: 'View customer profiles and information' },
+    { id: 'customer_edit', name: 'Edit Customers', category: 'customer_management', description: 'Modify customer details and profiles' },
+    { id: 'customer_create', name: 'Create Customers', category: 'customer_management', description: 'Add new customer accounts' },
+    { id: 'customer_delete', name: 'Delete Customers', category: 'customer_management', description: 'Remove customer accounts' },
+    { id: 'customer_upload', name: 'Upload Customers', category: 'customer_management', description: 'Bulk upload customer data via Excel' },
+    { id: 'customer_export', name: 'Export Customers', category: 'customer_management', description: 'Export customer data and reports' },
+    { id: 'customer_points_manage', name: 'Manage Customer Points', category: 'customer_management', description: 'Add, deduct, or modify customer loyalty points' },
+    
+    // Transaction Management
+    { id: 'transactions_view', name: 'View Transactions', category: 'transaction_management', description: 'View customer transaction history' },
+    { id: 'transactions_create', name: 'Create Transactions', category: 'transaction_management', description: 'Add manual transactions' },
+    { id: 'transactions_edit', name: 'Edit Transactions', category: 'transaction_management', description: 'Modify transaction details' },
+    { id: 'transactions_delete', name: 'Delete Transactions', category: 'transaction_management', description: 'Remove transactions' },
+    { id: 'transactions_upload', name: 'Upload Transactions', category: 'transaction_management', description: 'Bulk upload transaction data via Excel' },
+    { id: 'transactions_clear', name: 'Clear Transactions', category: 'transaction_management', description: 'Clear all transaction data' },
+    { id: 'upload_jobs_monitor', name: 'Monitor Upload Jobs', category: 'transaction_management', description: 'Monitor background upload processing' },
+    
+    // Card Management
+    { id: 'card_types_view', name: 'View Card Types', category: 'card_management', description: 'View available card types' },
+    { id: 'card_types_create', name: 'Create Card Types', category: 'card_management', description: 'Add new card types' },
+    { id: 'card_types_edit', name: 'Edit Card Types', category: 'card_management', description: 'Modify card type settings' },
+    { id: 'card_types_delete', name: 'Delete Card Types', category: 'card_management', description: 'Remove card types' },
+    { id: 'card_assignment', name: 'Assign Card Types', category: 'card_management', description: 'Assign card types to customers' },
+    { id: 'card_upgrade', name: 'Card Upgrades', category: 'card_management', description: 'Process card upgrades for customers' },
+    { id: 'extend_validity', name: 'Extend Card Validity', category: 'card_management', description: 'Extend card expiration dates' },
+    
+    // Rewards & Coupons
+    { id: 'offers_view', name: 'View Offers', category: 'rewards_coupons', description: 'View all promotional offers' },
+    { id: 'offers_create', name: 'Create Offers', category: 'rewards_coupons', description: 'Create new promotional offers' },
+    { id: 'offers_edit', name: 'Edit Offers', category: 'rewards_coupons', description: 'Modify existing offers' },
+    { id: 'offers_delete', name: 'Delete Offers', category: 'rewards_coupons', description: 'Remove offers' },
+    { id: 'offers_management', name: 'Offers Management', category: 'rewards_coupons', description: 'Comprehensive offers management system' },
+    { id: 'coupons_view', name: 'View Coupons', category: 'rewards_coupons', description: 'View coupon inventory' },
+    { id: 'coupons_create', name: 'Create Coupons', category: 'rewards_coupons', description: 'Generate new coupons' },
+    { id: 'coupons_assign', name: 'Assign Coupons', category: 'rewards_coupons', description: 'Assign coupons to customers' },
+    { id: 'coupons_manage', name: 'Manage Coupons', category: 'rewards_coupons', description: 'Full coupon lifecycle management' },
+    { id: 'gift_points', name: 'Gift Points', category: 'rewards_coupons', description: 'Transfer points between customers' },
+    
+    // User Management
+    { id: 'admin_users_view', name: 'View Admin Users', category: 'user_management', description: 'View admin user accounts' },
+    { id: 'admin_users_create', name: 'Create Admin Users', category: 'user_management', description: 'Create new admin accounts' },
+    { id: 'admin_users_edit', name: 'Edit Admin Users', category: 'user_management', description: 'Modify admin user details' },
+    { id: 'admin_users_delete', name: 'Delete Admin Users', category: 'user_management', description: 'Remove admin accounts' },
+    { id: 'user_roles_view', name: 'View User Roles', category: 'user_management', description: 'View system roles and permissions' },
+    { id: 'user_roles_create', name: 'Create User Roles', category: 'user_management', description: 'Create new user roles' },
+    { id: 'user_roles_edit', name: 'Edit User Roles', category: 'user_management', description: 'Modify role permissions' },
+    { id: 'user_roles_delete', name: 'Delete User Roles', category: 'user_management', description: 'Remove user roles' },
+    { id: 'set_master_admin', name: 'Set Master Admin', category: 'user_management', description: 'Assign master admin privileges' },
+    { id: 'password_reset', name: 'Password Reset', category: 'user_management', description: 'Reset user passwords' },
+    
+    // Content Management
+    { id: 'terms_view', name: 'View Terms & Conditions', category: 'content_management', description: 'View terms and conditions' },
+    { id: 'terms_edit', name: 'Edit Terms & Conditions', category: 'content_management', description: 'Modify terms and conditions' },
+    { id: 'privacy_policy_view', name: 'View Privacy Policy', category: 'content_management', description: 'View privacy policy content' },
+    { id: 'privacy_policy_edit', name: 'Edit Privacy Policy', category: 'content_management', description: 'Modify privacy policy content' },
+    { id: 'support_settings', name: 'Support Settings', category: 'content_management', description: 'Configure customer support settings' },
+    
+    // System Settings
+    { id: 'branches_view', name: 'View Branches', category: 'system_settings', description: 'View branch locations' },
+    { id: 'branches_create', name: 'Create Branches', category: 'system_settings', description: 'Add new branch locations' },
+    { id: 'branches_edit', name: 'Edit Branches', category: 'system_settings', description: 'Modify branch information' },
+    { id: 'branches_delete', name: 'Delete Branches', category: 'system_settings', description: 'Remove branch locations' },
+    { id: 'database_test', name: 'Database Testing', category: 'system_settings', description: 'Test database connections and queries' },
+    { id: 'system_configuration', name: 'System Configuration', category: 'system_settings', description: 'Configure system-wide settings' },
+    
+    // Notifications
+    { id: 'notifications_view', name: 'View Notifications', category: 'notifications', description: 'View notification history' },
+    { id: 'notifications_send', name: 'Send Notifications', category: 'notifications', description: 'Send notifications to customers' },
+    { id: 'notification_center', name: 'Notification Center', category: 'notifications', description: 'Manage notification center and templates' },
+    { id: 'notifications_bulk', name: 'Bulk Notifications', category: 'notifications', description: 'Send bulk notifications to multiple customers' },
+    
+    // Data Management
+    { id: 'data_export', name: 'Export Data', category: 'data_management', description: 'Export various data types and reports' },
+    { id: 'data_import', name: 'Import Data', category: 'data_management', description: 'Import data from external sources' },
+    { id: 'upload_status', name: 'Upload Status Monitoring', category: 'data_management', description: 'Monitor file upload and processing status' },
+    { id: 'data_backup', name: 'Data Backup', category: 'data_management', description: 'Create and manage data backups' },
+    { id: 'data_restore', name: 'Data Restore', category: 'data_management', description: 'Restore data from backups' },
+    
+    // Financial Management
+    { id: 'financial_reports', name: 'Financial Reports', category: 'financial', description: 'Generate financial and revenue reports' },
+    { id: 'transaction_reports', name: 'Transaction Reports', category: 'financial', description: 'Generate detailed transaction reports' },
+    { id: 'points_redemption_reports', name: 'Points Redemption Reports', category: 'financial', description: 'Track points redemption patterns' },
+    { id: 'revenue_analytics', name: 'Revenue Analytics', category: 'financial', description: 'Analyze revenue and profitability metrics' },
+    
+    // Analytics & Reports
+    { id: 'analytics_view', name: 'View Analytics', category: 'analytics_reports', description: 'Access analytical dashboards' },
+    { id: 'customer_reports', name: 'Customer Reports', category: 'analytics_reports', description: 'Generate customer behavior reports' },
+    { id: 'user_activity_reports', name: 'User Activity Reports', category: 'analytics_reports', description: 'Track admin user activities' },
+    { id: 'system_reports', name: 'System Reports', category: 'analytics_reports', description: 'Generate system performance reports' },
+    { id: 'registration_reports', name: 'Registration Reports', category: 'analytics_reports', description: 'Track customer registration metrics' },
+    
+    // Security & Compliance
+    { id: 'audit_logs', name: 'Audit Logs', category: 'security', description: 'View system audit logs and security events' },
+    { id: 'security_settings', name: 'Security Settings', category: 'security', description: 'Configure security policies and settings' },
+    { id: 'access_control', name: 'Access Control', category: 'security', description: 'Manage user access and permissions' },
+    { id: 'compliance_reports', name: 'Compliance Reports', category: 'security', description: 'Generate compliance and regulatory reports' },
+    
+    // API & Integration
+    { id: 'api_access', name: 'API Access', category: 'api_integration', description: 'Access to API endpoints and integrations' },
+    { id: 'webhook_management', name: 'Webhook Management', category: 'api_integration', description: 'Manage webhook configurations' },
+    { id: 'third_party_integrations', name: 'Third-party Integrations', category: 'api_integration', description: 'Manage external service integrations' }
+  ];
 
-  // Categories for organizing functions (from database modules)
-  $: categories = [...new Set(permissions.map(p => p.module))].sort();
+  // Available functions built from comprehensive list or real permissions
+  $: availableFunctions = permissions.length > 0 
+    ? permissions.map(perm => ({
+        id: perm.id,
+        name: perm.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        category: perm.module,
+        description: perm.description
+      }))
+    : allAppFunctions;
+
+  // Categories for organizing functions
+  $: categories = permissions.length > 0 
+    ? [...new Set(permissions.map(p => p.module))].sort()
+    : [...new Set(allAppFunctions.map(f => f.category))].sort();
 
   // Category display names (handle both old static and new dynamic categories)
   const categoryDisplayNames: Record<string, string> = {
@@ -59,12 +169,15 @@
     'user_management': 'User Management', 
     'content_management': 'Content Management',
     'system_settings': 'System Settings',
-    'financial': 'Financial',
+    'financial': 'Financial Management',
     'notifications': 'Notifications',
     'transaction_management': 'Transaction Management',
     'card_management': 'Card Management',
     'rewards_coupons': 'Rewards & Coupons',
     'data_management': 'Data Management',
+    'analytics_reports': 'Analytics & Reports',
+    'security': 'Security & Compliance',
+    'api_integration': 'API & Integration',
     'admin_tools': 'Admin Tools'
   };
 
@@ -534,17 +647,20 @@
   <!-- Header -->
   <div class="page-header">
     <div class="header-content">
-      <h1>Manage User Roles</h1>
-      <p>Configure user roles and permissions for customer management, transactions, rewards, and system administration</p>
+      <h1>Manage User Roles & Permissions</h1>
+      <p>Configure comprehensive user roles and permissions for all app functions including customer management, transactions, rewards, analytics, and system administration</p>
       <div class="stats-row">
         <span class="stat-item">
-          <strong>{availableFunctions.length}</strong> Total Functions
+          <strong>{availableFunctions.length}</strong> Total Functions Available
         </span>
         <span class="stat-item">
-          <strong>{filteredRoles.length}</strong> Manageable Roles
+          <strong>{filteredRoles.length}</strong> Active Roles
         </span>
         <span class="stat-item">
-          <strong>{users.length}</strong> Users
+          <strong>{users.length}</strong> Admin Users
+        </span>
+        <span class="stat-item">
+          <strong>{categories.length}</strong> Function Categories
         </span>
       </div>
     </div>
@@ -740,6 +856,140 @@
     </div>
   </div>
 
+  <!-- Users Management Section -->
+  <div class="users-management-section">
+    <div class="section-header">
+      <h2>User Management ({users.length} users)</h2>
+      <p>Manage user roles and permissions for all admin users</p>
+    </div>
+    
+    <div class="users-table-container">
+      {#if users.length === 0}
+        <div class="empty-state">
+          <span class="empty-icon">👥</span>
+          <h3>No users found</h3>
+          <p>Users will appear here once they are loaded from the database.</p>
+          <button class="btn btn-primary" on:click={loadRealData}>
+            🔄 Refresh Users
+          </button>
+        </div>
+      {:else}
+        <div class="users-table">
+          <div class="table-header">
+            <div class="header-cell">User</div>
+            <div class="header-cell">Email</div>
+            <div class="header-cell">Username</div>
+            <div class="header-cell">Current Role</div>
+            <div class="header-cell">Change Role</div>
+            <div class="header-cell">Actions</div>
+          </div>
+          
+          {#each users as user (user.id)}
+            <div class="table-row">
+              <div class="cell user-cell">
+                <div class="user-info">
+                  <div class="user-avatar">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div class="user-details">
+                    <span class="user-name">{user.name}</span>
+                    <span class="user-status {user.is_active ? 'active' : 'inactive'}">
+                      {user.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="cell email-cell">
+                <span class="user-email">{user.email}</span>
+              </div>
+              
+              <div class="cell username-cell">
+                <span class="username">@{user.username}</span>
+              </div>
+              
+              <div class="cell role-cell">
+                <span class="current-role {user.currentRole === 'No Role' ? 'no-role' : 'has-role'}">
+                  {user.currentRole}
+                </span>
+              </div>
+              
+              <div class="cell change-role-cell">
+                <select 
+                  class="role-select-inline" 
+                  value={user.role_id || ''}
+                  on:change={(e) => {
+                    const target = e.target as HTMLSelectElement;
+                    const newRoleId = target.value;
+                    if (newRoleId !== (user.role_id || '')) {
+                      updateUserRole(user.id, newRoleId);
+                    }
+                  }}
+                >
+                  <option value="">No Role</option>
+                  {#each roles as role}
+                    <option value={role.id}>{role.name}</option>
+                  {/each}
+                </select>
+              </div>
+              
+              <div class="cell actions-cell">
+                <button 
+                  class="action-btn view-btn" 
+                  title="View User Details"
+                  on:click={() => {
+                    selectedUser = user;
+                    showUserRoleAssignment = true;
+                  }}
+                >
+                  👁️
+                </button>
+                <button 
+                  class="action-btn edit-btn" 
+                  title="Edit User Permissions"
+                  on:click={() => {
+                    selectUser(user);
+                    showUserRoleAssignment = true;
+                  }}
+                >
+                  ✏️
+                </button>
+                <button 
+                  class="action-btn status-btn {user.is_active ? 'deactivate' : 'activate'}" 
+                  title="{user.is_active ? 'Deactivate' : 'Activate'} User"
+                  on:click={() => {
+                    // TODO: Implement user activation/deactivation
+                    console.log(`${user.is_active ? 'Deactivating' : 'Activating'} user:`, user);
+                  }}
+                >
+                  {user.is_active ? '❌' : '✅'}
+                </button>
+              </div>
+            </div>
+          {/each}
+        </div>
+        
+        <div class="table-footer">
+          <div class="table-summary">
+            <span>Showing {users.length} users</span>
+            <span>•</span>
+            <span>{users.filter(u => u.is_active).length} active</span>
+            <span>•</span>
+            <span>{users.filter(u => u.currentRole !== 'No Role').length} with roles</span>
+          </div>
+          <div class="table-actions">
+            <button class="btn btn-outline" on:click={loadRealData}>
+              🔄 Refresh
+            </button>
+            <button class="btn btn-secondary" on:click={openUserRoleAssignment}>
+              👤 Manage Roles
+            </button>
+          </div>
+        </div>
+      {/if}
+    </div>
+  </div>
+
   <!-- Create Role Modal -->
   {#if showCreateRole}
     <div 
@@ -785,15 +1035,27 @@
           
           <div class="form-group">
             <div class="permissions-header">
-              <span class="permissions-label">Functions & Permissions</span>
+              <div class="permissions-title-section">
+                <span class="permissions-label">Functions & Permissions</span>
+                <span class="permissions-count">{availableFunctions.length} total functions available</span>
+              </div>
               <div class="bulk-actions">
                 <button type="button" class="btn-link" on:click={() => selectAllPermissions()}>
-                  Select All
+                  ✅ Select All ({availableFunctions.length})
                 </button>
                 <button type="button" class="btn-link" on:click={() => deselectAllPermissions()}>
-                  Deselect All
+                  ❌ Clear All
                 </button>
               </div>
+            </div>
+            
+            <div class="selected-permissions-summary">
+              <strong>{selectedPermissions.length}</strong> functions selected
+              {#if selectedPermissions.length > 0}
+                <span class="selected-categories">
+                  across {[...new Set(availableFunctions.filter(f => selectedPermissions.includes(f.id)).map(f => f.category))].length} categories
+                </span>
+              {/if}
             </div>
             
             <div class="permissions-container">
@@ -806,13 +1068,18 @@
                     <label class="category-toggle">
                       <input 
                         type="checkbox"
-                        checked={selectedInCategory === categoryFunctions.length}
+                        checked={selectedInCategory === categoryFunctions.length && categoryFunctions.length > 0}
                         indeterminate={selectedInCategory > 0 && selectedInCategory < categoryFunctions.length}
                         on:change={() => toggleCategoryPermissions(category)}
                       />
-                      <span class="category-title">
-                        {getCategoryDisplayName(category)} ({selectedInCategory}/{categoryFunctions.length})
-                      </span>
+                      <div class="category-info">
+                        <span class="category-title">
+                          {getCategoryDisplayName(category)}
+                        </span>
+                        <span class="category-stats">
+                          {selectedInCategory}/{categoryFunctions.length} functions
+                        </span>
+                      </div>
                     </label>
                   </div>
                   
@@ -841,10 +1108,26 @@
         </div>
         
         <div class="modal-footer">
-          <button class="btn btn-secondary" on:click={closeCreateRole}>Cancel</button>
-          <button class="btn btn-primary" on:click={handleCreateRole}>
-            Create Role ({selectedPermissions.length} functions)
-          </button>
+          <div class="footer-summary">
+            <span class="summary-text">
+              {selectedPermissions.length} of {availableFunctions.length} functions selected
+            </span>
+            {#if selectedPermissions.length > 0}
+              <span class="categories-summary">
+                across {[...new Set(availableFunctions.filter(f => selectedPermissions.includes(f.id)).map(f => f.category))].length} categories
+              </span>
+            {/if}
+          </div>
+          <div class="footer-actions">
+            <button class="btn btn-secondary" on:click={closeCreateRole}>Cancel</button>
+            <button 
+              class="btn btn-primary" 
+              on:click={handleCreateRole}
+              disabled={!newRoleName.trim() || !newRoleDescription.trim() || selectedPermissions.length === 0}
+            >
+              ✨ Create Role ({selectedPermissions.length} functions)
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1001,7 +1284,7 @@
           {#if selectedUser}
             <div class="user-permissions">
               <div class="user-info-header">
-                <h3>Functions for {selectedUser.name}</h3>
+                <h3>Manage User: {selectedUser.name}</h3>
                 <div class="bulk-actions">
                   <button type="button" class="btn-link" on:click={() => selectAllPermissions(true)}>
                     Enable All
@@ -1011,7 +1294,35 @@
                   </button>
                 </div>
               </div>
-              <p class="user-info">Current Role: <span class="current-role">{selectedUser.currentRole}</span></p>
+              
+              <div class="user-role-management">
+                <div class="current-role-info">
+                  <p class="user-info">Current Role: <span class="current-role">{selectedUser.currentRole}</span></p>
+                </div>
+                
+                <div class="role-change-section">
+                  <label for="roleSelect" class="role-select-label">Change User Role:</label>
+                  <div class="role-select-container">
+                    <select 
+                      id="roleSelect"
+                      class="form-select role-select" 
+                      value={selectedUser.role_id || ''}
+                      on:change={(e) => {
+                        const target = e.target as HTMLSelectElement;
+                        const newRoleId = target.value;
+                        if (newRoleId && selectedUser) {
+                          updateUserRole(selectedUser.id, newRoleId);
+                        }
+                      }}
+                    >
+                      <option value="">No Role Assigned</option>
+                      {#each roles as role}
+                        <option value={role.id}>{role.name} - {role.description}</option>
+                      {/each}
+                    </select>
+                  </div>
+                </div>
+              </div>
               
               <div class="functions-by-category">
                 {#each categories as category}
@@ -1607,7 +1918,30 @@
     padding: 1.5rem;
     border-top: 1px solid #e5e7eb;
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+  }
+
+  .footer-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .summary-text {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.925rem;
+  }
+
+  .categories-summary {
+    font-size: 0.825rem;
+    color: #64748b;
+  }
+
+  .footer-actions {
+    display: flex;
     gap: 1rem;
   }
 
@@ -1626,13 +1960,45 @@
   .permissions-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 1rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+  }
+
+  .permissions-title-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
   }
 
   .permissions-label {
+    font-weight: 600;
+    color: #1a202c;
+    font-size: 1.1rem;
+  }
+
+  .permissions-count {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 400;
+  }
+
+  .selected-permissions-summary {
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    background: #dbeafe;
+    border: 1px solid #93c5fd;
+    border-radius: 0.375rem;
+    color: #1e40af;
+    font-size: 0.875rem;
+  }
+
+  .selected-categories {
+    color: #3730a3;
     font-weight: 500;
-    color: #374151;
   }
 
   .bulk-actions {
@@ -1690,6 +2056,16 @@
     background: #2563eb;
   }
 
+  .btn-primary:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  .btn-primary:disabled:hover {
+    background: #9ca3af;
+  }
+
   .btn-secondary {
     background: #6b7280;
     color: white;
@@ -1731,8 +2107,26 @@
   .permissions-container {
     max-height: 500px;
     overflow-y: auto;
-    border: 1px solid #e5e7eb;
+    border: 1px solid #e2e8f0;
     border-radius: 0.5rem;
+    background: white;
+  }
+
+  .permissions-container::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .permissions-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+
+  .permissions-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+
+  .permissions-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
   }
 
   .no-permissions {
@@ -1759,43 +2153,69 @@
   }
 
   .category-header {
-    background: #f9fafb;
-    padding: 1rem;
-    border-bottom: 1px solid #e5e7eb;
+    background: #f1f5f9;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e2e8f0;
+    position: sticky;
+    top: 0;
+    z-index: 1;
   }
 
   .category-toggle {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
     cursor: pointer;
     font-weight: 600;
-    color: #374151;
+    color: #1e293b;
+    width: 100%;
   }
 
   .category-toggle input[type="checkbox"] {
     width: 18px;
     height: 18px;
+    accent-color: #3b82f6;
+  }
+
+  .category-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+  }
+
+  .category-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .category-stats {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 400;
   }
 
   .category-permissions {
-    padding: 1rem;
+    padding: 0.5rem 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 0.75rem;
   }
 
   .permission-checkbox {
-    padding: 0.75rem;
-    border-bottom: 1px solid #f3f4f6;
-    margin-bottom: 0.5rem;
-    border-radius: 0.375rem;
-  }
-
-  .permission-checkbox:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
+    padding: 0.875rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    background: white;
   }
 
   .permission-checkbox:hover {
-    background: #f9fafb;
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   }
 
   .checkbox-label {
@@ -1810,21 +2230,23 @@
   }
 
   .checkbox-custom {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     border: 2px solid #d1d5db;
-    border-radius: 0.25rem;
+    border-radius: 0.375rem;
     background: white;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    margin-top: 2px;
+    margin-top: 1px;
+    transition: all 0.2s ease;
   }
 
   .checkbox-label input[type="checkbox"]:checked + .checkbox-custom {
     background: #3b82f6;
     border-color: #3b82f6;
+    transform: scale(1.05);
   }
 
   .checkbox-label input[type="checkbox"]:checked + .checkbox-custom::after {
@@ -1834,21 +2256,29 @@
     font-weight: bold;
   }
 
+  .checkbox-label:hover .checkbox-custom {
+    border-color: #9ca3af;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
   .permission-info {
     flex: 1;
   }
 
   .permission-title {
     display: block;
-    font-weight: 500;
-    color: #1f2937;
-    margin-bottom: 0.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.375rem;
+    font-size: 0.925rem;
+    line-height: 1.3;
   }
 
   .permission-desc {
     display: block;
-    font-size: 0.875rem;
-    color: #6b7280;
+    font-size: 0.825rem;
+    color: #64748b;
+    line-height: 1.4;
   }
 
   /* User Selection */
@@ -1974,6 +2404,306 @@
     transform: translateX(20px);
   }
 
+  /* Users Management Section */
+  .users-management-section {
+    margin-top: 3rem;
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+
+  .section-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+  }
+
+  .section-header h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  .section-header p {
+    margin: 0;
+    color: #6b7280;
+  }
+
+  .users-table-container {
+    padding: 2rem;
+  }
+
+  .users-table {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  .table-header {
+    display: grid;
+    grid-template-columns: 2fr 2fr 1.5fr 1.5fr 1.5fr 1fr;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .header-cell {
+    padding: 1rem;
+    border-right: 1px solid #e5e7eb;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .header-cell:last-child {
+    border-right: none;
+  }
+
+  .table-row {
+    display: grid;
+    grid-template-columns: 2fr 2fr 1.5fr 1.5fr 1.5fr 1fr;
+    border-bottom: 1px solid #e5e7eb;
+    transition: background-color 0.2s;
+  }
+
+  .table-row:hover {
+    background: #f9fafb;
+  }
+
+  .table-row:last-child {
+    border-bottom: none;
+  }
+
+  .cell {
+    padding: 1rem;
+    border-right: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+  }
+
+  .cell:last-child {
+    border-right: none;
+  }
+
+  .user-cell {
+    padding: 0.75rem 1rem;
+  }
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+
+  .user-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .user-name {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.95rem;
+  }
+
+  .user-status {
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-weight: 500;
+  }
+
+  .user-status.active {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .user-status.inactive {
+    background: #fef2f2;
+    color: #991b1b;
+  }
+
+  .user-email {
+    color: #6b7280;
+    font-size: 0.875rem;
+  }
+
+  .username {
+    color: #6b7280;
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 0.875rem;
+  }
+
+  .current-role {
+    font-weight: 500;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+  }
+
+  .current-role.has-role {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .current-role.no-role {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+
+  .role-select-inline {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    background: white;
+  }
+
+  .role-select-inline:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  }
+
+  .actions-cell {
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .action-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+  }
+
+  .action-btn.view-btn {
+    background: #f3f4f6;
+    color: #374151;
+  }
+
+  .action-btn.view-btn:hover {
+    background: #e5e7eb;
+  }
+
+  .action-btn.edit-btn {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .action-btn.edit-btn:hover {
+    background: #bfdbfe;
+  }
+
+  .action-btn.status-btn.activate {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .action-btn.status-btn.activate:hover {
+    background: #bbf7d0;
+  }
+
+  .action-btn.status-btn.deactivate {
+    background: #fef2f2;
+    color: #991b1b;
+  }
+
+  .action-btn.status-btn.deactivate:hover {
+    background: #fecaca;
+  }
+
+  .table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    margin-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .table-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6b7280;
+    font-size: 0.875rem;
+  }
+
+  .table-actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  /* Role management enhancements */
+  .user-role-management {
+    background: #f9fafb;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 1.5rem;
+  }
+
+  .current-role-info {
+    margin-bottom: 1rem;
+  }
+
+  .role-change-section {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .role-select-label {
+    font-weight: 500;
+    color: #374151;
+    white-space: nowrap;
+  }
+
+  .role-select-container {
+    width: 100%;
+  }
+
+  .role-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    background: white;
+    font-size: 0.875rem;
+  }
+
+  .role-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
   @media (max-width: 768px) {
     .content-grid {
       grid-template-columns: 1fr;
@@ -2005,6 +2735,46 @@
 
     .permissions-container {
       max-height: 400px;
+    }
+
+    /* Users table responsive */
+    .users-table {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .table-header, .table-row {
+      grid-template-columns: repeat(6, minmax(150px, 1fr));
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      font-size: 0.9rem;
+    }
+
+    .user-details {
+      min-width: 120px;
+    }
+
+    .role-select-inline {
+      min-width: 120px;
+    }
+
+    .table-footer {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .table-actions {
+      justify-content: center;
+    }
+
+    .role-change-section {
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
     }
   }
 </style>

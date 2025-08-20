@@ -5,7 +5,7 @@
   import { supabase } from '$lib/supabase';
   
   let currentLang: 'en' | 'ar' = 'en';
-  let email = '';
+  let username = '';
   let password = '';
   let error = '';
   let isLoading = false;
@@ -13,30 +13,32 @@
   let isMasterAdminLoggedIn = false;
   let branches: any[] = [];
   let loadingBranches = false;
+  let roles: any[] = [];
+  let loadingRoles = false;
   
-  // New admin creation form
+  // New admin creation form - updated for admin_users table
   let newAdminData = {
-    name: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: '',
-    nationalId: '',
-    whatsappNumber: '',
-    branchId: ''
+    full_name: '',
+    phone: '',
+    roleId: '' // Role selection for admin user
   };
 
   const translations = {
     en: {
       title: 'User Panel Login',
       subtitle: 'Secure login for authorized users only',
-      email: 'Email',
+      username: 'Username',
       password: 'Password',
       signIn: 'Sign In',
       forgotPassword: 'Forgot Password?',
       loading: 'Signing in...',
       invalidCredentials: 'Invalid credentials. Access denied.',
       accountInactive: 'Account is inactive. Contact Master User.',
-      emailPlaceholder: 'Enter your user email',
+      usernamePlaceholder: 'Enter your username',
       passwordPlaceholder: 'Enter your password',
       accessDenied: 'Access denied. Unauthorized user.',
       masterAdminAccess: 'Master User Access',
@@ -49,11 +51,13 @@
       createAdminAccount: 'Create User Account',
       onlyMasterAdmin: 'Only Master User can create accounts',
       newAdminRegistration: 'New User Registration',
-      adminName: 'User Name',
-      adminEmail: 'User Email',
+      adminName: 'Full Name',
+      adminEmail: 'Email Address',
+      adminUsername: 'Username',
+      adminPhone: 'Phone Number',
+      adminRole: 'User Role',
       adminPassword: 'User Password',
       confirmPassword: 'Confirm Password',
-      nationalId: 'National ID / Resident ID',
       whatsappNumber: 'WhatsApp Number',
       adminBranch: 'User Branch',
       createAccount: 'Create Account',
@@ -62,22 +66,22 @@
       newEmailPlaceholder: 'Enter user email address',
       newPasswordPlaceholder: 'Create a strong password',
       confirmPasswordPlaceholder: 'Re-enter your password',
-      nationalIdPlaceholder: 'Enter National ID or Resident ID',
-      whatsappPlaceholder: 'Enter WhatsApp number (e.g., +966XXXXXXXXX)',
+      newUsernamePlaceholder: 'Enter unique username (3+ characters)',
+      phonePlaceholder: 'Enter phone number',
       branchPlaceholder: 'Select branch for this user',
       registrationSuccess: 'User account created successfully!'
     },
     ar: {
       title: 'تسجيل دخول لوحة المستخدم',
       subtitle: 'تسجيل دخول آمن للمستخدمين المصرح لهم فقط',
-      email: 'البريد الإلكتروني',
+      username: 'اسم المستخدم',
       password: 'كلمة المرور',
       signIn: 'تسجيل الدخول',
       forgotPassword: 'نسيت كلمة المرور؟',
       loading: 'جاري تسجيل الدخول...',
       invalidCredentials: 'بيانات اعتماد غير صحيحة. تم رفض الوصول.',
       accountInactive: 'الحساب غير نشط. اتصل بالمستخدم الرئيسي.',
-      emailPlaceholder: 'أدخل بريد المستخدم الإلكتروني',
+      usernamePlaceholder: 'أدخل اسم المستخدم',
       passwordPlaceholder: 'أدخل كلمة المرور',
       accessDenied: 'تم رفض الوصول. مستخدم غير مصرح.',
       masterAdminAccess: 'وصول المستخدم الرئيسي',
@@ -90,11 +94,13 @@
       createAdminAccount: 'إنشاء حساب مستخدم',
       onlyMasterAdmin: 'فقط المستخدم الرئيسي يمكنه إنشاء الحسابات',
       newAdminRegistration: 'تسجيل مستخدم جديد',
-      adminName: 'اسم المستخدم',
-      adminEmail: 'بريد المستخدم الإلكتروني',
+      adminName: 'الاسم الكامل',
+      adminEmail: 'عنوان البريد الإلكتروني',
+      adminUsername: 'اسم المستخدم',
+      adminPhone: 'رقم الهاتف',
+      adminRole: 'دور المستخدم',
       adminPassword: 'كلمة مرور المستخدم',
       confirmPassword: 'تأكيد كلمة المرور',
-      nationalId: 'الهوية الوطنية / هوية المقيم',
       whatsappNumber: 'رقم الواتساب',
       adminBranch: 'فرع المستخدم',
       createAccount: 'إنشاء الحساب',
@@ -103,8 +109,8 @@
       newEmailPlaceholder: 'أدخل عنوان البريد الإلكتروني للمستخدم',
       newPasswordPlaceholder: 'إنشاء كلمة مرور قوية',
       confirmPasswordPlaceholder: 'أعد إدخال كلمة المرور',
-      nationalIdPlaceholder: 'أدخل الهوية الوطنية أو هوية المقيم',
-      whatsappPlaceholder: 'أدخل رقم الواتساب (مثال: +966XXXXXXXXX)',
+      newUsernamePlaceholder: 'أدخل اسم مستخدم فريد (3+ أحرف)',
+      phonePlaceholder: 'أدخل رقم الهاتف',
       branchPlaceholder: 'اختر الفرع لهذا المستخدم',
       registrationSuccess: 'تم إنشاء حساب المستخدم بنجاح!'
     }
@@ -167,15 +173,50 @@
     }
   }
 
-  // Load branches when component mounts
+  // Fetch roles from database
+  async function fetchRoles() {
+    console.log('🔄 Starting to fetch roles...');
+    loadingRoles = true;
+    try {
+      const { data, error } = await supabase
+        .from('roles')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+      
+      console.log('📊 Roles response:', { data, error });
+      
+      if (error) {
+        console.error('❌ Error fetching roles:', error);
+        // Fallback roles if the query fails
+        roles = [
+          { id: '1', name: 'Branch Admin', description: 'Branch administrator' },
+          { id: '2', name: 'Support Agent', description: 'Customer support agent' },
+          { id: '3', name: 'Uploader', description: 'File uploader role' }
+        ];
+      } else {
+        roles = data || [];
+        console.log('✅ Successfully fetched roles:', roles);
+      }
+    } catch (err) {
+      console.error('💥 Failed to fetch roles:', err);
+      roles = [];
+    } finally {
+      loadingRoles = false;
+    }
+  }
+
+  // Load branches and roles when component mounts
   onMount(() => {
-    console.log('🚀 Component mounted, fetching branches...');
+    console.log('🚀 Component mounted, fetching branches and roles...');
     fetchBranches();
+    fetchRoles();
   });
 
   // Master User credentials (hardcoded for emergency access)
   const MASTER_ADMIN = {
-    email: 'admin',
+    username: 'admin',
+    email: 'admin@loyalty.com',
     password: 'admin',
     role: 'master_admin'
   };
@@ -230,16 +271,15 @@
     isLoading = true;
     
     console.log('🔍 Login attempt started');
-    console.log('📧 Email entered:', email);
+    console.log('� Username entered:', username);
     console.log('🔐 Password length:', password.length);
-    console.log('⚙️ Master admin config:', MASTER_ADMIN);
 
     // Validation
-    email = email.trim();
-    if (!email) {
-      error = 'Email is required';
+    username = username.trim();
+    if (!username) {
+      error = 'Username is required';
       isLoading = false;
-      console.log('❌ Email validation failed');
+      console.log('❌ Username validation failed');
       return;
     }
 
@@ -252,14 +292,13 @@
 
     try {
       console.log('🔍 Checking master admin credentials...');
-      console.log('📧 Email match:', email === MASTER_ADMIN.email);
-      console.log('🔐 Password match:', password === MASTER_ADMIN.password);
       
       // Check Master Admin first (hardcoded access)
-      if (email === MASTER_ADMIN.email && password === MASTER_ADMIN.password) {
+      if (username === MASTER_ADMIN.username && password === MASTER_ADMIN.password) {
         console.log('✅ Master admin credentials match!');
         
         const adminInfo = {
+          username: MASTER_ADMIN.username,
           email: MASTER_ADMIN.email,
           role: MASTER_ADMIN.role,
           name: 'Master User',
@@ -277,42 +316,94 @@
         return;
       }
 
-      // Check regular admin users
-      console.log('🔍 Checking regular admin users...');
-      const user = adminUsers.find(u => u.email === email && u.password === password);
+      // Query admin_users table by username
+      console.log('🔍 Querying admin_users table...');
+      const { data: adminUser, error: queryError } = await supabase
+        .from('admin_users')
+        .select(`
+          id, 
+          username, 
+          email, 
+          password_hash, 
+          full_name, 
+          phone, 
+          is_active, 
+          created_at,
+          role_id
+        `)
+        .eq('username', username)
+        .eq('is_active', true)
+        .single();
 
-      if (!user) {
-        error = t.invalidCredentials;
-        console.log('❌ Failed login attempt:', { email, timestamp: new Date().toISOString() });
-        console.log('❌ No matching user found in admin database');
+      if (queryError) {
+        console.log('❌ Database query error:', queryError);
+        if (queryError.code === 'PGRST116') {
+          error = t.invalidCredentials;
+        } else {
+          error = 'Database connection error. Please try again.';
+        }
         isLoading = false;
         return;
       }
 
-      if (!user.isActive) {
-        error = t.accountInactive;
-        console.log('❌ User account is inactive:', user);
+      if (!adminUser) {
+        error = t.invalidCredentials;
+        console.log('❌ No matching user found in admin_users table');
+        isLoading = false;
+        return;
+      }
+
+      // Get role information separately if role_id exists
+      let roleInfo = null;
+      if (adminUser.role_id) {
+        console.log('🔍 Querying roles table for role_id:', adminUser.role_id);
+        const { data: role, error: roleError } = await supabase
+          .from('roles')
+          .select('id, name, description')
+          .eq('id', adminUser.role_id)
+          .single();
+        
+        if (!roleError && role) {
+          roleInfo = role;
+          console.log('✅ Role found:', roleInfo);
+        } else {
+          console.log('⚠️ Role query error or not found:', roleError);
+        }
+      }
+
+      // Note: In a real application, you would hash the password and compare with password_hash
+      // For now, we'll do a simple comparison (you should implement proper password hashing)
+      console.log('🔐 Verifying password...');
+      
+      // Simple password check (replace with proper bcrypt comparison)
+      if (password !== adminUser.password_hash) {
+        error = t.invalidCredentials;
+        console.log('❌ Password does not match');
         isLoading = false;
         return;
       }
 
       // Successful login
       const adminInfo = {
-        email: user.email,
-        role: user.role,
-        name: user.name,
-        branch: user.branch || '',
+        id: adminUser.id,
+        username: adminUser.username,
+        email: adminUser.email,
+        name: adminUser.full_name,
+        phone: adminUser.phone,
+        role: roleInfo ? roleInfo.name : '',
         loginTime: new Date().toISOString()
       };
       
-      console.log('🔄 Calling loginAdmin for regular user:', adminInfo);
+      console.log('🔄 Calling loginAdmin for database user:', adminInfo);
       loginAdmin(adminInfo);
       
-      console.log('🎉 Regular user login successful:', adminInfo);
+      console.log('🎉 Database user login successful:', adminInfo);
       
       // Role-based routing
-      switch (user.role) {
+      const roleName = roleInfo ? roleInfo.name : '';
+      switch (roleName.toLowerCase()) {
         case 'master_admin':
+        case 'admin':
           goto('/admin');
           break;
         case 'branch_admin':
@@ -349,7 +440,7 @@
   }
 
   function handleForgotPassword() {
-    const message = `Hi Master User, I forgot my user password. Please help me reset it. My registered email is: ${email || '___'}`;
+    const message = `Hi Master User, I forgot my user password. Please help me reset it. My username is: ${username || '___'}`;
     const whatsappUrl = `https://wa.me/966XXXXXXXXX?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   }
@@ -361,8 +452,9 @@
   function showRegistrationForm() {
     showCreateAdmin = true;
     error = '';
-    // Fetch branches when showing the form
+    // Fetch branches and roles when showing the form
     fetchBranches();
+    fetchRoles();
   }
 
   function hideRegistrationForm() {
@@ -370,13 +462,13 @@
     error = '';
     // Reset form
     newAdminData = {
-      name: '',
+      username: '',
       email: '',
       password: '',
       confirmPassword: '',
-      nationalId: '',
-      whatsappNumber: '',
-      branchId: ''
+      full_name: '',
+      phone: '',
+      roleId: ''
     };
   }
 
@@ -385,8 +477,14 @@
     isLoading = true;
 
     // Validation
-    if (!newAdminData.name.trim()) {
-      error = 'User name is required';
+    if (!newAdminData.full_name.trim()) {
+      error = 'Full name is required';
+      isLoading = false;
+      return;
+    }
+
+    if (!newAdminData.username.trim() || newAdminData.username.length < 3) {
+      error = 'Username must be at least 3 characters';
       isLoading = false;
       return;
     }
@@ -409,57 +507,55 @@
       return;
     }
 
-    if (!newAdminData.nationalId.trim()) {
-      error = 'National ID or Resident ID is required';
+    if (!newAdminData.phone.trim()) {
+      error = 'Phone number is required';
       isLoading = false;
       return;
     }
 
-    if (!newAdminData.whatsappNumber.trim()) {
-      error = 'WhatsApp number is required';
-      isLoading = false;
-      return;
-    }
-
-    // Validate WhatsApp number format
-    const whatsappRegex = /^\+?[1-9]\d{1,14}$/;
-    if (!whatsappRegex.test(newAdminData.whatsappNumber)) {
-      error = 'Please enter a valid WhatsApp number (e.g., +966XXXXXXXXX)';
-      isLoading = false;
-      return;
-    }
-
-    if (!newAdminData.branchId.trim()) {
-      error = 'Branch selection is required';
+    if (!newAdminData.roleId.trim()) {
+      error = 'Role selection is required';
       isLoading = false;
       return;
     }
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('🔄 Creating new admin user...');
       
-      // Create new user
-      const selectedBranch = branches.find(b => b.id === newAdminData.branchId);
-      const newAdmin = {
-        id: adminUsers.length + 1,
-        name: newAdminData.name.trim(),
-        email: newAdminData.email.trim(),
-        password: newAdminData.password,
-        nationalId: newAdminData.nationalId.trim(),
-        whatsappNumber: newAdminData.whatsappNumber.trim(),
-        role: 'branch_admin', // Default role assigned by admin
-        branch: selectedBranch ? selectedBranch.name : '',
-        branchId: newAdminData.branchId.trim(),
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        createdBy: 'Master User'
-      };
+      // Create the admin user in Supabase
+      const { data, error: insertError } = await supabase
+        .from('admin_users')
+        .insert([
+          {
+            username: newAdminData.username.trim(),
+            email: newAdminData.email.trim(),
+            password_hash: newAdminData.password, // Note: In production, this should be hashed on the backend
+            full_name: newAdminData.full_name.trim(),
+            phone: newAdminData.phone.trim(),
+            role_id: newAdminData.roleId,
+            is_active: true
+          }
+        ])
+        .select();
 
-      // Add to mock database (in real app, this would be an API call)
-      adminUsers.push(newAdmin);
-      
-      console.log('New user created:', newAdmin);
+      if (insertError) {
+        console.error('❌ Error creating admin user:', insertError);
+        if (insertError.code === '23505') {
+          if (insertError.message.includes('username')) {
+            error = 'Username already exists. Please choose a different username.';
+          } else if (insertError.message.includes('email')) {
+            error = 'Email already exists. Please use a different email address.';
+          } else {
+            error = 'User already exists with this username or email.';
+          }
+        } else {
+          error = insertError.message || 'Failed to create user account. Please try again.';
+        }
+        isLoading = false;
+        return;
+      }
+
+      console.log('✅ Admin user created successfully:', data);
       
       // Show success message
       error = '';
@@ -469,8 +565,8 @@
       hideRegistrationForm();
 
     } catch (err) {
+      console.error('💥 Failed to create admin user:', err);
       error = 'Failed to create user account. Please try again.';
-      console.error('Registration error:', err);
     } finally {
       isLoading = false;
     }
@@ -521,18 +617,18 @@
         <!-- Login Form -->
         <form on:submit|preventDefault={handleLogin} class="space-y-4">
           <div>
-            <label for="email" class="block text-sm font-medium text-gray-700 mb-2" class:text-right={currentLang === 'ar'}>
-              {t.email}
+            <label for="username" class="block text-sm font-medium text-gray-700 mb-2" class:text-right={currentLang === 'ar'}>
+              {t.username}
             </label>
             <input
-              id="email"
-              bind:value={email}
+              id="username"
+              bind:value={username}
               type="text"
-              placeholder={t.emailPlaceholder}
+              placeholder={t.usernamePlaceholder}
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-gray-50"
               class:text-right={currentLang === 'ar'}
               required
-              autocomplete="email"
+              autocomplete="username"
             />
           </div>
 
@@ -661,17 +757,33 @@
         <!-- Registration Form -->
         <form on:submit|preventDefault={handleCreateAdmin} class="space-y-4">
           <div>
-            <label for="userName" class="block text-sm font-medium text-gray-700 mb-2" class:text-right={currentLang === 'ar'}>
+            <label for="fullName" class="block text-sm font-medium text-gray-700 mb-2" class:text-right={currentLang === 'ar'}>
               {t.adminName}
             </label>
             <input
-              id="userName"
-              bind:value={newAdminData.name}
+              id="fullName"
+              bind:value={newAdminData.full_name}
               type="text"
               placeholder={t.namePlaceholder}
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors bg-gray-50"
               class:text-right={currentLang === 'ar'}
               required
+            />
+          </div>
+
+          <div>
+            <label for="username" class="block text-sm font-medium text-gray-700 mb-2" class:text-right={currentLang === 'ar'}>
+              {t.adminUsername}
+            </label>
+            <input
+              id="username"
+              bind:value={newAdminData.username}
+              type="text"
+              placeholder={t.newUsernamePlaceholder}
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors bg-gray-50"
+              class:text-right={currentLang === 'ar'}
+              required
+              minlength="3"
             />
           </div>
 
@@ -723,29 +835,14 @@
           </div>
 
           <div>
-            <label for="nationalId" class="block text-sm font-medium text-gray-700 mb-2" class:text-right={currentLang === 'ar'}>
-              {t.nationalId}
+            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2" class:text-right={currentLang === 'ar'}>
+              {t.adminPhone}
             </label>
             <input
-              id="nationalId"
-              bind:value={newAdminData.nationalId}
-              type="text"
-              placeholder={t.nationalIdPlaceholder}
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors bg-gray-50"
-              class:text-right={currentLang === 'ar'}
-              required
-            />
-          </div>
-
-          <div>
-            <label for="whatsappNumber" class="block text-sm font-medium text-gray-700 mb-2" class:text-right={currentLang === 'ar'}>
-              {t.whatsappNumber}
-            </label>
-            <input
-              id="whatsappNumber"
-              bind:value={newAdminData.whatsappNumber}
+              id="phone"
+              bind:value={newAdminData.phone}
               type="tel"
-              placeholder={t.whatsappPlaceholder}
+              placeholder={t.phonePlaceholder}
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors bg-gray-50"
               class:text-right={currentLang === 'ar'}
               required
@@ -753,28 +850,28 @@
           </div>
 
           <div>
-            <label for="userBranch" class="block text-sm font-medium text-gray-700 mb-2" class:text-right={currentLang === 'ar'}>
-              {t.adminBranch} 
-              <span class="text-xs text-gray-500">({branches.length} branches available)</span>
+            <label for="userRole" class="block text-sm font-medium text-gray-700 mb-2" class:text-right={currentLang === 'ar'}>
+              {t.adminRole}
+              <span class="text-xs text-gray-500">({roles.length} roles available)</span>
               <button 
                 type="button"
-                on:click={fetchBranches}
+                on:click={fetchRoles}
                 class="ml-2 text-blue-600 underline text-xs"
               >
                 Refresh
               </button>
             </label>
-            {#if loadingBranches}
+            {#if loadingRoles}
               <div class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center">
                 <span class="animate-spin">⟳</span>
-                <span class="ml-2">Loading branches...</span>
+                <span class="ml-2">Loading roles...</span>
               </div>
-            {:else if branches.length === 0}
+            {:else if roles.length === 0}
               <div class="w-full px-4 py-3 border border-red-300 rounded-lg bg-red-50 text-red-700 text-center">
-                No branches found. Please contact administrator.
+                No roles found. Please contact administrator.
                 <button 
                   type="button"
-                  on:click={fetchBranches}
+                  on:click={fetchRoles}
                   class="ml-2 text-red-600 underline text-sm"
                 >
                   Retry
@@ -782,18 +879,18 @@
               </div>
             {:else}
               <select
-                id="userBranch"
-                bind:value={newAdminData.branchId}
+                id="userRole"
+                bind:value={newAdminData.roleId}
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors bg-gray-50"
                 class:text-right={currentLang === 'ar'}
                 required
               >
-                <option value="" disabled>{t.branchPlaceholder}</option>
-                {#each branches as branch}
-                  <option value={branch.id}>
-                    {currentLang === 'ar' && branch.name_ar ? branch.name_ar : branch.name}
-                    {#if branch.location || branch.location_ar}
-                      - {currentLang === 'ar' && branch.location_ar ? branch.location_ar : branch.location}
+                <option value="" disabled>Select role for this user</option>
+                {#each roles as role}
+                  <option value={role.id}>
+                    {role.name}
+                    {#if role.description}
+                      - {role.description}
                     {/if}
                   </option>
                 {/each}
