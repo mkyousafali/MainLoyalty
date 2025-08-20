@@ -1005,12 +1005,12 @@
             class:text-right={$language === 'ar'}
             class:px-3={$language !== 'ar'}
             class:sm:px-4={$language !== 'ar'}
-            class:pr-10={$language !== 'ar'}
-            class:px-10={$language === 'ar'}
-            class:sm:px-12={$language === 'ar'}
+            class:pr-12={$language !== 'ar'}
+            class:px-12={$language === 'ar'}
+            class:sm:px-14={$language === 'ar'}
             class:pl-3={$language === 'ar'}
             class:sm:pl-4={$language === 'ar'}
-            style:background-position={$language === 'ar' ? 'left 0.75rem center' : 'right 0.75rem center'}
+            style:background-position={$language === 'ar' ? 'left 1rem center' : 'right 1rem center'}
           >
             {#each branchOptions as branch}
               <option value={branch.id}>{branch.name}</option>

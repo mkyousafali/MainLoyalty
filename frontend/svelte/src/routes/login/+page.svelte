@@ -336,7 +336,7 @@
         .single();
       
       if (eligibilityError || !eligibilityData) {
-        error = 'Mobile number not found in our system. Please contact support or visit a branch.';
+        error = localTranslations.mobileNotFound;
         isLoading = false;
         return;
       }
@@ -610,6 +610,7 @@
       chatWhatsApp: 'Chat on WhatsApp',
       readTerms: 'Read Terms',
       needHelpLogin: 'Need help with login?',
+      mobileNotFound: 'Mobile number not found in our system. Please contact support or visit a branch.',
       termsAndConditionsTitle: 'Terms and Conditions',
       loadingTerms: 'Loading terms...',
       // Registration fields for unregistered users
@@ -647,6 +648,7 @@
       chatWhatsApp: 'محادثة واتساب',
       readTerms: 'اقرأ الشروط',
       needHelpLogin: 'تحتاج مساعدة في تسجيل الدخول؟',
+      mobileNotFound: 'رقم الجوال غير موجود في نظامنا. يرجى التواصل مع الدعم أو زيارة أحد الفروع.',
       termsAndConditionsTitle: 'الشروط والأحكام',
       loadingTerms: 'جارٍ تحميل الشروط...',
       // Registration fields in Arabic for unregistered users
@@ -862,7 +864,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>
               </div>
-              <span class="text-sm font-semibold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Mobile verified!</span>
+              <span class="text-sm font-semibold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{$language === 'ar' ? 'تم التحقق من الجوال!' : 'Mobile verified!'}</span>
             </div>
             <h2 class="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">{localTranslations.enterPassword}</h2>
           </div>
@@ -938,7 +940,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>
               </div>
-              <span class="text-sm font-semibold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Mobile verified!</span>
+              <span class="text-sm font-semibold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{$language === 'ar' ? 'تم التحقق من الجوال!' : 'Mobile verified!'}</span>
             </div>
             <h2 class="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">{localTranslations.completeRegistration}</h2>
           </div>
@@ -1188,27 +1190,35 @@
 
     </div>
 
-    <!-- Always Visible PWA Install Button -->
-    <div class="fixed top-4 right-4 z-50">
-      <button
-        on:click={installPWA}
-        class="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white p-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-3 focus:ring-orange-500/50 focus:ring-offset-2 active:scale-95 group"
-        aria-label={$language === 'ar' ? 'تثبيت التطبيق' : 'Install App'}
-        title={$language === 'ar' ? 'تثبيت التطبيق' : 'Install App'}
-      >
-        <div class="flex items-center">
-          <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 2 0 002 2z"></path>
-          </svg>
-          <span class="ml-2 text-sm md:text-base font-semibold hidden sm:inline">
-            {$language === 'ar' ? 'تثبيت' : 'Install'}
-          </span>
-        </div>
-      </button>
-    </div>
-
     <!-- Footer -->
     <div class="text-center mt-8 transform transition-all duration-500" class:translate-y-0={pageLoaded} class:translate-y-4={!pageLoaded} class:opacity-100={pageLoaded} class:opacity-0={!pageLoaded}>
+      
+      <!-- PWA Install Card -->
+      <div class="mb-6 max-w-sm mx-auto">
+        <button
+          on:click={installPWA}
+          class="group bg-gradient-to-br from-orange-50 to-red-100 hover:from-orange-100 hover:to-red-200 border-2 border-orange-200 hover:border-orange-300 rounded-2xl p-4 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] w-full"
+          aria-label={$language === 'ar' ? 'تثبيت التطبيق' : 'Install App'}
+          title={$language === 'ar' ? 'تثبيت التطبيق' : 'Install App'}
+        >
+          <div class="flex flex-col items-center space-y-2">
+            <div class="bg-orange-500 group-hover:bg-orange-600 rounded-full p-2 transition-colors duration-300">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+              </svg>
+            </div>
+            <div class="text-center">
+              <h3 class="font-semibold text-orange-800 group-hover:text-orange-900 transition-colors text-sm">
+                {$language === 'ar' ? 'تثبيت التطبيق' : 'Install App'}
+              </h3>
+              <p class="text-xs text-orange-600 group-hover:text-orange-700 mt-1">
+                {$language === 'ar' ? 'تثبيت على الهاتف' : 'Install on Phone'}
+              </p>
+            </div>
+          </div>
+        </button>
+      </div>
+      
       <!-- Card-style Links -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 max-w-md mx-auto">
         <!-- Terms & Conditions Card -->

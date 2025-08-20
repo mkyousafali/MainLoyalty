@@ -107,7 +107,7 @@ Standalone registration page for new customers
       }
 
       if (!eligibleNumber) {
-        error = 'This mobile number is not eligible for registration. Please contact support or visit a branch.';
+        error = t.mobileNotEligible;
         return;
       }
 
@@ -314,7 +314,8 @@ Standalone registration page for new customers
       goToDashboard: 'Go to Dashboard',
       backToCheck: '← Back to Check',
       alreadyHaveAccount: 'Already have an account?',
-      loginHere: 'Login here'
+      loginHere: 'Login here',
+      mobileNotEligible: 'This mobile number is not eligible for registration. Please contact support or visit a branch.'
     },
     ar: {
       title: 'تسجيل العميل',
@@ -347,7 +348,8 @@ Standalone registration page for new customers
       goToDashboard: 'اذهب إلى لوحة التحكم',
       backToCheck: '← العودة للتحقق',
       alreadyHaveAccount: 'لديك حساب بالفعل؟',
-      loginHere: 'سجل الدخول هنا'
+      loginHere: 'سجل الدخول هنا',
+      mobileNotEligible: 'هذا الرقم غير مؤهل للتسجيل. يرجى التواصل مع الدعم أو زيارة أحد الفروع.'
     }
   };
 
