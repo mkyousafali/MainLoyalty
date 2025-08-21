@@ -2,6 +2,7 @@ import { writable, get } from 'svelte/store';
 import { goto } from '$app/navigation';
 
 export interface User {
+  id?: string; // Add Supabase-compatible ID
   mobile: string;
   name: string;
   place?: string;
@@ -13,6 +14,7 @@ export interface User {
 }
 
 export interface AdminUser {
+  id?: string; // Add Supabase-compatible ID
   email: string;
   name: string;
   role: string;

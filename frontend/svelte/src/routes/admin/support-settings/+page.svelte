@@ -147,6 +147,50 @@
   {/if}
 </div>
 
+<!-- ✅ OTHER APPS MANAGEMENT -->
+<div class="p-6 bg-violet-50 border border-violet-200 rounded-xl shadow mb-6 max-w-4xl mx-auto">
+  <div class="flex items-center gap-3 mb-4">
+    <div class="w-12 h-12 bg-violet-100 rounded-lg flex items-center justify-center">
+      <svg class="w-6 h-6 text-violet-600" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+    </div>
+    <div>
+      <h2 class="text-xl font-bold text-violet-800">🌐 Other Apps Integration</h2>
+      <p class="text-sm text-gray-700">Manage external applications and quick access links</p>
+    </div>
+  </div>
+
+  <div class="space-y-4">
+    <p class="text-gray-700">
+      Configure and manage external applications that your team uses. Add apps with simple name and URL, 
+      and they will appear in the admin sidebar for quick access with embedded viewing.
+    </p>
+    
+    <div class="flex flex-wrap gap-3">
+      <a 
+        href="/admin/manage-other-apps"
+        class="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg hover:bg-violet-700 transition-colors font-medium"
+      >
+        <span class="text-lg">🔧</span>
+        Manage Other Apps
+      </a>
+    </div>
+
+    <div class="bg-violet-100 p-4 rounded-lg">
+      <h4 class="font-semibold text-violet-800 mb-2">Other Apps Features:</h4>
+      <ul class="text-sm text-violet-700 space-y-1">
+        <li>✅ Simple app management with name and URL</li>
+        <li>✅ Direct browser tab opening for external apps</li>
+        <li>✅ Session tracking and analytics</li>
+        <li>✅ Quick access from admin sidebar</li>
+        <li>✅ Category-based organization</li>
+        <li>✅ Mobile-responsive design</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
 <style>
   /* Ensure all input fields, selects, and text are visible */
   input, select, textarea {

@@ -1,0 +1,41 @@
+-- ======================================
+-- NEW PARTNER APPS INTEGRATED SCHEMA
+-- ======================================
+-- This will replace the existing schema with 23 tables
+-- Date: August 21, 2025
+-- Purpose: Complete Partner Apps integration with per-partner email login
+
+-- ======================================
+-- SCHEMA COLLECTION IN PROGRESS
+-- ======================================
+-- Tables received: 0/23
+-- Status: Waiting for table definitions
+
+-- Table collection log:
+-- 1. [Waiting...]
+-- 2. [Waiting...]
+-- 3. [Waiting...]
+-- 4. [Waiting...]
+-- 5. [Waiting...]
+-- 6. [Waiting...]
+-- 7. [Waiting...]
+-- 8. [Waiting...]
+-- 9. [Waiting...]
+-- 10. [Waiting...]
+-- 11. [Waiting...]
+-- 12. [Waiting...]
+-- 13. [Waiting...]
+-- 14. [Waiting...]
+-- 15. [Waiting...]
+-- 16. [Waiting...]
+-- 17. [Waiting...]
+-- 18. [Waiting...]
+-- 19. [Waiting...]
+-- 20. [Waiting...]
+-- 21. [Waiting...]
+-- 22. [Waiting...]
+-- 23. [Waiting...]
+
+-- ======================================
+-- TABLES WILL BE ADDED HERE AS RECEIVED
+-- ======================================

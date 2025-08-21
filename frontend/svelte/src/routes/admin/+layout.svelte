@@ -5,6 +5,7 @@
   import { user, logout as authLogout } from '$lib/stores/auth';
   import { language, toggleLanguage, t } from '$lib/stores/language';
   import { customerNotifications, unreadNotificationCount, loadCustomerNotifications, markAsRead } from '$lib/stores/notifications';
+  import { supabase } from '$lib/supabase';
 
   // Dashboard item definition
   const dashboardItem = {
@@ -14,8 +15,27 @@
     description: 'Main overview panel'
   };
 
+  // Support Settings as separate button
+  const supportSettingsItem = {
+    path: '/admin/support-settings',
+    label: 'Support Settings',
+    icon: '⚙️',
+    description: 'Configure support options'
+  };
+
+  // View Other Apps button
+  const viewOtherAppsItem = {
+    path: '/admin/other-apps',
+    label: 'View Other Apps',
+    icon: '🌐',
+    description: 'Access external applications'
+  };
+
+  // User session management
+  let userSession = null;
+
   // Categories with their buttons
-  const categories = {
+  let categories = {
     dataManagement: {
       title: 'Data Management',
       icon: '📊',
@@ -48,7 +68,6 @@
       buttons: [
         { path: '/admin/user-management', label: 'User Management', icon: '👥', description: 'Manage admin users' },
         { path: '/admin/user-roles', label: 'User Roles', icon: '🔐', description: 'Manage user roles and permissions' },
-        { path: '/admin/support-settings', label: 'Support Settings', icon: '⚙️', description: 'Configure support options' },
         { path: '/admin/terms-management', label: 'Terms & Conditions', icon: '📋', description: 'Edit Terms & Conditions' },
         { path: '/admin/privacy-policy', label: 'Privacy Policy', icon: '🔒', description: 'Manage Privacy Policy content' },
         { path: '/admin/notification-center', label: 'Notification Center', icon: '🔔', description: 'Manage notifications' },
@@ -157,6 +176,26 @@
       >
         <span class="nav-icon">{dashboardItem.icon}</span>
         <span class="nav-label">{dashboardItem.label}</span>
+      </a>
+
+      <!-- Support Settings Link -->
+      <a 
+        href={supportSettingsItem.path}
+        class="nav-item support-settings {$page.url.pathname === supportSettingsItem.path ? 'active' : ''}"
+        title={supportSettingsItem.description}
+      >
+        <span class="nav-icon">{supportSettingsItem.icon}</span>
+        <span class="nav-label">{supportSettingsItem.label}</span>
+      </a>
+
+      <!-- View Other Apps Link -->
+      <a 
+        href={viewOtherAppsItem.path}
+        class="nav-item view-other-apps {$page.url.pathname === viewOtherAppsItem.path ? 'active' : ''}"
+        title={viewOtherAppsItem.description}
+      >
+        <span class="nav-icon">{viewOtherAppsItem.icon}</span>
+        <span class="nav-label">{viewOtherAppsItem.label}</span>
       </a>
 
       <!-- Category Buttons -->
@@ -489,6 +528,66 @@
     border-left-color: #fb923c;
     color: #fed7aa;
     box-shadow: 0 0 15px rgba(251, 146, 60, 0.3);
+  }
+
+  /* Support Settings button special styling */
+  .nav-item.support-settings {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    margin-bottom: 1rem;
+  }
+
+  .nav-item.support-settings:hover {
+    background: rgba(34, 197, 94, 0.2);
+    border-left-color: #22c55e;
+    color: #dcfce7;
+  }
+
+  .nav-item.support-settings.active {
+    background: rgba(34, 197, 94, 0.3);
+    border-left-color: #22c55e;
+    color: #dcfce7;
+    box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+  }
+
+  /* Other Apps button special styling */
+  .nav-item.other-apps {
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    margin-bottom: 0.5rem;
+  }
+
+  .nav-item.other-apps:hover {
+    background: rgba(139, 92, 246, 0.2);
+    border-left-color: #8b5cf6;
+    color: #ede9fe;
+  }
+
+  .nav-item.other-apps.active {
+    background: rgba(139, 92, 246, 0.3);
+    border-left-color: #8b5cf6;
+    color: #ede9fe;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+  }
+
+  /* Manage Other Apps button special styling */
+  .nav-item.manage-other-apps {
+    background: rgba(236, 72, 153, 0.1);
+    border: 1px solid rgba(236, 72, 153, 0.3);
+    margin-bottom: 1rem;
+  }
+
+  .nav-item.manage-other-apps:hover {
+    background: rgba(236, 72, 153, 0.2);
+    border-left-color: #ec4899;
+    color: #fce7f3;
+  }
+
+  .nav-item.manage-other-apps.active {
+    background: rgba(236, 72, 153, 0.3);
+    border-left-color: #ec4899;
+    color: #fce7f3;
+    box-shadow: 0 0 15px rgba(236, 72, 153, 0.3);
   }
 
   .nav-icon {

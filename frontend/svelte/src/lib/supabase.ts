@@ -60,7 +60,11 @@ export const TABLES = {
   NOTIFICATION_RECIPIENTS: 'notification_recipients',
   
   // Audit
-  USER_ACTIVITY_LOGS: 'user_activity_logs'
+  USER_ACTIVITY_LOGS: 'user_activity_logs',
+  
+  // Other Apps
+  OTHER_APPS: 'other_apps',
+  USER_APP_SESSIONS: 'user_app_sessions'
 };
 
 // Auth helpers

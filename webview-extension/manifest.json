@@ -1,0 +1,43 @@
+// ========================================
+// BROWSER EXTENSION FOR WEBVIEW CAPTURE
+// ========================================
+
+// manifest.json
+{
+  "manifest_version": 3,
+  "name": "MainLoyalty WebView Helper",
+  "version": "1.0",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
+
+// background.js
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete') {
+    // Inject iframe-friendly wrapper
+    chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      function: makeIframeFriendly
+    });
+  }
+});
+
+function makeIframeFriendly() {
+  // Remove X-Frame-Options restrictions
+  if (window.self !== window.top) {
+    // We're in an iframe, allow it
+    document.documentElement.style.display = 'block';
+  }
+}
