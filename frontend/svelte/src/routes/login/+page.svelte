@@ -5,7 +5,7 @@
   import { onMount } from 'svelte';
   import { termsStore, formatTermsForLogin, type TermsData } from '$lib/stores/terms';
   import { getGlobalWhatsAppLink } from '$lib/stores/globalSettings';
-  import { language, toggleLanguage } from '$lib/stores/language';
+  import { language } from '$lib/stores/language';
 
   let mobile = '';
   let error = '';
@@ -37,6 +37,7 @@
   // WhatsApp support and other features
   let whatsappSupportLink = 'https://wa.me/966500000000'; // Fallback
   let smileyClickCount = 0;
+  let customerLoginClickCount = 0; // Counter for checkout staff access
 
   // Terms modal
   let showTermsModal = false;
@@ -111,6 +112,48 @@
     setTimeout(() => {
       if (smileyClickCount < 10) {
         smileyClickCount = Math.max(0, smileyClickCount - 1);
+      }
+    }, 5000);
+  }
+  
+  function handleCustomerLoginClick() {
+    customerLoginClickCount++;
+    console.log(`💳 Customer Login card clicked ${customerLoginClickCount} times`);
+    
+    // Visual feedback for progress - vibration on mobile if available
+    if (navigator.vibrate && customerLoginClickCount >= 5) {
+      navigator.vibrate(50);
+    }
+    
+    // Progressive feedback messages
+    if (customerLoginClickCount === 5) {
+      console.log('🤔 Checkout staff access - halfway there...');
+    } else if (customerLoginClickCount === 8) {
+      console.log('😏 Checkout staff access - almost there...');
+    } else if (customerLoginClickCount === 9) {
+      console.log('😈 Checkout staff access - one more click...');
+      // Stronger vibration for the final click
+      if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 100]);
+      }
+    }
+    
+    if (customerLoginClickCount >= 10) {
+      console.log('🎉 Checkout staff access activated! Redirecting...');
+      customerLoginClickCount = 0; // Reset counter
+      
+      // Success vibration
+      if (navigator.vibrate) {
+        navigator.vibrate([200, 100, 200, 100, 200]);
+      }
+      
+      goto('/checkout-staff/login');
+    }
+    
+    // Reset counter after 5 seconds of inactivity
+    setTimeout(() => {
+      if (customerLoginClickCount < 10) {
+        customerLoginClickCount = Math.max(0, customerLoginClickCount - 1);
       }
     }, 5000);
   }
@@ -690,29 +733,30 @@
         </div>
       </div>
       <div class="mt-6">
-        <div class="inline-flex items-center gap-3 bg-gradient-to-r from-orange-100 via-orange-50 to-yellow-50 px-4 sm:px-6 py-3 rounded-full border border-orange-200/50 shadow-lg backdrop-blur-sm">
+        <div 
+          class="inline-flex items-center gap-3 bg-gradient-to-r from-orange-100 via-orange-50 to-yellow-50 px-4 sm:px-6 py-3 rounded-full border border-orange-200/50 shadow-lg backdrop-blur-sm cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+          on:click={handleCustomerLoginClick}
+          role="button"
+          tabindex="0"
+          on:keydown={(e) => e.key === 'Enter' && handleCustomerLoginClick()}
+          title={customerLoginClickCount >= 5 ? `${customerLoginClickCount}/10 - Keep clicking for checkout staff access` : ''}
+        >
           <div class="relative">
             <div class="w-3 h-3 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full animate-pulse"></div>
             <div class="absolute inset-0 w-3 h-3 bg-orange-300 rounded-full animate-ping opacity-75"></div>
+            {#if customerLoginClickCount >= 5}
+              <div class="absolute -inset-1 w-5 h-5 bg-gradient-to-r from-purple-400 to-blue-500 rounded-full animate-spin opacity-50"></div>
+            {/if}
           </div>
-          <span class="text-sm font-semibold bg-gradient-to-r from-orange-600 to-orange-700 bg-clip-text text-transparent" class:text-right={$language === 'ar'}>
+          <span class="text-sm font-semibold bg-gradient-to-r from-orange-600 to-orange-700 bg-clip-text text-transparent {customerLoginClickCount >= 8 ? 'animate-pulse' : ''}" class:text-right={$language === 'ar'}>
             {$language === 'ar' ? 'تسجيل دخول العملاء' : 'Customer Login'}
+            {#if customerLoginClickCount >= 5}
+              <span class="text-xs block text-purple-600 font-bold">
+                {customerLoginClickCount}/10
+              </span>
+            {/if}
           </span>
         </div>
-      </div>
-      <!-- Enhanced Language Toggle -->
-      <div class="mt-6">
-        <button 
-          on:click={toggleLanguage}
-          class="group relative bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
-        >
-          <span class="relative z-10 flex items-center gap-2">
-            <svg class="w-4 h-4 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"></path>
-            </svg>
-            {$language === 'ar' ? 'English' : 'العربية'}
-          </span>
-        </button>
       </div>
     </div>
   </div>

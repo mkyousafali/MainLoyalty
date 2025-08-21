@@ -92,6 +92,25 @@
         { path: '/admin/reports/registrations', label: 'Registrations Report', icon: '📝', description: 'Track customer registrations' }
       ]
     },
+    luckyWheelManager: {
+      title: 'Lucky Wheel Manager',
+      icon: '🎯',
+      buttons: [
+        { path: '/admin/lucky-wheel/system-controls', label: '🔧 System Controls (Enable/Disable)', icon: '⚙️', description: 'Enable or disable Lucky Draw for all customers' },
+        { path: '/admin/lucky-wheel/test', label: '🧪 Lucky Wheel Test (Unlimited)', icon: '🎰', description: 'Test Lucky Wheel with unlimited credits and mock data' },
+        { path: '/admin/lucky-wheel/dashboard', label: 'Dashboard (Live)', icon: '📊', description: 'Real-time Lucky Draw statistics' },
+        { path: '/admin/lucky-wheel/redeem', label: 'Scan & Redeem (Cashier)', icon: '📱', description: 'Redeem customer prizes' },
+        { path: '/admin/lucky-wheel/customer-history', label: 'Customer Prize History', icon: '📝', description: 'View customer prize records' },
+        { path: '/admin/lucky-wheel/credits', label: 'Spin Credits', icon: '🎰', description: 'Manage customer spin credits' },
+        { path: '/admin/lucky-wheel/controls', label: 'Blocklist / Pauses', icon: '⏸️', description: 'Control access to Lucky Draw' },
+        { path: '/admin/lucky-wheel/categories', label: 'Categories & Assets', icon: '🏷️', description: 'Manage prize categories' },
+        { path: '/admin/lucky-wheel/coupons', label: 'Coupons (Pool Manager)', icon: '🎫', description: 'Manage coupon inventory' },
+        { path: '/admin/lucky-wheel/rules', label: 'Odds & Rules', icon: '⚙️', description: 'Configure game rules and odds' },
+        { path: '/admin/lucky-wheel/campaigns', label: 'Campaign Scheduler', icon: '📅', description: 'Schedule Lucky Draw campaigns' },
+        { path: '/admin/lucky-wheel/reports', label: 'Reports', icon: '📈', description: 'Generate Lucky Draw reports' },
+        { path: '/admin/create-checkout-staff', label: 'Create Checkout Staff', icon: '👤', description: 'Create checkout staff users' }
+      ]
+    },
     adminTools: {
       title: 'Admin Tools',
       icon: '👑',

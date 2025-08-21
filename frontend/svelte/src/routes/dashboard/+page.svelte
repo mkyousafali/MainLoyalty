@@ -19,6 +19,7 @@
   let allTransactions: any[] = []; // Store all transactions for filtering
   let isLoading = true;
   let error = '';
+  let isLuckyDrawEnabled = true; // Lucky Draw feature toggle
 
   // Reactive translations based on current language
   $: currentTranslations = $language === 'ar' ? {
@@ -467,10 +468,34 @@
 
   onMount(() => {
     loadCustomerData();
+    checkLuckyDrawStatus();
     
     // Load notifications from Supabase
     loadCustomerNotifications($language);
   });
+
+  // Check Lucky Draw enabled status
+  async function checkLuckyDrawStatus() {
+    try {
+      const { data, error } = await supabase
+        .rpc('get_lucky_draw_enabled');
+      
+      if (error) {
+        console.error('Error checking Lucky Draw status:', error);
+        // Default to enabled if we can't check
+        isLuckyDrawEnabled = true;
+        return;
+      }
+      
+      isLuckyDrawEnabled = data === true;
+      console.log('🎯 Lucky Draw enabled status:', isLuckyDrawEnabled);
+      
+    } catch (err) {
+      console.error('Error checking Lucky Draw status:', err);
+      // Default to enabled if there's an error
+      isLuckyDrawEnabled = true;
+    }
+  }
 
   // Generate QR Code
   async function generateQRCode() {
@@ -1104,6 +1129,35 @@
                 <div class="absolute bottom-2 left-2 w-1.5 h-1.5 bg-orange-200 rounded-full animate-pulse opacity-70"></div>
               </div>
             </a>
+
+            <!-- Enhanced Lucky Draw Button (Conditional) -->
+            {#if isLuckyDrawEnabled}
+              <a href="/lucky-draw" class="block group/lucky" class:flex-row-reverse={$language === 'ar'}>
+                <div class="relative overflow-hidden rounded-2xl transform hover:scale-[1.03] transition-all duration-500">
+                  <!-- Animated background -->
+                  <div class="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-500 to-purple-700 opacity-90"></div>
+                  <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover/lucky:opacity-10 transform -skew-x-12 translate-x-[-100%] group-hover/lucky:translate-x-[100%] transition-all duration-700"></div>
+                  
+                  <!-- Content -->
+                  <div class="relative flex items-center gap-4 sm:gap-5 p-4 sm:p-5 text-white" class:flex-row-reverse={$language === 'ar'}>
+                    <div class="flex-shrink-0 p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                      <div class="text-3xl sm:text-4xl">🎯</div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <h4 class="font-black text-lg sm:text-xl truncate drop-shadow-lg">{$language === 'ar' ? 'العجلة المحظوظة' : 'Lucky Draw'}</h4>
+                      <p class="text-purple-100 text-sm sm:text-base truncate font-medium">{$language === 'ar' ? 'دوّر واربح جوائز مذهلة!' : 'Spin and win amazing prizes!'}</p>
+                    </div>
+                    <div class="flex-shrink-0 p-2 bg-white/20 rounded-lg backdrop-blur-sm transform group-hover/lucky:translate-x-1 transition-transform duration-300">
+                      <div class="text-2xl sm:text-3xl opacity-90">→</div>
+                    </div>
+                  </div>
+                  
+                  <!-- Decorative elements -->
+                  <div class="absolute top-2 right-2 w-2 h-2 bg-white rounded-full animate-ping opacity-60"></div>
+                  <div class="absolute bottom-2 left-2 w-1.5 h-1.5 bg-purple-200 rounded-full animate-pulse opacity-70"></div>
+                </div>
+              </a>
+            {/if}
 
             <!-- Enhanced Customer Support Button -->
             <a href="/customer-support" class="block group/support" class:flex-row-reverse={$language === 'ar'}>
