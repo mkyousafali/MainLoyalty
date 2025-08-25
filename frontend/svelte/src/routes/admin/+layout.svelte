@@ -5,6 +5,7 @@
   import { user, logout as authLogout } from '$lib/stores/auth';
   import { language, toggleLanguage, t } from '$lib/stores/language';
   import { customerNotifications, unreadNotificationCount, loadCustomerNotifications, markAsRead } from '$lib/stores/notifications';
+  import { appSettings } from '$lib/stores/appSettings';
   import { supabase } from '$lib/supabase';
 
   // Dashboard item definition
@@ -129,6 +130,26 @@
   // Notification panel state
   let showNotificationPanel = false;
 
+  // My Offers page toggle state - using store
+  let isTogglingOffers = false;
+
+  async function toggleMyOffersPage() {
+    if (isTogglingOffers) return;
+    
+    isTogglingOffers = true;
+    try {
+      // Toggle using the store
+      appSettings.toggleMyOffers();
+      
+      console.log('My Offers page toggled');
+      
+    } catch (error) {
+      console.error('Error toggling My Offers page:', error);
+    } finally {
+      isTogglingOffers = false;
+    }
+  }
+
   function toggleNotificationPanel() {
     showNotificationPanel = !showNotificationPanel;
   }
@@ -161,7 +182,10 @@
     }
   }
 
-  onMount(() => {
+  onMount(async () => {
+    // Initialize app settings store
+    appSettings.init();
+    
     document.addEventListener('click', handleClickOutside);
     // Load notifications for admin users too
     loadCustomerNotifications($language);
@@ -296,6 +320,28 @@
 
         <!-- Right Side Controls -->
         <div class="top-bar-controls">
+          <!-- Quick Action: My Offers Toggle -->
+          <div class="quick-action-toggle">
+            <button 
+              on:click={toggleMyOffersPage}
+              disabled={isTogglingOffers}
+              class="flex items-center space-x-2 px-3 py-2 rounded-lg font-medium transition-all duration-200 border shadow-sm transform hover:scale-105 {$appSettings.myOffersEnabled 
+                ? 'bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 hover:text-green-800 border-green-200/60 hover:border-green-300' 
+                : 'bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-700 hover:text-red-800 border-red-200/60 hover:border-red-300'
+              }"
+              title="{$appSettings.myOffersEnabled ? 'Disable' : 'Enable'} My Offers page for all users"
+            >
+              {#if isTogglingOffers}
+                <div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+              {:else}
+                <span class="text-lg">{$appSettings.myOffersEnabled ? '🎁' : '🚫'}</span>
+              {/if}
+              <span class="text-sm font-medium">
+                My Offers: <strong>{$appSettings.myOffersEnabled ? 'ON' : 'OFF'}</strong>
+              </span>
+            </button>
+          </div>
+
           <!-- Notification Bell -->
           <div class="notification-area relative">
             <button 
@@ -849,6 +895,35 @@
     display: flex;
     align-items: center;
     gap: 1rem;
+  }
+
+  .quick-action-toggle button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+    border: 1px solid;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transform: scale(1);
+    background: linear-gradient(135deg, transparent, transparent);
+    font-size: 0.875rem;
+    min-width: 120px;
+    justify-content: center;
+  }
+
+  .quick-action-toggle button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .quick-action-toggle button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: scale(1) !important;
   }
 
   .admin-user-info {

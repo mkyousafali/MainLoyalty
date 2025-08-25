@@ -1,15 +1,15 @@
 import { writable, derived } from 'svelte/store';
 import { browser } from '$app/environment';
 
-// Types
+// Typescd..
 type Language = 'en' | 'ar';
 
 interface Translations {
   [key: string]: string;
 }
 
-// Language store
-export const language = writable<Language>('en');
+// Language store - Default to Arabic
+export const language = writable<Language>('ar');
 
 // Translation store
 export const translations: Record<Language, Translations> = {
@@ -328,11 +328,15 @@ export function toggleLanguage() {
   language.update((lang: Language) => lang === 'en' ? 'ar' : 'en');
 }
 
-// Initialize language from localStorage if available
+// Initialize language from localStorage if available, otherwise default to Arabic
 if (browser) {
   const stored = localStorage.getItem('language');
   if (stored && (stored === 'en' || stored === 'ar')) {
     language.set(stored as Language);
+  } else {
+    // Set Arabic as default if no stored preference exists
+    language.set('ar');
+    localStorage.setItem('language', 'ar');
   }
   
   // Save language changes to localStorage

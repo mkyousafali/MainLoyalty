@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import { supabase } from '$lib/supabase';
   import { language, t } from '$lib/stores/language.js';
+  import { appSettings } from '$lib/stores/appSettings';
+  import { goto } from '$app/navigation';
   
   interface Offer {
     offer_id: number;
@@ -26,6 +28,13 @@
   let selectedBranch = 'all';
 
   onMount(async () => {
+    // Check if My Offers page is enabled
+    if (!$appSettings.myOffersEnabled) {
+      console.log('My Offers page is disabled by admin');
+      goto('/dashboard');
+      return;
+    }
+    
     await Promise.all([loadOffers(), loadBranches()]);
   });
 
@@ -132,6 +141,16 @@
       
       offers = offersWithBranches;
       console.log('Loaded offers:', offers);
+      
+      // Debug: Log image and PDF URLs for each offer
+      offers.forEach((offer, index) => {
+        console.log(`Offer ${index + 1} (${offer.title}):`);
+        console.log('  - Image URL:', offer.image_url);
+        console.log('  - PDF URL:', offer.pdf_url);
+        if (offer.image_url) {
+          console.log('  - Processed Image URL:', getImageUrl(offer.image_url));
+        }
+      });
 
     } catch (err) {
       console.error('Error loading offers:', err);
@@ -179,13 +198,136 @@
   function downloadPdf(pdfUrl: string, title: string) {
     if (!pdfUrl) return;
     
-    const link = document.createElement('a');
-    link.href = pdfUrl;
-    link.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_offer.pdf`;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    console.log('Attempting to download PDF:', pdfUrl);
+    
+    try {
+      let finalUrl = pdfUrl;
+      
+      // Check if the PDF URL contains raw PDF data
+      if (pdfUrl.startsWith('%PDF')) {
+        console.log('Detected raw PDF data, converting to blob...');
+        try {
+          // Find the end of the PDF
+          const endIndex = pdfUrl.indexOf('%%EOF');
+          if (endIndex === -1) {
+            throw new Error('Invalid PDF data - no %%EOF found');
+          }
+          
+          const pdfData = pdfUrl.substring(0, endIndex + 5);
+          console.log('PDF data length:', pdfData.length);
+          
+          // Convert to blob
+          const blob = new Blob([pdfData], { type: 'application/pdf' });
+          finalUrl = URL.createObjectURL(blob);
+          console.log('Created blob URL:', finalUrl);
+        } catch (blobError) {
+          console.error('Error creating blob from PDF data:', blobError);
+          alert($language === 'ar' ? 'خطأ في معالجة بيانات PDF' : 'Error processing PDF data');
+          return;
+        }
+      }
+      // For complete URLs (which they are), use directly with cache busting
+      else if (pdfUrl.startsWith('http')) {
+        console.log('Using direct PDF URL:', pdfUrl);
+        const separator = pdfUrl.includes('?') ? '&' : '?';
+        finalUrl = `${pdfUrl}${separator}_download=${Date.now()}`;
+      }
+      
+      // Create a proper download link
+      const link = document.createElement('a');
+      link.href = finalUrl;
+      link.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_offer.pdf`;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log('✅ Download initiated successfully');
+      
+      // Clean up blob URL if we created one
+      if (finalUrl.startsWith('blob:')) {
+        setTimeout(() => {
+          URL.revokeObjectURL(finalUrl);
+          console.log('Blob URL cleaned up');
+        }, 1000);
+      }
+      
+    } catch (error) {
+      console.error('❌ Error downloading PDF:', error);
+      alert($language === 'ar' ? 'خطأ في تحميل PDF. يرجى المحاولة مرة أخرى.' : 'Error downloading PDF. Please try again.');
+    }
+  }
+
+  // Helper function to get proper image URL
+  // Enhanced function to get image URL using Supabase client methods
+  function getImageUrl(imageUrl: string): string {
+    if (!imageUrl) {
+      console.log('No image URL provided');
+      return '';
+    }
+    
+    console.log('Processing image URL:', imageUrl);
+    
+    // If it's a Supabase storage URL, extract the path and use Supabase client
+    if (imageUrl.includes('supabase.co/storage/v1/object/public/')) {
+      try {
+        // Extract the bucket and file path from the URL
+        const urlParts = imageUrl.split('/storage/v1/object/public/');
+        if (urlParts.length === 2) {
+          const pathParts = urlParts[1].split('/');
+          const bucketName = pathParts[0];
+          const filePath = pathParts.slice(1).join('/');
+          
+          console.log('Extracting Supabase storage info:', { bucketName, filePath });
+          
+          // Use Supabase client to get the public URL (this should handle CORS properly)
+          const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath);
+          console.log('Using Supabase client URL:', data.publicUrl);
+          
+          // Add cache busting to ensure fresh load
+          const separator = data.publicUrl.includes('?') ? '&' : '?';
+          return `${data.publicUrl}${separator}_t=${Date.now()}`;
+        }
+      } catch (error) {
+        console.error('Error processing Supabase URL:', error);
+        // Fall back to direct URL
+      }
+    }
+    
+    // For other URLs or fallback, return as is with cache busting
+    if (imageUrl.startsWith('http')) {
+      console.log('Using direct URL:', imageUrl);
+      const separator = imageUrl.includes('?') ? '&' : '?';
+      return `${imageUrl}${separator}_t=${Date.now()}`;
+    }
+    
+    return imageUrl;
+  }
+
+  // Keep the blob loading function as fallback (though we might not need it now)
+  async function loadImageAsBlob(imageUrl: string): Promise<string | null> {
+    try {
+      console.log('🔄 Loading image as blob:', imageUrl);
+      const response = await fetch(imageUrl, {
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      
+      if (!response.ok) {
+        console.error('❌ Failed to fetch image:', response.status, response.statusText);
+        return null;
+      }
+      
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      console.log('✅ Image blob created successfully:', blobUrl);
+      return blobUrl;
+    } catch (error) {
+      console.error('❌ Error loading image as blob:', error);
+      return null;
+    }
   }
 
   // Get unique branches for filter - use allBranches from database
@@ -210,6 +352,22 @@
   <title>{$t.storeOffers} - Store Deals</title>
 </svelte:head>
 
+{#if !$appSettings.myOffersEnabled}
+  <!-- Page Disabled Message -->
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+    <div class="text-center p-8 bg-white rounded-2xl shadow-xl max-w-md mx-4">
+      <div class="text-6xl mb-4">🚫</div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-2">Page Temporarily Unavailable</h2>
+      <p class="text-gray-600 mb-6">The My Offers page is currently disabled. Please check back later.</p>
+      <button 
+        on:click={() => goto('/dashboard')}
+        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+      >
+        Return to Dashboard
+      </button>
+    </div>
+  </div>
+{:else}
 <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50" class:rtl={$language === 'ar'}>
   <!-- Header -->
   <header class="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white">
@@ -345,19 +503,129 @@
 
             <!-- Offer Image -->
             <div class="relative h-64 bg-gradient-to-br from-blue-400 to-purple-600 {expired ? 'blur-sm grayscale' : ''}">
-              {#if offer.image_url}
+              {#if offer.image_url && getImageUrl(offer.image_url)}
                 <img 
-                  src={offer.image_url} 
+                  src={getImageUrl(offer.image_url)} 
                   alt={offer.title}
                   class="w-full h-full object-cover {expired ? 'opacity-50' : ''}"
                   loading="lazy"
+                  on:error={async (e) => {
+                    console.error('❌ Failed to load image with Supabase client:', offer.image_url, 'Processed URL:', getImageUrl(offer.image_url));
+                    
+                    // Let's do comprehensive debugging to understand what's happening
+                    try {
+                      console.log('🔍 Starting comprehensive image debugging...');
+                      
+                      // Get the processed URL like the img tag would use
+                      const processedUrl = getImageUrl(offer.image_url);
+                      console.log('🔍 Using processed URL:', processedUrl);
+                      
+                      // Test 1: Basic fetch
+                      const response = await fetch(processedUrl);
+                      console.log('🔍 Basic fetch result:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        contentType: response.headers.get('content-type'),
+                        contentLength: response.headers.get('content-length'),
+                        url: response.url
+                      });
+                      
+                      // Test 2: If it's JSON/form data (error), let's see what the error is
+                      const responseText = await response.text();
+                      if (response.headers.get('content-type')?.includes('application/json') || 
+                          response.headers.get('content-type')?.includes('multipart/form-data') ||
+                          responseText.includes('WebKitFormBoundary')) {
+                        console.log('🚨 Form Data Response (not image):', responseText.substring(0, 500));
+                        
+                        // Extract the original filename from the form data
+                        const filenameMatch = responseText.match(/filename="([^"]+)"/);
+                        const originalFilename = filenameMatch ? filenameMatch[1] : null;
+                        console.log('📝 Extracted original filename:', originalFilename);
+                        
+                        // The issue is we're getting form upload data instead of the image
+                        // Try different URL patterns
+                        const urlsToTry = [
+                          // Try with the original filename if we found it
+                          originalFilename ? `https://sfydwpimwnxocrgpiour.supabase.co/storage/v1/object/public/offer-images/${originalFilename}` : null,
+                          // Original stored URL as-is
+                          offer.image_url.startsWith('http') ? offer.image_url : `https://sfydwpimwnxocrgpiour.supabase.co/storage/v1/object/public/offer-images/${offer.image_url}`,
+                          // Try without the "offer-" prefix
+                          `https://sfydwpimwnxocrgpiour.supabase.co/storage/v1/object/public/offer-images/${offer.image_url.replace('offer-', '')}`,
+                          // Try different file extensions
+                          `https://sfydwpimwnxocrgpiour.supabase.co/storage/v1/object/public/offer-images/${offer.image_url.replace('.png', '.jpg')}`,
+                          // Try the authenticated URL
+                          `https://sfydwpimwnxocrgpiour.supabase.co/storage/v1/object/authenticated/offer-images/${offer.image_url}`
+                        ].filter(Boolean); // Remove null values
+                        
+                        for (let i = 0; i < urlsToTry.length; i++) {
+                          const testUrl = urlsToTry[i];
+                          console.log(`🔄 Trying URL ${i + 1}:`, testUrl);
+                          
+                          try {
+                            const testResponse = await fetch(testUrl);
+                            console.log(`🔄 URL ${i + 1} result:`, {
+                              status: testResponse.status,
+                              contentType: testResponse.headers.get('content-type')
+                            });
+                            
+                            if (testResponse.ok && testResponse.headers.get('content-type')?.includes('image')) {
+                              console.log(`✅ Success with URL ${i + 1}! Using it...`);
+                              e.target.src = testUrl;
+                              return;
+                            }
+                          } catch (testError) {
+                            console.log(`❌ URL ${i + 1} failed:`, testError.message);
+                          }
+                        }
+                        
+                      } else if (response.ok) {
+                        // It might be an image, let's try to use the response text as blob
+                        console.log('🔍 Response looks like image data, trying as blob...');
+                        const newResponse = await fetch(processedUrl); // Get fresh response for blob
+                        const blob = await newResponse.blob();
+                        console.log('🔍 Blob info:', {
+                          size: blob.size,
+                          type: blob.type
+                        });
+                        
+                        // Try loading as blob URL
+                        const blobUrl = URL.createObjectURL(blob);
+                        console.log('🔄 Attempting to load as blob URL:', blobUrl);
+                        e.target.src = blobUrl;
+                        return;
+                      } else {
+                        console.error('❌ Fetch failed with status:', response.status);
+                      }
+                    } catch (fetchError) {
+                      console.error('❌ Fetch error:', fetchError);
+                    }
+                    
+                    // Only hide if everything fails
+                    e.target.style.display = 'none';
+                    e.target.nextElementSibling?.style.removeProperty('display');
+                  }}
+                  on:load={() => {
+                    console.log('✅ Image loaded successfully with Supabase client:', getImageUrl(offer.image_url));
+                  }}
                 />
+                <!-- Fallback for broken images (initially hidden) -->
+                <div class="w-full h-full flex items-center justify-center {expired ? 'opacity-50' : ''}" style="display: none;">
+                  <div class="text-center text-white">
+                    <span class="text-6xl mb-2 block">📷</span>
+                    <p class="text-sm opacity-90">Image Not Available</p>
+                    <!-- Debug info -->
+                    <p class="text-xs opacity-70 mt-2 break-all">Original: {offer.image_url?.substring(0, 50)}...</p>
+                  </div>
+                </div>
               {:else}
                 <!-- Fallback gradient -->
                 <div class="w-full h-full flex items-center justify-center {expired ? 'opacity-50' : ''}">
                   <div class="text-center text-white">
                     <span class="text-6xl mb-2 block">🎯</span>
                     <p class="text-sm opacity-90">Exclusive Offer</p>
+                    {#if !offer.image_url}
+                      <p class="text-xs opacity-70 mt-2">No image URL provided</p>
+                    {/if}
                   </div>
                 </div>
               {/if}
@@ -448,6 +716,13 @@
                       </svg>
                       {$t.downloadFullOfferDetails}
                     </button>
+                    
+                    <!-- Debug info (remove in production) -->
+                    {#if offer.pdf_url && offer.pdf_url.startsWith('%PDF')}
+                      <div class="text-xs text-red-500 p-2 bg-red-50 rounded">
+                        ⚠️ PDF contains raw data instead of file URL. Please contact admin to fix this offer.
+                      </div>
+                    {/if}
                   {:else}
                     <div class="w-full bg-gray-100 text-gray-500 py-3 px-6 rounded-lg text-center font-medium">
                       📄 {$t.noAdditionalDetails}
@@ -522,6 +797,7 @@
     </div>
   </footer>
 </div>
+{/if}
 
 <style>
   /* Animation for cards */

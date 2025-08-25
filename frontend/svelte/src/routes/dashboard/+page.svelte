@@ -8,6 +8,7 @@
   import { language, t, toggleLanguage } from '$lib/stores/language';
   import { formatCurrency, formatCurrencyText } from '$lib/formatCurrency';
   import { customerNotifications, unreadNotificationCount, loadCustomerNotifications } from '$lib/stores/notifications';
+  import { appSettings } from '$lib/stores/appSettings';
   import QRCode from 'qrcode';
   import JsBarcode from 'jsbarcode';
 
@@ -1076,18 +1077,19 @@
           </div>
         
           <div class="space-y-4 sm:space-y-5">
-            <!-- Enhanced My Offers Button - Moved to Top -->
-            <a href="/my-offers" class="block group/offers" class:flex-row-reverse={$language === 'ar'}>
-              <div class="relative overflow-hidden rounded-2xl transform hover:scale-[1.03] transition-all duration-500">
-                <!-- Animated background -->
-                <div class="absolute inset-0 bg-gradient-to-r from-yellow-600 via-amber-500 to-yellow-700 opacity-90"></div>
-                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover/offers:opacity-10 transform -skew-x-12 translate-x-[-100%] group-hover/offers:translate-x-[100%] transition-all duration-700"></div>
-                
-                <!-- Content -->
-                <div class="relative flex items-center gap-4 sm:gap-5 p-4 sm:p-5 text-white" class:flex-row-reverse={$language === 'ar'}>
-                  <div class="flex-shrink-0 p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                    <div class="text-3xl sm:text-4xl">🎁</div>
-                  </div>
+            <!-- Enhanced My Offers Button - Conditionally shown based on admin settings -->
+            {#if $appSettings.myOffersEnabled}
+              <a href="/my-offers" class="block group/offers" class:flex-row-reverse={$language === 'ar'}>
+                <div class="relative overflow-hidden rounded-2xl transform hover:scale-[1.03] transition-all duration-500">
+                  <!-- Animated background -->
+                  <div class="absolute inset-0 bg-gradient-to-r from-yellow-600 via-amber-500 to-yellow-700 opacity-90"></div>
+                  <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover/offers:opacity-10 transform -skew-x-12 translate-x-[-100%] group-hover/offers:translate-x-[100%] transition-all duration-700"></div>
+                  
+                  <!-- Content -->
+                  <div class="relative flex items-center gap-4 sm:gap-5 p-4 sm:p-5 text-white" class:flex-row-reverse={$language === 'ar'}>
+                    <div class="flex-shrink-0 p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                      <div class="text-3xl sm:text-4xl">🎁</div>
+                    </div>
                   <div class="flex-1 min-w-0">
                     <h4 class="font-black text-lg sm:text-xl truncate drop-shadow-lg">{$t.myOffers}</h4>
                     <p class="text-yellow-100 text-sm sm:text-base truncate font-medium">{$t.viewSpecialOffers}</p>
@@ -1102,6 +1104,7 @@
                 <div class="absolute bottom-2 left-2 w-1.5 h-1.5 bg-yellow-200 rounded-full animate-pulse opacity-70"></div>
               </div>
             </a>
+            {/if}
 
             <!-- Enhanced Virtual Card Button -->
             <a href="/virtual-card" class="block group/card">
