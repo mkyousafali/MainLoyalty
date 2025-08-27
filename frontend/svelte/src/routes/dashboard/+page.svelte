@@ -1076,32 +1076,6 @@
           </div>
         
           <div class="space-y-4 sm:space-y-5">
-            <!-- Enhanced My Offers Button - Moved to Top -->
-            <a href="/my-offers" class="block group/offers" class:flex-row-reverse={$language === 'ar'}>
-              <div class="relative overflow-hidden rounded-2xl transform hover:scale-[1.03] transition-all duration-500">
-                <!-- Animated background -->
-                <div class="absolute inset-0 bg-gradient-to-r from-yellow-600 via-amber-500 to-yellow-700 opacity-90"></div>
-                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover/offers:opacity-10 transform -skew-x-12 translate-x-[-100%] group-hover/offers:translate-x-[100%] transition-all duration-700"></div>
-                
-                <!-- Content -->
-                <div class="relative flex items-center gap-4 sm:gap-5 p-4 sm:p-5 text-white" class:flex-row-reverse={$language === 'ar'}>
-                  <div class="flex-shrink-0 p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                    <div class="text-3xl sm:text-4xl">🎁</div>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <h4 class="font-black text-lg sm:text-xl truncate drop-shadow-lg">{$t.myOffers}</h4>
-                    <p class="text-yellow-100 text-sm sm:text-base truncate font-medium">{$t.viewSpecialOffers}</p>
-                  </div>
-                  <div class="flex-shrink-0 p-2 bg-white/20 rounded-lg backdrop-blur-sm transform group-hover/offers:translate-x-1 transition-transform duration-300">
-                    <div class="text-2xl sm:text-3xl opacity-90">→</div>
-                  </div>
-                </div>
-                
-                <!-- Decorative elements -->
-                <div class="absolute top-2 right-2 w-2 h-2 bg-white rounded-full animate-ping opacity-60"></div>
-                <div class="absolute bottom-2 left-2 w-1.5 h-1.5 bg-yellow-200 rounded-full animate-pulse opacity-70"></div>
-              </div>
-            </a>
 
             <!-- Enhanced Virtual Card Button -->
             <a href="/virtual-card" class="block group/card">
@@ -1127,6 +1101,33 @@
                 <!-- Decorative elements -->
                 <div class="absolute top-2 right-2 w-2 h-2 bg-white rounded-full animate-ping opacity-60"></div>
                 <div class="absolute bottom-2 left-2 w-1.5 h-1.5 bg-orange-200 rounded-full animate-pulse opacity-70"></div>
+              </div>
+            </a>
+
+            <!-- Enhanced My Offers Button -->
+            <a href="/my-offers" class="block group/offers" class:flex-row-reverse={$language === 'ar'}>
+              <div class="relative overflow-hidden rounded-2xl transform hover:scale-[1.03] transition-all duration-500">
+                <!-- Animated background -->
+                <div class="absolute inset-0 bg-gradient-to-r from-emerald-600 via-green-500 to-emerald-700 opacity-90"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover/offers:opacity-10 transform -skew-x-12 translate-x-[-100%] group-hover/offers:translate-x-[100%] transition-all duration-700"></div>
+                
+                <!-- Content -->
+                <div class="relative flex items-center gap-4 sm:gap-5 p-4 sm:p-5 text-white" class:flex-row-reverse={$language === 'ar'}>
+                  <div class="flex-shrink-0 p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                    <div class="text-3xl sm:text-4xl">🎁</div>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h4 class="font-black text-lg sm:text-xl truncate drop-shadow-lg">{$language === 'ar' ? 'عروضي' : 'My Offers'}</h4>
+                    <p class="text-emerald-100 text-sm sm:text-base truncate font-medium">{$language === 'ar' ? 'اكتشف العروض الحصرية' : 'Discover exclusive offers'}</p>
+                  </div>
+                  <div class="flex-shrink-0 p-2 bg-white/20 rounded-lg backdrop-blur-sm transform group-hover/offers:translate-x-1 transition-transform duration-300">
+                    <div class="text-2xl sm:text-3xl opacity-90">→</div>
+                  </div>
+                </div>
+                
+                <!-- Decorative elements -->
+                <div class="absolute top-2 right-2 w-2 h-2 bg-white rounded-full animate-ping opacity-60"></div>
+                <div class="absolute bottom-2 left-2 w-1.5 h-1.5 bg-emerald-200 rounded-full animate-pulse opacity-70"></div>
               </div>
             </a>
 

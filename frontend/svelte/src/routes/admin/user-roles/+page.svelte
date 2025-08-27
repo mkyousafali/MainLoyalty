@@ -72,11 +72,6 @@
     { id: 'extend_validity', name: 'Extend Card Validity', category: 'card_management', description: 'Extend card expiration dates' },
     
     // Rewards & Coupons
-    { id: 'offers_view', name: 'View Offers', category: 'rewards_coupons', description: 'View all promotional offers' },
-    { id: 'offers_create', name: 'Create Offers', category: 'rewards_coupons', description: 'Create new promotional offers' },
-    { id: 'offers_edit', name: 'Edit Offers', category: 'rewards_coupons', description: 'Modify existing offers' },
-    { id: 'offers_delete', name: 'Delete Offers', category: 'rewards_coupons', description: 'Remove offers' },
-    { id: 'offers_management', name: 'Offers Management', category: 'rewards_coupons', description: 'Comprehensive offers management system' },
     { id: 'coupons_view', name: 'View Coupons', category: 'rewards_coupons', description: 'View coupon inventory' },
     { id: 'coupons_create', name: 'Create Coupons', category: 'rewards_coupons', description: 'Generate new coupons' },
     { id: 'coupons_assign', name: 'Assign Coupons', category: 'rewards_coupons', description: 'Assign coupons to customers' },

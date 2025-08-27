@@ -115,8 +115,7 @@
       title: 'Admin Tools',
       icon: '👑',
       buttons: [
-        { path: '/admin/create-offer', label: 'Create Offer', icon: '➕', description: 'Create new promotional offers' },
-        { path: '/admin/offers-management', label: 'Offers Management', icon: '📋', description: 'Manage all store offers' },
+        { path: '/admin/offer-ads', label: 'Offer Advertisement Manager', icon: '📢', description: 'Manage promotional offers and advertisements' },
         { path: '/admin/set-master-admin', label: 'Set Master Admin', icon: '👑', description: 'Configure master admin settings' }
       ]
     }
