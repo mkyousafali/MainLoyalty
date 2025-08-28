@@ -14,7 +14,8 @@
 		$page.url.pathname === '/login' ||
 		$page.url.pathname === '/select-branch' ||
 		$page.url.pathname === '/guest-login' ||
-		$page.url.pathname === '/my-offers' ||
+		$page.url.pathname === '/guest-login/my-offers' ||
+		$page.url.pathname === '/dashboard/my-offers' ||
 		$page.url.pathname.startsWith('/checkout-staff/login') ||
 		$page.url.pathname.startsWith('/admin') // Hide TopBar for all admin routes
 	);

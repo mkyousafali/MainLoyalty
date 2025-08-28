@@ -78,7 +78,7 @@
   }
 
   function goToOffers() {
-    goto('/my-offers');
+    goto('/guest-login/my-offers');
   }
 
   // Function to get Arabic name for social media platforms
@@ -241,19 +241,19 @@
               </svg>
               {localTranslations.socialLinksTitle}
             </h3>
-            <div class="flex flex-wrap justify-center gap-3">
+            <div class="flex flex-wrap justify-center gap-4">
               {#each socialLinks as link}
                 <a 
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="flex items-center justify-center bg-white p-3 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-purple-200 hover:border-purple-400 hover:bg-purple-50 group transform hover:scale-105"
+                  class="flex items-center justify-center bg-white w-16 h-16 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-purple-200 hover:border-purple-400 hover:bg-purple-50 group transform hover:scale-105"
                   title={getLocalizedPlatformName(link.name)}
                 >
                   {#if link.use_custom_icon && link.static_icon}
-                    <img src="/icons/social/{link.static_icon}" alt={link.name} class="w-6 h-6 object-contain group-hover:scale-110 transition-transform duration-200" />
+                    <img src="/icons/social/{link.static_icon}" alt={link.name} class="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-200" />
                   {:else}
-                    <span class="text-2xl group-hover:scale-110 transition-transform duration-200">{link.icon}</span>
+                    <span class="text-3xl group-hover:scale-110 transition-transform duration-200">{link.icon}</span>
                   {/if}
                 </a>
               {/each}
@@ -274,7 +274,7 @@
                   on:click={() => $language = 'en'}
                   class="px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {$language === 'en' ? 'bg-purple-500 text-white shadow-md transform scale-105' : 'text-gray-600 hover:bg-gray-50'}"
                 >
-                  EN
+                  English
                 </button>
                 <button
                   type="button"

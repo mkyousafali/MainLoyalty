@@ -20,6 +20,7 @@
   let isLoading = true;
   let error = '';
   let isLuckyDrawEnabled = true; // Lucky Draw feature toggle
+  let socialLinks: any[] = []; // Social media links for Follow Us card
 
   // Reactive translations based on current language
   $: currentTranslations = $language === 'ar' ? {
@@ -284,6 +285,83 @@
   // Watch for branch selection changes
   $: if (selectedBranch && customerData) {
     loadFilteredTransactions();
+    loadSocialLinksForBranch(); // Load social links when branch changes
+  }
+
+  // Load social media links for the selected branch
+  async function loadSocialLinksForBranch() {
+    try {
+      // Determine which branch ID to use for social links
+      let branchIdForSocial = selectedBranch;
+      
+      // If 'all' is selected, use the first available branch or default to '1'
+      if (selectedBranch === 'all') {
+        branchIdForSocial = branches.length > 0 ? branches[0].id.toString() : '1';
+      }
+
+      console.log('🔍 Loading social links for branch:', branchIdForSocial);
+
+      const { data, error } = await supabase
+        .from('social_links')
+        .select('*')
+        .eq('branch_id', branchIdForSocial)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      if (error) {
+        if (error.code === '42P01') {
+          // Table doesn't exist, use branch-specific default links
+          socialLinks = getBranchSpecificSocialLinks(branchIdForSocial);
+        } else {
+          console.warn('Error loading social links:', error);
+          socialLinks = getBranchSpecificSocialLinks(branchIdForSocial);
+        }
+      } else {
+        socialLinks = data?.length > 0 ? data : getBranchSpecificSocialLinks(branchIdForSocial);
+      }
+
+      console.log('✅ Social links loaded:', socialLinks);
+    } catch (error) {
+      console.error('Error loading social links:', error);
+      // Fallback to branch-specific links
+      socialLinks = getBranchSpecificSocialLinks(selectedBranch === 'all' ? '1' : selectedBranch);
+    }
+  }
+
+  // Get branch-specific social media links (fallback data)
+  function getBranchSpecificSocialLinks(branchId: string) {
+    // No fallback mock data - return empty array to rely on database only
+    return [];
+  }
+
+  // Function to handle social media icon click when all branches is selected
+  function handleSocialIconClick(event: Event, link: any) {
+    if (selectedBranch === 'all') {
+      event.preventDefault();
+      alert($language === 'ar' ? 
+        'يرجى اختيار فرع محدد لعرض روابط وسائل التواصل الاجتماعي' : 
+        'Please select a specific branch to view social media links'
+      );
+    }
+  }
+
+  // Function to get Arabic name for social media platforms (same as guest-login)
+  function getLocalizedPlatformName(englishName: string) {
+    if ($language === 'ar') {
+      const arabicNames = {
+        'Facebook': 'فيسبوك',
+        'Instagram': 'إنستقرام',
+        'WhatsApp': 'واتساب',
+        'TikTok': 'تيك توك',
+        'Snapchat': 'سناب شات',
+        'Twitter': 'تويتر',
+        'LinkedIn': 'لينكد إن',
+        'YouTube': 'يوتيوب',
+        'Telegram': 'تليقرام'
+      };
+      return arabicNames[englishName] || englishName;
+    }
+    return englishName;
   }
 
   // Load customer data from database
@@ -472,6 +550,9 @@
     
     // Load notifications from Supabase
     loadCustomerNotifications($language);
+    
+    // Load initial social links
+    loadSocialLinksForBranch();
   });
 
   // Check Lucky Draw enabled status
@@ -1105,7 +1186,7 @@
             </a>
 
             <!-- Enhanced My Offers Button -->
-            <a href="/my-offers" class="block group/offers" class:flex-row-reverse={$language === 'ar'}>
+            <a href="/dashboard/my-offers" class="block group/offers" class:flex-row-reverse={$language === 'ar'}>
               <div class="relative overflow-hidden rounded-2xl transform hover:scale-[1.03] transition-all duration-500">
                 <!-- Animated background -->
                 <div class="absolute inset-0 bg-gradient-to-r from-emerald-600 via-green-500 to-emerald-700 opacity-90"></div>
@@ -1190,6 +1271,119 @@
         </div>
       </div>
     </div>
+
+    <!-- Follow Us Social Media Card - Added above Recent Transactions -->
+    <section class="relative mt-4 sm:mt-6 md:mt-8 mb-4 sm:mb-6 md:mb-8">
+      <!-- Animated background glow -->
+      <div class="absolute -inset-1 bg-gradient-to-r from-orange-400 via-red-500 to-orange-600 rounded-3xl blur opacity-20 animate-pulse"></div>
+      
+      <!-- Main container -->
+      <div class="relative bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden" style="backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2);">
+        
+        <!-- Header -->
+        <div class="relative p-4 sm:p-6 md:p-8 pb-4 sm:pb-6" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.05) 0%, rgba(249, 115, 22, 0.05) 100%);">
+          <!-- Grid pattern overlay -->
+          <div class="absolute inset-0 opacity-5" style="background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(251,146,60,0.2) 2px, rgba(251,146,60,0.2) 4px), repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(251,146,60,0.2) 2px, rgba(251,146,60,0.2) 4px);"></div>
+          
+          <!-- Header content -->
+          <div class="relative flex justify-between items-center">
+            <div class="flex items-center gap-2 sm:gap-3 md:gap-4">
+              <!-- LED indicator -->
+              <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-orange-400 animate-pulse" style="box-shadow: 0 0 15px #fb923c;"></div>
+              
+              <h3 class="text-lg sm:text-2xl md:text-3xl font-bold font-mono tracking-wide" style="color: #f97316; text-shadow: 0 0 20px rgba(251, 146, 60, 0.3);">
+                {$language === 'ar' ? 'تابعنا' : 'FOLLOW US'}
+              </h3>
+            </div>
+          </div>
+          
+          <!-- Scanning line -->
+          <div class="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-orange-400 to-transparent animate-pulse"></div>
+        </div>
+
+        <!-- Content -->
+        <div class="p-3 sm:p-4 md:p-6">
+          <!-- Branch Selection for Social Links -->
+          <div class="mb-4 sm:mb-6">
+            <label for="social-branch-select" class="block text-sm font-bold uppercase tracking-wide mb-2 sm:mb-3" style="color: #f97316;" class:text-right={$language === 'ar'}>
+              {$language === 'ar' ? 'اختر الفرع لروابط التواصل' : 'Select Branch for Social Links'}
+            </label>
+            <div class="relative">
+              <select 
+                id="social-branch-select" 
+                bind:value={selectedBranch} 
+                class="py-2 sm:py-3 border-2 border-gray-200 rounded-xl w-full bg-white focus:ring-2 focus:border-transparent transition-all shadow-sm hover:border-gray-300 text-sm sm:text-base appearance-none pr-12" 
+                style="focus:ring-color: #f97316; focus:border-color: #f97316;" 
+                class:text-right={$language === 'ar'}
+                class:px-3={$language !== 'ar'}
+                class:sm:px-4={$language !== 'ar'}
+                class:px-12={$language === 'ar'}
+                class:sm:px-14={$language === 'ar'}
+                class:pl-3={$language === 'ar'}
+                class:sm:pl-4={$language === 'ar'}
+              >
+                {#each branchOptions as branch}
+                  <option value={branch.id}>{branch.name}</option>
+                {/each}
+              </select>
+              
+              <!-- Custom Dropdown Arrow -->
+              <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none" class:right-auto={$language === 'ar'} class:left-0={$language === 'ar'} class:pl-4={$language === 'ar'}>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Social Media Icons -->
+          <div class="bg-gradient-to-br from-orange-50 to-red-50 border-2 border-orange-200 rounded-2xl p-4 sm:p-5">
+            <!-- Social Links based on selected branch - Dynamic from database -->
+            <div class="flex flex-wrap justify-center gap-6">
+              {#if selectedBranch === 'all'}
+                <!-- Show disabled state with message when all branches selected -->
+                <div class="w-full text-center mb-4">
+                  <p class="text-sm text-orange-600 font-medium" class:text-right={$language === 'ar'}>
+                    {$language === 'ar' ? 'يرجى اختيار فرع محدد لعرض روابط وسائل التواصل' : 'Please select a specific branch to view social media links'}
+                  </p>
+                </div>
+                <!-- Disabled placeholder icons -->
+                <div class="flex items-center justify-center bg-gray-100 w-20 h-20 rounded-xl shadow-sm border border-gray-300 opacity-50 cursor-not-allowed">
+                  <span class="text-4xl text-gray-400">📱</span>
+                </div>
+                <div class="flex items-center justify-center bg-gray-100 w-20 h-20 rounded-xl shadow-sm border border-gray-300 opacity-50 cursor-not-allowed">
+                  <span class="text-4xl text-gray-400">🔗</span>
+                </div>
+                <div class="flex items-center justify-center bg-gray-100 w-20 h-20 rounded-xl shadow-sm border border-gray-300 opacity-50 cursor-not-allowed">
+                  <span class="text-4xl text-gray-400">📢</span>
+                </div>
+              {:else}
+                <!-- Active social media icons for specific branch -->
+                {#each socialLinks as link}
+                  <a 
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="flex items-center justify-center bg-white w-20 h-20 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-orange-200 hover:border-orange-400 hover:bg-orange-50 group transform hover:scale-105"
+                    title={getLocalizedPlatformName(link.name)}
+                    on:click={(event) => handleSocialIconClick(event, link)}
+                  >
+                    {#if link.use_custom_icon && link.static_icon}
+                      <img src="/icons/social/{link.static_icon}" alt={link.name} class="w-12 h-12 object-contain group-hover:scale-110 transition-transform duration-200" />
+                    {:else}
+                      <span class="text-4xl group-hover:scale-110 transition-transform duration-200">{link.icon}</span>
+                    {/if}
+                  </a>
+                {/each}
+              {/if}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Bottom accent line -->
+        <div class="h-1 bg-gradient-to-r from-transparent via-orange-400 to-transparent"></div>
+      </div>
+    </section>
 
     <!-- Recent Transactions Section - Mobile-Optimized Futuristic Design -->
     <section class="relative mt-4 sm:mt-6 md:mt-8">

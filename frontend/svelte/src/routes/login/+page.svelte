@@ -852,6 +852,27 @@
         
         <h1 class="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2">{localTranslations.title}</h1>
         <div class="h-px w-16 bg-gradient-to-r from-orange-400 to-pink-400 mx-auto mb-3"></div>
+        
+        <!-- Language Toggle - Compact under logo -->
+        <div class="flex justify-center mb-4">
+          <div class="flex items-center bg-gray-50 rounded-xl border border-gray-200 p-1 shadow-sm">
+            <button
+              type="button"
+              on:click={() => $language = 'en'}
+              class="px-3 py-1 text-xs font-medium rounded-lg transition-all duration-200 {$language === 'en' ? 'bg-blue-500 text-white shadow-md' : 'text-blue-600 hover:bg-blue-50'}"
+            >
+              English
+            </button>
+            <button
+              type="button"
+              on:click={() => $language = 'ar'}
+              class="px-3 py-1 text-xs font-medium rounded-lg transition-all duration-200 {$language === 'ar' ? 'bg-blue-500 text-white shadow-md' : 'text-blue-600 hover:bg-blue-50'}"
+            >
+              العربية
+            </button>
+          </div>
+        </div>
+        
         <p class="text-gray-500 text-sm leading-relaxed">{$language === 'en' ? 'Enter your mobile number to login' : 'أدخل رقم جوالك لتسجيل الدخول'}</p>
       </div>
 
@@ -893,32 +914,7 @@
             </div>
           </div>
 
-          <!-- Language Switch Card -->
-          <div class="flex justify-center mb-4">
-            <div class="bg-gradient-to-r from-blue-50 to-indigo-100 border-2 border-blue-200 rounded-2xl p-4 shadow-lg backdrop-blur-sm">
-              <div class="flex items-center justify-center gap-3">
-                <span class="text-sm font-semibold text-blue-700">
-                  {$language === 'ar' ? 'اللغة:' : 'Language:'}
-                </span>
-                <div class="flex items-center bg-white rounded-xl border border-blue-200 p-1 shadow-sm">
-                  <button
-                    type="button"
-                    on:click={() => $language = 'en'}
-                    class="px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {$language === 'en' ? 'bg-blue-500 text-white shadow-md transform scale-105' : 'text-blue-600 hover:bg-blue-50'}"
-                  >
-                    EN
-                  </button>
-                  <button
-                    type="button"
-                    on:click={() => $language = 'ar'}
-                    class="px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {$language === 'ar' ? 'bg-blue-500 text-white shadow-md transform scale-105' : 'text-blue-600 hover:bg-blue-50'}"
-                  >
-                    العربية
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+
 
           <button
             type="submit"
@@ -944,6 +940,42 @@
             {/if}
           </button>
 
+          <!-- Support Section - Only show when user not found in database -->
+          {#if showHelpCard}
+            <div class="mt-6 p-4 bg-green-50 rounded-2xl border border-green-200 animate-pulse">
+              <div class="flex items-center gap-2 text-green-700 mb-3">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="font-medium text-xs">{localTranslations.needHelpLogin}</span>
+              </div>
+              
+              <div class="flex justify-center mb-2">
+                <button 
+                  on:click={handleWhatsAppRegistration}
+                  class="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-xs font-medium transition-colors transform hover:scale-105"
+                >
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+                  </svg>
+                  {localTranslations.sendRegistrationRequest}
+                </button>
+              </div>
+            </div>
+          {/if}
+
+          <!-- Error Display -->
+          {#if error}
+            <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div class="flex items-center">
+                <svg class="w-4 h-4 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                </svg>
+                <p class="text-red-700 text-sm">{error}</p>
+              </div>
+            </div>
+          {/if}
+
           <!-- Guest Login Button -->
           <button
             type="button"
@@ -959,30 +991,6 @@
             </span>
           </button>
         </form>
-        
-        <!-- Support Section - Only show when user not found in database -->
-        {#if showHelpCard}
-          <div class="mt-6 p-4 bg-green-50 rounded-2xl border border-green-200 animate-pulse">
-            <div class="flex items-center gap-2 text-green-700 mb-3">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-              <span class="font-medium text-xs">{localTranslations.needHelpLogin}</span>
-            </div>
-            
-            <div class="flex justify-center mb-2">
-              <button 
-                on:click={handleWhatsAppRegistration}
-                class="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-xs font-medium transition-colors transform hover:scale-105"
-              >
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
-                </svg>
-                {localTranslations.sendRegistrationRequest}
-              </button>
-            </div>
-          </div>
-        {/if}
       {/if}
 
       <!-- Step 2: Password Input for Registered Users -->
@@ -1290,18 +1298,6 @@
                 {localTranslations.goToDashboard}
               </span>
             </button>
-          </div>
-        </div>
-      {/if}
-
-      <!-- Error Display -->
-      {#if error}
-        <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <div class="flex items-center">
-            <svg class="w-4 h-4 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-            </svg>
-            <p class="text-red-700 text-sm">{error}</p>
           </div>
         </div>
       {/if}

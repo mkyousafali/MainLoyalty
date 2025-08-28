@@ -178,7 +178,7 @@
               <select
                 id="branch-select"
                 bind:value={selectedBranchId}
-                class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-teal-100 focus:border-teal-400 text-gray-900 text-lg transition-all duration-300 bg-gray-50 hover:bg-white appearance-none cursor-pointer"
+                class="w-full px-4 py-4 pr-12 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-teal-100 focus:border-teal-400 text-gray-900 text-lg transition-all duration-300 bg-gray-50 hover:bg-white appearance-none cursor-pointer"
                 required
               >
                 <option value="">{localTranslations.chooseBranch}</option>
@@ -211,7 +211,7 @@
                     on:click={() => $language = 'en'}
                     class="px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {$language === 'en' ? 'bg-teal-500 text-white shadow-md transform scale-105' : 'text-gray-600 hover:bg-gray-50'}"
                   >
-                    EN
+                    English
                   </button>
                   <button
                     type="button"
