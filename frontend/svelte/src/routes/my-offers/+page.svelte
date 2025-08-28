@@ -1,5 +1,6 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
+  import { goto } from '$app/navigation';
   import { supabase } from '$lib/supabase';
   import { language } from '$lib/stores/language';
 
@@ -265,6 +266,34 @@
 
         <!-- Right Section -->
         <div class="flex items-center gap-3">
+          <!-- Back Button -->
+          <button
+            on:click={() => goto('/guest-login')}
+            class="px-4 py-2 rounded-xl text-gray-600 hover:text-gray-800 font-medium bg-gray-100 hover:bg-gray-200 transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+            title={$language === 'ar' ? 'العودة' : 'Go Back'}
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            {$language === 'ar' ? 'عودة' : 'Back'}
+          </button>
+
+          <!-- Logout Button -->
+          <button
+            on:click={() => {
+              sessionStorage.clear();
+              localStorage.clear();
+              window.location.href = '/login';
+            }}
+            class="px-4 py-2 rounded-xl text-white font-medium bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+            title={$language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
+            {$language === 'ar' ? 'خروج' : 'Logout'}
+          </button>
+
           <!-- Share All Button (only when > 1) -->
           {#if filteredOffers.length > 1}
             <button

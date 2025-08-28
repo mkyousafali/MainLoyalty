@@ -232,6 +232,62 @@
           <p class="text-center text-sm text-gray-500">{localTranslations.myOffersDescription}</p>
         </div>
 
+        <!-- Social Links -->
+        {#if socialLinks.length > 0}
+          <div class="mb-6 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-2xl p-5">
+            <h3 class="text-lg font-bold text-purple-700 mb-4 text-center flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+              </svg>
+              {localTranslations.socialLinksTitle}
+            </h3>
+            <div class="flex flex-wrap justify-center gap-3">
+              {#each socialLinks as link}
+                <a 
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-center justify-center bg-white p-3 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-purple-200 hover:border-purple-400 hover:bg-purple-50 group transform hover:scale-105"
+                  title={getLocalizedPlatformName(link.name)}
+                >
+                  {#if link.use_custom_icon && link.static_icon}
+                    <img src="/icons/social/{link.static_icon}" alt={link.name} class="w-6 h-6 object-contain group-hover:scale-110 transition-transform duration-200" />
+                  {:else}
+                    <span class="text-2xl group-hover:scale-110 transition-transform duration-200">{link.icon}</span>
+                  {/if}
+                </a>
+              {/each}
+            </div>
+          </div>
+        {/if}
+
+        <!-- Language Switch -->
+        <div class="flex justify-center mb-6">
+          <div class="bg-gradient-to-r from-gray-50 to-slate-100 border-2 border-gray-200 rounded-2xl p-3 shadow-sm">
+            <div class="flex items-center justify-center gap-3">
+              <span class="text-sm font-semibold text-gray-700">
+                {$language === 'ar' ? 'اللغة:' : 'Language:'}
+              </span>
+              <div class="flex items-center bg-white rounded-xl border border-gray-200 p-1 shadow-sm">
+                <button
+                  type="button"
+                  on:click={() => $language = 'en'}
+                  class="px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {$language === 'en' ? 'bg-purple-500 text-white shadow-md transform scale-105' : 'text-gray-600 hover:bg-gray-50'}"
+                >
+                  EN
+                </button>
+                <button
+                  type="button"
+                  on:click={() => $language = 'ar'}
+                  class="px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {$language === 'ar' ? 'bg-purple-500 text-white shadow-md transform scale-105' : 'text-gray-600 hover:bg-gray-50'}"
+                >
+                  العربية
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Guest Information -->
         <div class="mb-8 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl">
           <div class="flex items-start gap-3 mb-3">
@@ -298,62 +354,6 @@
                 </li>
               {/each}
             </ol>
-          </div>
-        </div>
-
-        <!-- Social Links -->
-        {#if socialLinks.length > 0}
-          <div class="mb-8 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-2xl p-5">
-            <h3 class="text-lg font-bold text-purple-700 mb-4 text-center flex items-center justify-center gap-2">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
-              </svg>
-              {localTranslations.socialLinksTitle}
-            </h3>
-            <div class="flex flex-wrap justify-center gap-3">
-              {#each socialLinks as link}
-                <a 
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="flex items-center justify-center bg-white p-3 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-purple-200 hover:border-purple-400 hover:bg-purple-50 group transform hover:scale-105"
-                  title={getLocalizedPlatformName(link.name)}
-                >
-                  {#if link.use_custom_icon && link.static_icon}
-                    <img src="/icons/social/{link.static_icon}" alt={link.name} class="w-6 h-6 object-contain group-hover:scale-110 transition-transform duration-200" />
-                  {:else}
-                    <span class="text-2xl group-hover:scale-110 transition-transform duration-200">{link.icon}</span>
-                  {/if}
-                </a>
-              {/each}
-            </div>
-          </div>
-        {/if}
-
-        <!-- Language Switch -->
-        <div class="flex justify-center mb-6">
-          <div class="bg-gradient-to-r from-gray-50 to-slate-100 border-2 border-gray-200 rounded-2xl p-3 shadow-sm">
-            <div class="flex items-center justify-center gap-3">
-              <span class="text-sm font-semibold text-gray-700">
-                {$language === 'ar' ? 'اللغة:' : 'Language:'}
-              </span>
-              <div class="flex items-center bg-white rounded-xl border border-gray-200 p-1 shadow-sm">
-                <button
-                  type="button"
-                  on:click={() => $language = 'en'}
-                  class="px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {$language === 'en' ? 'bg-purple-500 text-white shadow-md transform scale-105' : 'text-gray-600 hover:bg-gray-50'}"
-                >
-                  EN
-                </button>
-                <button
-                  type="button"
-                  on:click={() => $language = 'ar'}
-                  class="px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {$language === 'ar' ? 'bg-purple-500 text-white shadow-md transform scale-105' : 'text-gray-600 hover:bg-gray-50'}"
-                >
-                  العربية
-                </button>
-              </div>
-            </div>
           </div>
         </div>
 
