@@ -23,6 +23,14 @@
     description: 'Configure support options'
   };
 
+  // WhatsApp Registration Settings
+  const whatsappRegistrationItem = {
+    path: '/admin/whatsapp-registration',
+    label: 'WhatsApp Registration',
+    icon: '📱',
+    description: 'Manage WhatsApp registration settings for login page'
+  };
+
   // View Other Apps button
   const viewOtherAppsItem = {
     path: '/admin/other-apps',
@@ -212,6 +220,16 @@
       >
         <span class="nav-icon">{supportSettingsItem.icon}</span>
         <span class="nav-label">{supportSettingsItem.label}</span>
+      </a>
+
+      <!-- WhatsApp Registration Settings Link -->
+      <a 
+        href={whatsappRegistrationItem.path}
+        class="nav-item whatsapp-registration {$page.url.pathname === whatsappRegistrationItem.path ? 'active' : ''}"
+        title={whatsappRegistrationItem.description}
+      >
+        <span class="nav-icon">{whatsappRegistrationItem.icon}</span>
+        <span class="nav-label">{whatsappRegistrationItem.label}</span>
       </a>
 
       <!-- View Other Apps Link -->

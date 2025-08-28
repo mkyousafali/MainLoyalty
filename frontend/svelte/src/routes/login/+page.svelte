@@ -5,6 +5,7 @@
   import { onMount } from 'svelte';
   import { termsStore, formatTermsForLogin, type TermsData } from '$lib/stores/terms';
   import { getGlobalWhatsAppLink } from '$lib/stores/globalSettings';
+  import { createWhatsAppRegistrationURL } from '$lib/stores/whatsappRegistration';
   import { language } from '$lib/stores/language';
 
   let mobile = '';
@@ -38,6 +39,9 @@
   let whatsappSupportLink = 'https://wa.me/966500000000'; // Fallback
   let smileyClickCount = 0;
   let customerLoginClickCount = 0; // Counter for checkout staff access
+  
+  // Help card visibility - only show when user not found in database
+  let showHelpCard = false;
 
   // Terms modal
   let showTermsModal = false;
@@ -369,6 +373,7 @@
     error = '';
     isLoading = true;
     processStatus = 'Checking mobile number...';
+    showHelpCard = false; // Hide help card initially
 
     try {
       // Step 1: Check if mobile exists in customer_numbers table
@@ -380,12 +385,14 @@
       
       if (eligibilityError || !eligibilityData) {
         error = localTranslations.mobileNotFound;
+        showHelpCard = true; // Show help card when user not found
         isLoading = false;
         return;
       }
 
       // Show green tick - mobile found in customer_numbers
       showGreenTick = true;
+      showHelpCard = false; // Hide help card when user is found
       processStatus = 'Mobile number verified! Checking account status...';
 
       // Step 2: Check if customer exists in customers table
@@ -627,6 +634,25 @@
     }
   }
 
+  // Function to handle WhatsApp registration request
+  async function handleWhatsAppRegistration() {
+    try {
+      const whatsappUrl = await createWhatsAppRegistrationURL(mobile, $language);
+      // Open WhatsApp in a new window/tab
+      window.open(whatsappUrl, '_blank');
+    } catch (error) {
+      console.error('Error creating WhatsApp URL:', error);
+      // Fallback to basic message
+      const message = $language === 'ar' 
+        ? `مرحباً! أحتاج مساعدة في التسجيل في برنامج الولاء. رقم الجوال: ${mobile}`
+        : `Hi! I need help with loyalty program registration. Mobile number: ${mobile}`;
+      
+      const encodedMessage = encodeURIComponent(message);
+      const whatsappUrl = `https://wa.me/966500000000?text=${encodedMessage}`;
+      window.open(whatsappUrl, '_blank');
+    }
+  }
+
   // Terms and conditions accordion
   let showContactInfo = false;
 
@@ -651,7 +677,9 @@
       address: 'Address',
       chatWhatsApp: 'Chat on WhatsApp',
       needHelpLogin: 'Need help with login?',
-      mobileNotFound: 'Mobile number not found in our system. Please contact support or visit a branch.',
+      registerWithLoyalty: 'Register with Loyalty Program',
+      sendRegistrationRequest: 'Send Registration Request',
+      mobileNotFound: 'Mobile number not found in our system. Send a registration request and wait 24 hours - your membership will be created automatically.',
       termsAndConditionsTitle: 'Terms and Conditions',
       loadingTerms: 'Loading terms...',
       // Registration fields for unregistered users
@@ -706,7 +734,9 @@
       address: 'العنوان',
       chatWhatsApp: 'محادثة واتساب',
       needHelpLogin: 'تحتاج مساعدة في تسجيل الدخول؟',
-      mobileNotFound: 'رقم الجوال غير موجود في نظامنا. يرجى التواصل مع الدعم أو زيارة أحد الفروع.',
+      registerWithLoyalty: 'التسجيل في برنامج الولاء',
+      sendRegistrationRequest: 'إرسال طلب التسجيل',
+      mobileNotFound: 'رقم الجوال غير موجود في نظامنا. أرسل طلب تسجيل وانتظر 24 ساعة - سيتم إنشاء العضوية تلقائياً.',
       termsAndConditionsTitle: 'الشروط والأحكام',
       loadingTerms: 'جارٍ تحميل الشروط...',
       // Registration fields in Arabic for unregistered users
@@ -930,24 +960,29 @@
           </button>
         </form>
         
-        <!-- Support Section -->
-        <div class="mt-6 p-4 bg-green-50 rounded-2xl border border-green-200">
-          <div class="flex items-center gap-2 text-green-700 mb-3">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span class="font-medium text-xs">{localTranslations.needHelpLogin}</span>
-          </div>
-          
-          <div class="flex justify-center mb-2">
-            <a href={whatsappSupportLink} target="_blank" class="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-xs font-medium transition-colors">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+        <!-- Support Section - Only show when user not found in database -->
+        {#if showHelpCard}
+          <div class="mt-6 p-4 bg-green-50 rounded-2xl border border-green-200 animate-pulse">
+            <div class="flex items-center gap-2 text-green-700 mb-3">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
-              {localTranslations.chatWhatsApp}
-            </a>
+              <span class="font-medium text-xs">{localTranslations.needHelpLogin}</span>
+            </div>
+            
+            <div class="flex justify-center mb-2">
+              <button 
+                on:click={handleWhatsAppRegistration}
+                class="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-xs font-medium transition-colors transform hover:scale-105"
+              >
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+                </svg>
+                {localTranslations.sendRegistrationRequest}
+              </button>
+            </div>
           </div>
-        </div>
+        {/if}
       {/if}
 
       <!-- Step 2: Password Input for Registered Users -->
