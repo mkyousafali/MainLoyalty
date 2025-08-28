@@ -913,6 +913,21 @@
               </span>
             {/if}
           </button>
+
+          <!-- Guest Login Button -->
+          <button
+            type="button"
+            on:click={() => goto('/select-branch')}
+            class="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white py-4 px-6 rounded-xl font-bold focus:outline-none focus:ring-4 focus:ring-purple-200 transition-all duration-300 text-base tracking-wide transform hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] relative overflow-hidden group mt-4"
+          >
+            <div class="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <span class="relative z-10 flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+              </svg>
+              {$language === 'ar' ? 'دخول ضيف' : 'Guest Login'}
+            </span>
+          </button>
         </form>
         
         <!-- Support Section -->

@@ -118,6 +118,14 @@
         { path: '/admin/offer-ads', label: 'Offer Advertisement Manager', icon: '📢', description: 'Manage promotional offers and advertisements' },
         { path: '/admin/set-master-admin', label: 'Set Master Admin', icon: '👑', description: 'Configure master admin settings' }
       ]
+    },
+    guestManagement: {
+      title: 'Guest Management',
+      icon: '🚪',
+      buttons: [
+        { path: '/admin/guest/branch-logs', label: 'Branch Login Logs', icon: '📊', description: 'View guest branch selection statistics' },
+        { path: '/admin/guest/manage-links', label: 'Manage Social Links', icon: '🔗', description: 'Add and manage social media links for guest page' }
+      ]
     }
   };
 
