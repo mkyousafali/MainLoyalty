@@ -29,6 +29,13 @@
     loadCustomerNotifications($language);
   });
 
+  // Reactive statement to reload notifications when language changes
+  $: if ($language) {
+    if ($user && $user.type === 'customer') {
+      loadCustomerNotifications($language);
+    }
+  }
+
   async function loadNotifications() {
     if (!$user || $user.type !== 'customer') {
       return;
@@ -41,7 +48,9 @@
       error = '';
     } catch (err) {
       console.error('Error loading notifications:', err);
-      error = 'Failed to load notifications. Please try again.';
+      error = $language === 'ar' ? 
+        'فشل في تحميل الإشعارات. يرجى المحاولة مرة أخرى.' : 
+        'Failed to load notifications. Please try again.';
     } finally {
       isLoading = false;
     }

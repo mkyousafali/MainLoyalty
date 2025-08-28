@@ -40,7 +40,7 @@
         .from('offer_advertisements')
         .select(`
           *,
-          branches(id, name)
+          branches(id, name_en, name_ar)
         `)
         .eq('status', 'active')
         .gte('expiry_date', new Date().toISOString().split('T')[0])
@@ -61,8 +61,8 @@
     try {
       const { data, error } = await supabase
         .from('branches')
-        .select('id, name')
-        .order('name');
+        .select('id, name_en, name_ar')
+        .order('name_en');
 
       if (error) throw error;
       branches = data || [];
@@ -78,7 +78,8 @@
     if (searchQuery.trim()) {
       filtered = filtered.filter(offer =>
         offer.offer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        offer.branches?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+        offer.branches?.name_en?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        offer.branches?.name_ar?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
@@ -324,7 +325,11 @@
           >
             <option value="">{ $language === 'ar' ? 'جميع الفروع' : 'All Branches' }</option>
             {#each branches as branch}
-              <option value={branch.id}>{branch.name}</option>
+              <option value={branch.id}>
+                {$language === 'ar' 
+                  ? (branch.name_ar || branch.name_en) 
+                  : (branch.name_en || branch.name_ar)}
+              </option>
             {/each}
           </select>
         {/if}
@@ -410,7 +415,9 @@
                   {offer.offer_name}
                 </h3>
                 <p class="text-gray-500 text-sm truncate">
-                  {offer.branches?.name || ($language === 'ar' ? 'جميع الفروع' : 'All Branches')}
+                  {$language === 'ar' 
+                    ? (offer.branches?.name_ar || offer.branches?.name_en || 'جميع الفروع') 
+                    : (offer.branches?.name_en || offer.branches?.name_ar || 'All Branches')}
                 </p>
               </div>
 
@@ -466,7 +473,11 @@
       <div class="flex items-center justify-between p-4 border-b border-gray-200">
         <div>
           <h3 class="text-lg font-semibold text-gray-900">{selectedOffer.offer_name}</h3>
-          <p class="text-gray-500 text-sm">{selectedOffer.branches?.name}</p>
+          <p class="text-gray-500 text-sm">
+            {$language === 'ar' 
+              ? (selectedOffer.branches?.name_ar || selectedOffer.branches?.name_en || 'جميع الفروع') 
+              : (selectedOffer.branches?.name_en || selectedOffer.branches?.name_ar || 'All Branches')}
+          </p>
         </div>
         <div class="flex items-center gap-3">
           <!-- Download Button -->

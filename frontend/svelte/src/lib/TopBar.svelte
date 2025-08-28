@@ -20,6 +20,11 @@
     // Use get() to safely access language store value
     const currentLang = get(language) || 'en';
     loadCustomerNotifications(currentLang);
+    
+    // Debug logging
+    console.log('Current language:', currentLang);
+    console.log('Translation store:', get(t));
+    console.log('viewAllNotifications translation:', get(t)?.viewAllNotifications);
   });
 
   function toggleNotificationPanel() {
@@ -147,7 +152,7 @@
             {#if showNotificationPanel}
               <div class="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-hidden">
                 <div class="p-4 border-b border-gray-200 flex items-center justify-between">
-                  <h3 class="text-lg font-semibold text-gray-900">🔔 {$t?.notifications || 'Notifications'}</h3>
+                  <h3 class="text-lg font-semibold text-gray-900">🔔 {$t?.notifications || ($language === 'ar' ? 'الإشعارات' : 'Notifications')}</h3>
                   <button 
                     on:click={closeNotificationPanel}
                     class="text-gray-400 hover:text-gray-600 transition-colors"
@@ -218,7 +223,7 @@
                         on:click={() => { closeNotificationPanel(); goto('/notifications'); }}
                         class="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium"
                       >
-                        {$t?.viewAllNotifications || 'View All Notifications'} →
+                        {$t?.viewAllNotifications || ($language === 'ar' ? 'عرض جميع الإشعارات' : 'View All Notifications')} →
                       </button>
                     </div>
                   {/if}

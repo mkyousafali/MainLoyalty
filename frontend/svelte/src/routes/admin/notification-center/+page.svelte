@@ -2,11 +2,13 @@
   import { onMount } from 'svelte';
   import { supabase } from '$lib/supabase';
   import { sendNotificationToCustomers } from '$lib/stores/notifications';
+  import { fixNotificationBranchNames } from '$lib/utils/notificationFixer';
 
   let notifications: any[] = [];
   let isLoading = false;
   let error = '';
   let success = '';
+  let isFixingNotifications = false;
 
   // Filters
   let selectedType = '';
@@ -18,6 +20,7 @@
   let formData = {
     type: 'system',
     title: '',
+    title_ar: '',
     message: '',
     message_ar: '',
     recipient_type: 'all',
@@ -92,8 +95,8 @@
     try {
       const { data, error: loadError } = await supabase
         .from('branches')
-        .select('id, name, location')
-        .order('name');
+        .select('id, name_en, name_ar, location')
+        .order('name_en');
 
       if (loadError) throw loadError;
       branches = data || [];
@@ -218,6 +221,7 @@
     formData = {
       type: 'system',
       title: '',
+      title_ar: '',
       message: '',
       message_ar: '',
       recipient_type: 'all',
@@ -297,7 +301,7 @@
       const notificationPayload = {
         type: formData.type,
         title: formData.title.trim(),
-        title_ar: formData.message_ar.trim() ? formData.title : undefined,
+        title_ar: formData.title_ar.trim() || undefined,
         message: formData.message.trim(),
         message_ar: formData.message_ar.trim() || undefined,
         priority: formData.priority,
@@ -481,6 +485,28 @@
     }
   }
 
+  async function fixBranchNamesInNotifications() {
+    try {
+      isFixingNotifications = true;
+      error = '';
+      success = '';
+
+      const result = await fixNotificationBranchNames();
+
+      if (result.success) {
+        success = `Successfully fixed ${result.updated} notification(s) with Arabic branch names!`;
+        // Reload notifications to show updated content
+        loadNotifications();
+      } else {
+        error = `Failed to fix notifications: ${result.error?.message || 'Unknown error'}`;
+      }
+    } catch (err: any) {
+      error = `Error fixing notifications: ${err.message}`;
+    } finally {
+      isFixingNotifications = false;
+    }
+  }
+
   function getTypeConfig(type: string) {
     return notificationTypes.find(t => t.value === type) || notificationTypes[4];
   }
@@ -531,6 +557,13 @@
             class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm"
           >
             Clear All
+          </button>
+          <button
+            on:click={fixBranchNamesInNotifications}
+            disabled={isFixingNotifications}
+            class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm disabled:opacity-50"
+          >
+            {isFixingNotifications ? '⏳ Fixing...' : '🔧 Fix Arabic Names'}
           </button>
           <button
             on:click={openCreateModal}
@@ -816,6 +849,68 @@
                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Enter notification title..."
                     />
+                  </div>
+
+                  <!-- Arabic Title -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      🌍 Title (Arabic) - Optional
+                    </label>
+                    <input
+                      type="text"
+                      bind:value={formData.title_ar}
+                      class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-right"
+                      placeholder="أدخل عنوان الإشعار بالعربية..."
+                      dir="rtl"
+                    />
+                  </div>
+
+                  <!-- Quick Templates -->
+                  <div class="bg-blue-50 p-4 rounded-lg">
+                    <label class="block text-sm font-medium text-blue-800 mb-3">
+                      ⚡ Quick Templates - Click to auto-fill
+                    </label>
+                    <div class="grid grid-cols-1 gap-2">
+                      <button
+                        type="button"
+                        on:click={() => {
+                          formData.type = 'promotion';
+                          formData.title = 'New Offer Available 🛒';
+                          formData.title_ar = 'عرض جديد متاح 🛒';
+                          formData.message = 'Check out our new offer! Save money on your next purchase at [Branch Name].';
+                          formData.message_ar = 'تحقق من عرضنا الجديد! وفر المال على مشترياتك القادمة في فرع [اسم الفرع].';
+                        }}
+                        class="text-left text-sm bg-white hover:bg-blue-100 border border-blue-200 rounded px-3 py-2 transition-colors"
+                      >
+                        🛒 New Offer Available / عرض جديد متاح
+                      </button>
+                      <button
+                        type="button"
+                        on:click={() => {
+                          formData.type = 'promotion';
+                          formData.title = 'Special Discount Available';
+                          formData.title_ar = 'خصم خاص متاح';
+                          formData.message = 'Limited time offer! Get special discounts on selected items.';
+                          formData.message_ar = 'عرض لفترة محدودة! احصل على خصومات خاصة على المنتجات المختارة.';
+                        }}
+                        class="text-left text-sm bg-white hover:bg-blue-100 border border-blue-200 rounded px-3 py-2 transition-colors"
+                      >
+                        💰 Special Discount / خصم خاص
+                      </button>
+                      <button
+                        type="button"
+                        on:click={() => {
+                          formData.type = 'promotion';
+                          formData.title = 'Weekend Sale';
+                          formData.title_ar = 'تخفيضات نهاية الأسبوع';
+                          formData.message = 'Weekend special! Great deals on all your favorite products.';
+                          formData.message_ar = 'عروض نهاية الأسبوع! صفقات رائعة على جميع منتجاتك المفضلة.';
+                        }}
+                        class="text-left text-sm bg-white hover:bg-blue-100 border border-blue-200 rounded px-3 py-2 transition-colors"
+                      >
+                        🎉 Weekend Sale / تخفيضات نهاية الأسبوع
+                      </button>
+                    </div>
                   </div>
 
                   <!-- Message -->

@@ -362,7 +362,7 @@
 
   async function handleLogin() {
     if (!isValidMobile) {
-      error = 'Please enter a valid 10-digit Saudi mobile number starting with 05';
+      error = localTranslations.invalidMobile;
       return;
     }
 
@@ -436,7 +436,7 @@
       
     } catch (err) {
       console.error('Login check error:', err);
-      error = 'An error occurred while checking your account. Please try again.';
+      error = localTranslations.accountError;
     } finally {
       isLoading = false;
     }
@@ -444,7 +444,7 @@
 
   async function handlePasswordLogin() {
     if (!loginPassword) {
-      error = 'Please enter your password';
+      error = localTranslations.passwordRequired;
       return;
     }
 
@@ -474,10 +474,10 @@
           goto('/dashboard');
         }, 1500);
       } else {
-        error = 'Incorrect password. Please try again.';
+        error = localTranslations.incorrectPassword;
       }
     } catch (err) {
-      error = 'Login failed. Please check your credentials.';
+      error = localTranslations.loginFailed;
     } finally {
       isLoading = false;
     }
@@ -486,27 +486,27 @@
   async function submitRegistration() {
     // Validation
     if (!regFullName.trim()) {
-      error = 'Please enter your full name';
+      error = localTranslations.fullNameRequired;
       return;
     }
 
     if (!regArea.trim()) {
-      error = 'Please enter your area/place';
+      error = localTranslations.areaRequired;
       return;
     }
 
     if (!regBranchId) {
-      error = 'Please select your nearest branch';
+      error = localTranslations.branchRequired;
       return;
     }
 
     if (regPassword.length < 6) {
-      error = 'Password must be at least 6 characters long';
+      error = localTranslations.passwordTooShort;
       return;
     }
 
     if (!termsAccepted) {
-      error = 'You must accept the Terms & Conditions to proceed';
+      error = localTranslations.termsRequired;
       return;
     }
 
@@ -582,11 +582,11 @@
           console.error('Customer insert error:', insertError);
           
           if (insertError.code === '23505') {
-            error = 'This mobile number is already registered. Please use login instead.';
+            error = localTranslations.mobileAlreadyRegistered;
           } else if (insertError.code === 'PGRST116') {
-            error = 'Invalid data provided. Please check your information and try again.';
+            error = localTranslations.invalidData;
           } else {
-            error = `Registration failed: ${insertError.message || 'Unknown error'}`;
+            error = `${localTranslations.registrationFailed}: ${insertError.message || localTranslations.unexpectedError}`;
           }
           return;
         }
@@ -618,9 +618,9 @@
     } catch (err: any) {
       console.error('Registration error:', err);
       if (err.message?.includes('duplicate key')) {
-        error = 'This mobile number is already registered. Please try logging in instead.';
+        error = localTranslations.mobileAlreadyExists;
       } else {
-        error = `Registration failed: ${err.message || 'Unknown error. Please try again.'}`;
+        error = `${localTranslations.registrationFailed}: ${err.message || localTranslations.unexpectedError}`;
       }
     } finally {
       isLoading = false;
@@ -658,6 +658,8 @@
       completeRegistration: 'Complete Your Registration',
       fullName: 'Full Name',
       fullNamePlaceholder: 'Enter your full name',
+      emailOptional: 'Email (Optional)',
+      emailPlaceholder: 'Enter your email address',
       place: 'Place / Area',
       placePlaceholder: 'Enter your area or city',
       nearestBranch: 'Select Nearest Branch',
@@ -666,7 +668,23 @@
       passwordPlaceholder: 'Enter your password (min 6 characters)',
       acceptTerms: 'I accept the Terms & Conditions',
       registerButton: 'Complete Registration',
-      registering: 'Creating Account...'
+      registering: 'Creating Account...',
+      // Error Messages
+      invalidMobile: 'Please enter a valid 10-digit Saudi mobile number starting with 05',
+      accountError: 'An error occurred while checking your account. Please try again.',
+      passwordRequired: 'Please enter your password',
+      incorrectPassword: 'Incorrect password. Please try again.',
+      loginFailed: 'Login failed. Please check your credentials.',
+      fullNameRequired: 'Please enter your full name',
+      areaRequired: 'Please enter your area/place',
+      branchRequired: 'Please select your nearest branch',
+      passwordTooShort: 'Password must be at least 6 characters long',
+      termsRequired: 'You must accept the Terms & Conditions to proceed',
+      mobileAlreadyRegistered: 'This mobile number is already registered. Please use login instead.',
+      invalidData: 'Invalid data provided. Please check your information and try again.',
+      mobileAlreadyExists: 'This mobile number is already registered. Please try logging in instead.',
+      registrationFailed: 'Registration failed. Please try again.',
+      unexpectedError: 'Unexpected error. Please try again.'
     },
     ar: {
       title: 'برنامج ولاء ايربن ماركت',
@@ -705,7 +723,23 @@
       passwordPlaceholder: 'أدخل كلمة المرور (6 أحرف على الأقل)',
       acceptTerms: 'أوافق على الشروط والأحكام',
       registerButton: 'إكمال التسجيل',
-      registering: 'جاري إنشاء الحساب...'
+      registering: 'جاري إنشاء الحساب...',
+      // Error Messages in Arabic
+      invalidMobile: 'يرجى إدخال رقم جوال سعودي صحيح مكون من 10 أرقام يبدأ بـ 05',
+      accountError: 'حدث خطأ أثناء التحقق من حسابك. يرجى المحاولة مرة أخرى.',
+      passwordRequired: 'يرجى إدخال كلمة المرور',
+      incorrectPassword: 'كلمة المرور غير صحيحة. يرجى المحاولة مرة أخرى.',
+      loginFailed: 'فشل تسجيل الدخول. يرجى التحقق من بياناتك.',
+      fullNameRequired: 'يرجى إدخال اسمك الكامل',
+      areaRequired: 'يرجى إدخال منطقتك/مكانك',
+      branchRequired: 'يرجى اختيار أقرب فرع',
+      passwordTooShort: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
+      termsRequired: 'يجب الموافقة على الشروط والأحكام للمتابعة',
+      mobileAlreadyRegistered: 'رقم الجوال هذا مسجل مسبقاً. يرجى استخدام تسجيل الدخول.',
+      invalidData: 'البيانات المدخلة غير صحيحة. يرجى التحقق والمحاولة مرة أخرى.',
+      mobileAlreadyExists: 'رقم الجوال هذا مسجل مسبقاً. يرجى محاولة تسجيل الدخول.',
+      registrationFailed: 'فشل التسجيل. يرجى المحاولة مرة أخرى.',
+      unexpectedError: 'خطأ غير متوقع. يرجى المحاولة مرة أخرى.'
     }
   };
 
@@ -726,12 +760,6 @@
   <!-- Top Bar -->
   <div class="text-center py-6 sm:py-8 relative z-10">
     <div class="max-w-6xl mx-auto px-3 sm:px-4 md:px-6">
-      <div class="relative inline-block transform hover:scale-105 transition-all duration-500">
-        <div class="absolute inset-0 bg-gradient-to-r from-orange-400 via-pink-400 to-purple-500 rounded-3xl blur-xl opacity-30 animate-pulse"></div>
-        <div class="relative bg-white/90 backdrop-blur-sm p-4 sm:p-6 rounded-3xl shadow-2xl border border-white/20 hover:shadow-3xl transition-all duration-300">
-          <img src="/logo.png" alt="Urban Market Logo" class="h-12 sm:h-16 w-auto mx-auto drop-shadow-lg" />
-        </div>
-      </div>
       <div class="mt-6">
         <div 
           class="inline-flex items-center gap-3 bg-gradient-to-r from-orange-100 via-orange-50 to-yellow-50 px-4 sm:px-6 py-3 rounded-full border border-orange-200/50 shadow-lg backdrop-blur-sm cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:scale-105"
@@ -768,8 +796,20 @@
     <!-- Floating Background Card -->
     <div class="absolute inset-0 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 rounded-3xl blur-xl opacity-20 animate-pulse scale-105"></div>
     
+    <!-- 3D Orange Border Effect -->
+    <div class="absolute inset-0 bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 rounded-3xl blur-sm opacity-30 scale-[1.02]"></div>
+    <div class="absolute inset-0 border-4 border-orange-300/60 rounded-3xl shadow-orange-200/50 shadow-2xl"></div>
+    <div class="absolute inset-1 border-2 border-orange-200/40 rounded-3xl"></div>
+    <div class="absolute inset-2 border border-orange-100/30 rounded-3xl"></div>
+    
     <!-- Main Card -->
-    <div class="relative bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-6 transform transition-all duration-700 border border-white/30" class:translate-y-0={pageLoaded} class:translate-y-8={!pageLoaded} class:opacity-100={pageLoaded} class:opacity-0={!pageLoaded}>
+    <div class="relative bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-6 transform transition-all duration-700 border-4 border-orange-400/20 shadow-orange-300/30" 
+         style="box-shadow: 
+           0 25px 50px -12px rgba(251, 146, 60, 0.25),
+           0 0 0 1px rgba(251, 146, 60, 0.1),
+           inset 0 1px 0 rgba(255, 255, 255, 0.1),
+           inset 0 -1px 0 rgba(251, 146, 60, 0.1)"
+         class:translate-y-0={pageLoaded} class:translate-y-8={!pageLoaded} class:opacity-100={pageLoaded} class:opacity-0={!pageLoaded}>
       
       <!-- Logo and Header -->
       <div class="text-center mb-8">
@@ -820,6 +860,33 @@
                   </div>
                 </div>
               {/if}
+            </div>
+          </div>
+
+          <!-- Language Switch Card -->
+          <div class="flex justify-center mb-4">
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-100 border-2 border-blue-200 rounded-2xl p-4 shadow-lg backdrop-blur-sm">
+              <div class="flex items-center justify-center gap-3">
+                <span class="text-sm font-semibold text-blue-700">
+                  {$language === 'ar' ? 'اللغة:' : 'Language:'}
+                </span>
+                <div class="flex items-center bg-white rounded-xl border border-blue-200 p-1 shadow-sm">
+                  <button
+                    type="button"
+                    on:click={() => $language = 'en'}
+                    class="px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {$language === 'en' ? 'bg-blue-500 text-white shadow-md transform scale-105' : 'text-blue-600 hover:bg-blue-50'}"
+                  >
+                    EN
+                  </button>
+                  <button
+                    type="button"
+                    on:click={() => $language = 'ar'}
+                    class="px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {$language === 'ar' ? 'bg-blue-500 text-white shadow-md transform scale-105' : 'text-blue-600 hover:bg-blue-50'}"
+                  >
+                    العربية
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
