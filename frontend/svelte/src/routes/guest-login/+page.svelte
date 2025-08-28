@@ -316,15 +316,14 @@
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="flex items-center gap-2 bg-white px-4 py-3 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-purple-200 hover:border-purple-400 hover:bg-purple-50 group transform hover:scale-105"
+                  class="flex items-center justify-center bg-white p-3 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-purple-200 hover:border-purple-400 hover:bg-purple-50 group transform hover:scale-105"
                   title={getLocalizedPlatformName(link.name)}
                 >
                   {#if link.use_custom_icon && link.static_icon}
-                    <img src="/icons/social/{link.static_icon}" alt={link.name} class="w-5 h-5 object-contain group-hover:scale-110 transition-transform duration-200" />
+                    <img src="/icons/social/{link.static_icon}" alt={link.name} class="w-6 h-6 object-contain group-hover:scale-110 transition-transform duration-200" />
                   {:else}
-                    <span class="text-xl group-hover:scale-110 transition-transform duration-200">{link.icon}</span>
+                    <span class="text-2xl group-hover:scale-110 transition-transform duration-200">{link.icon}</span>
                   {/if}
-                  <span class="text-sm font-medium text-gray-700 group-hover:text-purple-700">{getLocalizedPlatformName(link.name)}</span>
                 </a>
               {/each}
             </div>
