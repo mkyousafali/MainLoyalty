@@ -21,6 +21,35 @@
   let error = '';
   let isLuckyDrawEnabled = true; // Lucky Draw feature toggle
   let socialLinks: any[] = []; // Social media links for Follow Us card
+  let isMenuOpen = false;
+
+  function scrollToSection(sectionId: string) {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      // Calculate offset for the fixed header on mobile
+      const offset = window.innerWidth < 1024 ? 64 : 0; // 64px is height of sticky header
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = element.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+    isMenuOpen = false; // Close menu after clicking
+  }
+
+  const menuItems = [
+    { id: 'membership-code', label: 'Membership Code', labelAr: 'رمز العضوية', icon: '💳' },
+    { id: 'notifications', label: 'Notifications', labelAr: 'الإشعارات', icon: '🔔' },
+    { id: 'points', label: 'Points', labelAr: 'النقاط', icon: '✨' },
+    { id: 'quick-actions', label: 'Quick Actions', labelAr: 'إجراءات سريعة', icon: '🚀' },
+    { id: 'follow-us', label: 'Follow Us', labelAr: 'تابعنا', icon: '🔗' },
+    { id: 'recent-transactions', label: 'Recent Transactions', labelAr: 'المعاملات الأخيرة', icon: '🧾' },
+    { id: 'redemption-conditions', label: 'Redemption Conditions', labelAr: 'شروط الاستبدال', icon: '🎯' }
+  ];
 
   // Reactive translations based on current language
   $: currentTranslations = $language === 'ar' ? {
@@ -688,10 +717,78 @@
   <title>{$t.dashboard} - Urban Market Loyalty</title>
 </svelte:head>
 
+<!-- Mobile Header with Hamburger Menu -->
+<header class="sticky top-0 z-30 bg-white/90 backdrop-blur-sm shadow-sm lg:hidden" dir={$language === 'ar' ? 'rtl' : 'ltr'}>
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="flex items-center justify-between h-16">
+      <button on:click={() => isMenuOpen = !isMenuOpen} class="p-2 rounded-full text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </button>
+      
+      <div class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
+        {$language === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
+      </div>
+
+      <!-- Spacer to balance the header -->
+      <div class="w-8"></div>
+    </div>
+  </div>
+</header>
+
+<!-- Sliding Menu for Mobile -->
+{#if isMenuOpen}
+<div class="fixed inset-0 z-40 lg:hidden" on:click={() => isMenuOpen = false} on:keydown={(e) => e.key === 'Escape' && (isMenuOpen = false)}>
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm {$language === 'ar' ? 'animate-fade-in-rtl' : 'animate-fade-in-ltr'}"></div>
+  
+  <div 
+    class="relative bg-white w-80 max-w-[85vw] h-full shadow-2xl flex flex-col p-6 {$language === 'ar' ? 'ml-auto animate-slide-in-rtl' : 'mr-auto animate-slide-in-ltr'}"
+    on:click|stopPropagation
+  >
+    <div class="flex items-center justify-between mb-8">
+      <h3 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">{$language === 'ar' ? 'القائمة' : 'Menu'}</h3>
+      <button on:click={() => isMenuOpen = false} class="p-2 rounded-full hover:bg-gray-100">
+        <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto">
+      <ul class="space-y-2">
+        {#each menuItems as item}
+          <li>
+            <button 
+              on:click={() => scrollToSection(item.id)} 
+              class="w-full flex items-center gap-4 text-left px-4 py-3 rounded-lg hover:bg-orange-50 text-gray-700 hover:text-orange-600 font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400"
+            >
+              <span class="text-2xl">{item.icon}</span>
+              <span>{$language === 'ar' ? item.labelAr : item.label}</span>
+            </button>
+          </li>
+        {/each}
+      </ul>
+    </nav>
+
+    <div class="mt-6 pt-6 border-t border-gray-200">
+        <button
+            on:click={() => {
+              sessionStorage.clear();
+              localStorage.clear();
+              window.location.href = '/login';
+            }}
+            class="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg bg-red-500 hover:bg-red-600 text-white font-bold transition-all duration-200"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            <span>{$language === 'ar' ? 'تسجيل الخروج' : 'Logout'}</span>
+        </button>
+    </div>
+  </div>
+</div>
+{/if}
 
 
 <!-- Logo Header Section - Compact on Mobile -->
-<div class="text-center py-2 sm:py-6 md:py-8">
+<div class="text-center py-2 sm:py-6 md:py-8 hidden lg:block">
   <div class="max-w-6xl mx-auto px-2 sm:px-4 md:px-6">
     <div class="relative inline-block transform hover:scale-105 transition-all duration-300">
       <div class="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl sm:rounded-3xl blur-lg opacity-20 animate-pulse"></div>
@@ -731,7 +828,7 @@
     </div>
   {:else if customerData}
     <!-- QR/Barcode Toggle Card - New Feature -->
-    <div class="mb-6 sm:mb-8">
+    <div id="membership-code" class="mb-6 sm:mb-8">
       <div class="relative group">
         <!-- Ocean Wave Background -->
         <div class="absolute inset-0 rounded-2xl overflow-hidden">
@@ -861,7 +958,7 @@
               <div class="relative p-4 bg-gradient-to-br from-white via-cyan-50/50 to-blue-50/30 backdrop-blur-sm rounded-2xl border-2 border-white/40 shadow-xl">
                 <!-- Floating elements around the code -->
                 <div class="absolute -top-2 -left-2 w-4 h-4 bg-cyan-300/40 rounded-full animate-bounce"></div>
-                <div class="absolute -top-1 -right-3 w-2 h-2 bg-blue-400/50 rounded-full animate-pulse"></div>
+                <div class="absolute -top-1 -right-1 w-2 h-2 bg-blue-400/50 rounded-full animate-pulse"></div>
                 <div class="absolute -bottom-2 -left-1 w-3 h-3 bg-cyan-400/30 rounded-full animate-bounce" style="animation-delay: 0.5s"></div>
                 
                 <!-- QR Code -->
@@ -941,7 +1038,7 @@
 
     <!-- Notifications Widget - Recent Notifications Preview -->
     {#if $customerNotifications.length > 0}
-      <div class="mb-6 sm:mb-8">
+      <div id="notifications" class="mb-6 sm:mb-8">
         <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
@@ -995,7 +1092,7 @@
     <!-- Main Widgets - Mobile-First Responsive Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
       <!-- Points Widget with Premium Brand Design -->
-      <div class="bg-white p-4 sm:p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300" style="box-shadow: 0 4px 20px rgba(240, 131, 0, 0.1);">
+      <div id="points" class="bg-white p-4 sm:p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300" style="box-shadow: 0 4px 20px rgba(240, 131, 0, 0.1);">
         
         <!-- Mobile-Optimized Points Display -->
         <div class="text-center mb-6 md:mb-8">
@@ -1138,7 +1235,7 @@
       </div>
 
       <!-- Enhanced Quick Actions Widget -->
-      <div class="relative group">
+      <div id="quick-actions" class="relative group">
         <!-- Enhanced glow background -->
         <div class="absolute -inset-1 bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-600 rounded-3xl blur-lg opacity-20 group-hover:opacity-30 animate-pulse transition-opacity duration-500"></div>
         
@@ -1229,12 +1326,10 @@
                       <h4 class="font-black text-lg sm:text-xl truncate drop-shadow-lg">{$language === 'ar' ? 'العجلة المحظوظة' : 'Lucky Draw'}</h4>
                       <p class="text-purple-100 text-sm sm:text-base truncate font-medium">{$language === 'ar' ? 'دوّر واربح جوائز مذهلة!' : 'Spin and win amazing prizes!'}</p>
                     </div>
-                    <div class="flex-shrink-0 p-2 bg-white/20 rounded-lg backdrop-blur-sm transform group-hover/lucky:translate-x-1 transition-transform duration-300">
-                      <div class="text-2xl sm:text-3xl opacity-90">→</div>
-                    </div>
-                  </div>
-                  
-                  <!-- Decorative elements -->
+                      <div class="flex-shrink-0 p-2 bg-white/20 rounded-lg backdrop-blur-sm transform group-hover/lucky:translate-x-1 transition-transform duration-300">
+                        <div class="text-2xl sm:text-3xl opacity-90">→</div>
+                      </div>
+                    </div>                  <!-- Decorative elements -->
                   <div class="absolute top-2 right-2 w-2 h-2 bg-white rounded-full animate-ping opacity-60"></div>
                   <div class="absolute bottom-2 left-2 w-1.5 h-1.5 bg-purple-200 rounded-full animate-pulse opacity-70"></div>
                 </div>
@@ -1273,7 +1368,7 @@
     </div>
 
     <!-- Follow Us Social Media Card - Added above Recent Transactions -->
-    <section class="relative mt-4 sm:mt-6 md:mt-8 mb-4 sm:mb-6 md:mb-8">
+    <section id="follow-us" class="relative mt-4 sm:mt-6 md:mt-8 mb-4 sm:mb-6 md:mb-8">
       <!-- Animated background glow -->
       <div class="absolute -inset-1 bg-gradient-to-r from-orange-400 via-red-500 to-orange-600 rounded-3xl blur opacity-20 animate-pulse"></div>
       
@@ -1386,7 +1481,7 @@
     </section>
 
     <!-- Recent Transactions Section - Mobile-Optimized Futuristic Design -->
-    <section class="relative mt-4 sm:mt-6 md:mt-8">
+    <section id="recent-transactions" class="relative mt-4 sm:mt-6 md:mt-8">
       <!-- Animated background glow -->
       <div class="absolute -inset-1 bg-gradient-to-r from-green-400 via-emerald-500 to-green-600 rounded-3xl blur opacity-20 animate-pulse"></div>
       
@@ -1524,7 +1619,7 @@
     </section>
 
     <!-- Point Redemption Conditions Section - Mobile Optimized -->
-    <section class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 md:p-8 mt-4 sm:mt-6 md:mt-8">
+    <section id="redemption-conditions" class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 md:p-8 mt-4 sm:mt-6 md:mt-8">
       <div class="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
         <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #C0A32A 0%, #D4B836 100%);">
           <span class="text-lg sm:text-2xl">🎯</span>
@@ -1619,7 +1714,7 @@
   <!-- Footer Card -->
   <footer class="mt-8 py-6">
     <div class="max-w-md mx-auto">
-      <div class="bg-gradient-to-br from-gray-50 to-slate-100 hover:from-gray-100 hover:to-slate-200 border-2 border-gray-200 hover:border-gray-300 rounded-2xl p-4 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg">
+      <div class="bg-gradient-to-br from-gray-50 to-slate-100 hover:from-gray-100 hover:to-slate-200 border-2 border-gray-200 hover:border-gray-300 rounded-2xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
         <div class="text-center space-y-3">
           <!-- Buttons -->
           <div class="flex justify-center items-center gap-3 mb-2" class:flex-row-reverse={$language === 'ar'}>
@@ -1709,5 +1804,36 @@
   
   .animate-wave {
     animation: wave 4s ease-in-out infinite;
+  }
+
+  /* Menu Animations */
+  @keyframes slide-in-ltr {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+  }
+  .animate-slide-in-ltr {
+    animation: slide-in-ltr 0.3s ease-out forwards;
+  }
+  @keyframes fade-in-ltr {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .animate-fade-in-ltr {
+    animation: fade-in-ltr 0.3s ease-out forwards;
+  }
+
+  @keyframes slide-in-rtl {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+  .animate-slide-in-rtl {
+    animation: slide-in-rtl 0.3s ease-out forwards;
+  }
+  @keyframes fade-in-rtl {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .animate-fade-in-rtl {
+    animation: fade-in-rtl 0.3s ease-out forwards;
   }
 </style>
