@@ -89,7 +89,7 @@
       buttons: [
         { path: '/admin/reports/transaction-report', label: 'Transaction Report', icon: '💰', description: 'View transaction analytics and reports' },
         { path: '/admin/reports/customer-usage', label: 'Customer Usage Report', icon: '👥', description: 'Analyze customer usage patterns' },
-        { path: '/admin/reports/registrations', label: 'Registrations Report', icon: '📝', description: 'Track customer registrations' }
+        { path: '/admin/reports/card-details', label: 'Card Details Report', icon: '💳', description: 'Export detailed customer card information' }
       ]
     },
     luckyWheelManager: {

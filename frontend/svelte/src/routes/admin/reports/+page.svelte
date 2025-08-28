@@ -21,12 +21,12 @@
       features: ['Usage Analytics', 'Customer Behavior', 'Activity Trends', 'Engagement Metrics']
     },
     {
-      id: 'registrations',
-      title: 'Registrations Report',
-      description: 'Track customer registration trends and patterns',
-      icon: '📝',
-      href: '/admin/reports/registrations',
-      features: ['Registration Trends', 'Time Analysis', 'Growth Metrics', 'Demographic Data']
+      id: 'card-details',
+      title: 'Card Details Report',
+      description: 'Detailed information about customer cards and their status',
+      icon: '💳',
+      href: '/admin/reports/card-details',
+      features: ['Card Information', 'Customer Details', 'Status Tracking', 'Excel Export']
     }
   ];
 
@@ -50,7 +50,7 @@
       <div class="stat-card">
         <span class="stat-icon">📊</span>
         <div class="stat-content">
-          <span class="stat-value">3</span>
+          <span class="stat-value">4</span>
           <span class="stat-label">Report Types</span>
         </div>
       </div>
@@ -112,6 +112,10 @@
       <button class="action-btn" on:click={() => navigateToReport('/admin/reports/registrations')}>
         <span class="action-icon">👤</span>
         <span class="action-text">Check Registration Trends</span>
+      </button>
+      <button class="action-btn" on:click={() => navigateToReport('/admin/reports/card-details')}>
+        <span class="action-icon">💳</span>
+        <span class="action-text">Export Card Details</span>
       </button>
     </div>
   </div>
