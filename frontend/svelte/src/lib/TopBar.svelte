@@ -47,6 +47,14 @@
     authLogout();
   }
 
+  function handleMobileMenuClick() {
+    // If we're on the dashboard page, dispatch a custom event for dashboard navigation
+    if ($page.url.pathname === '/dashboard') {
+      window.dispatchEvent(new CustomEvent('dashboard-mobile-menu'));
+    }
+    // For other pages, you can implement different menu behavior here
+  }
+
   // Dynamic title based on current route
   $: currentTitle = title || getPageTitle($page.url.pathname);
 
@@ -265,6 +273,7 @@
         <!-- Mobile Menu Button -->
         <div class="sm:hidden">
           <button
+            on:click={handleMobileMenuClick}
             class="flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-all duration-200 hover:shadow-sm min-w-[32px]"
             title="Menu"
             aria-label="Menu"

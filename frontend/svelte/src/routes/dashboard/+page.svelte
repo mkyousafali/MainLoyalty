@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { getCardTypeGradient } from '$lib/stores/cardTypes';
   import { supabase } from '$lib/supabase';
-  import { user } from '$lib/stores/auth';
+  import { user, logout as authLogout } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
   import { language, t, toggleLanguage } from '$lib/stores/language';
@@ -40,6 +40,22 @@
     }
     isMenuOpen = false; // Close menu after clicking
   }
+
+  // Global event handler for mobile menu
+  onMount(() => {
+    function handleMobileMenuToggle(event: CustomEvent) {
+      if (window.location.pathname === '/dashboard') {
+        isMenuOpen = !isMenuOpen;
+        event.preventDefault();
+      }
+    }
+
+    window.addEventListener('dashboard-mobile-menu', handleMobileMenuToggle);
+
+    return () => {
+      window.removeEventListener('dashboard-mobile-menu', handleMobileMenuToggle);
+    };
+  });
 
   const menuItems = [
     { id: 'membership-code', label: 'Membership Code', labelAr: 'رمز العضوية', icon: '💳' },
@@ -717,25 +733,7 @@
   <title>{$t.dashboard} - Urban Market Loyalty</title>
 </svelte:head>
 
-<!-- Mobile Header with Hamburger Menu -->
-<header class="sticky top-0 z-30 bg-white/90 backdrop-blur-sm shadow-sm lg:hidden" dir={$language === 'ar' ? 'rtl' : 'ltr'}>
-  <div class="max-w-6xl mx-auto px-4">
-    <div class="flex items-center justify-between h-16">
-      <button on:click={() => isMenuOpen = !isMenuOpen} class="p-2 rounded-full text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-        </svg>
-      </button>
-      
-      <div class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
-        {$language === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
-      </div>
 
-      <!-- Spacer to balance the header -->
-      <div class="w-8"></div>
-    </div>
-  </div>
-</header>
 
 <!-- Sliding Menu for Mobile -->
 {#if isMenuOpen}
@@ -743,7 +741,7 @@
   <div class="absolute inset-0 bg-black/40 backdrop-blur-sm {$language === 'ar' ? 'animate-fade-in-rtl' : 'animate-fade-in-ltr'}"></div>
   
   <div 
-    class="relative bg-white w-80 max-w-[85vw] h-full shadow-2xl flex flex-col p-6 {$language === 'ar' ? 'ml-auto animate-slide-in-rtl' : 'mr-auto animate-slide-in-ltr'}"
+    class="relative bg-white w-80 max-w-[85vw] h-full shadow-2xl flex flex-col p-6 {$language === 'ar' ? 'ml-auto animate-slide-in-rtl' : 'mr-auto animate-slide-in-ltr'} mt-16"
     on:click|stopPropagation
   >
     <div class="flex items-center justify-between mb-8">
